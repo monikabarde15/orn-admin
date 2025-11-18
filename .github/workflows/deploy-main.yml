@@ -27,19 +27,15 @@ jobs:
                   sshpass -p "$HOST_PASSWORD" ssh -o StrictHostKeyChecking=no "${{ secrets.HOST_USER }}"@"${{ secrets.HOST_SERVER }}" << 'EOF'
                     set -e
 
-                    sudo rm -rf ~/onrequestlab_backend
-                    git clone https://${{ secrets.PAT_TOKEN }}@github.com/onrequestlab/onrequestlab_backend.git ~/onrequestlab_backend
-                    cd ~/onrequestlab_backend
+                    sudo rm -rf ~/onrequestlab_reactjs
+                    git clone https://${{ secrets.PAT_TOKEN }}@github.com/onrequestlab/Onrequestreactjs.git ~/onrequestlab_reactjs
+                    cd ~/onrequestlab_reactjs
 
                     git fetch origin main
                     git checkout main || git checkout -b main origin/main
 
                     # Preserve newlines in .env
                     printf "%s\n" "${{ secrets.ENV_FILE }}" > .env
-
-                    #copy certs
-                    sudo cp /etc/letsencrypt/live/backend.onrequestlab.com/fullchain.pem .
-                    sudo cp /etc/letsencrypt/live/backend.onrequestlab.com/privkey.pem .
 
                     sudo docker compose down
                     sudo docker system prune -af

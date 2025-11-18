@@ -1,7 +1,7 @@
 {
   "name": "ONREQUESTLAB-FRONTEND-APP",
   "dockerComposeFile": ["../docker-compose.dev.yml"],
-  "service": "web",
+  "service": "app",
   "workspaceFolder": "/workspace",
   "forwardPorts": [3000, 5173],
   "portsAttributes": {

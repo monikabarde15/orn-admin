@@ -1,8 +1,12 @@
 # docker-compose.prod.yml  (pure production, no volumes, no dev dependencies)
 services:
-    web:
+    app:
         image: node:22-alpine
-        command: sleep infinity
+        command: >
+            sh -c "
+              npm install &&
+              sleep infinity
+            "
         ports:
             - '3000:3000' # CRA
             - '5173:5173' # Vite

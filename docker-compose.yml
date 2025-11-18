@@ -4,9 +4,9 @@ services:
             context: .
             dockerfile: Dockerfile
         container_name: react_app
-        command: serve -s dist -l 3000
+        command: npm run preview
         ports:
-            - '3000:3000'
+            - '3000:4173'
         volumes:
             - .:/app
         env_file:

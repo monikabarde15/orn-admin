@@ -73,9 +73,9 @@ jobs:
                     docker load -i onrequestlab_reactjs.tar
 
                     echo "Restarting containers..."
-                    docker compose down || true
-                    docker compose up -d --remove-orphans --build   # <-- --build ensures latest Dockerfile is used
-
+                    docker rm -f onrequestlab_reactjs
+                    docker run -d --name onrequestlab_reactjs onrequestlab_reactjs:${{ env.ENV }}  
+                    
                     rm -f onrequestlab_reactjs.tar
                     echo "Deployed ${{ env.ENV }} successfully in <70 seconds!"
                   EOF

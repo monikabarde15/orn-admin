@@ -1,17 +1,16 @@
+# docker-compose.prod.yml  (pure production, no volumes, no dev dependencies)
 services:
     web:
-        build:
-            context: .
-            dockerfile: Dockerfile
-        container_name: react_app
+        image: node:22-alpine
+        working_dir: /app
         command: >
             sh -c "
-                npm install &&
-                npm run preview
+              npm ci --omit=dev &&
+              npm run build &&
+              npx serve -s dist -l 3000
             "
         ports:
-            - '4173:4173'
-        volumes:
-            - .:/app
-        env_file:
-            - .env
+            - '3000:3000'
+        environment:
+            - NODE_ENV=production
+        # No volumes → container is immutable and secure

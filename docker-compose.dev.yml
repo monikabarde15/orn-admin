@@ -1,13 +1,12 @@
+# docker-compose.prod.yml  (pure production, no volumes, no dev dependencies)
 services:
     web:
-        build:
-            context: .
-            dockerfile: Dockerfile.dev
+        image: node:22-alpine
         command: sleep infinity
         ports:
             - '3000:3000' # CRA
             - '5173:5173' # Vite
+        environment:
+            - NODE_ENV=development
         volumes:
             - .:/workspace:cached # your code, cached for speed
-        env_file:
-            - .env

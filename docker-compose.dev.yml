@@ -1,12 +1,13 @@
 services:
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    command: sleep infinity
-    ports:
-      - "3000:3000"
-    volumes:
-      - .:/workspace:cached
-    env_file:
-      - .env
+    web:
+        build:
+            context: .
+            dockerfile: Dockerfile.dev
+        command: sleep infinity
+        ports:
+            - '3000:3000' # CRA
+            - '5173:5173' # Vite
+        volumes:
+            - .:/workspace:cached # your code, cached for speed
+        env_file:
+            - .env

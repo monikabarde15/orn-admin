@@ -74,10 +74,10 @@ jobs:
 
                     echo "Restarting containers..."
                     docker rm -f onrequestlab_reactjs
-                    docker run -d --name onrequestlab_reactjs onrequestlab_reactjs:${{ env.ENV }}  
+                    docker run -d -p 3000:3000 --name onrequestlab_reactjs onrequestlab_reactjs:${{ env.ENV }}  
                     
                     rm -f onrequestlab_reactjs.tar
-                    echo "Deployed ${{ env.ENV }} successfully in <70 seconds!"
+                    echo "Deployed ${{ env.ENV }} successfully!"
                   EOF
 
             - name: Success

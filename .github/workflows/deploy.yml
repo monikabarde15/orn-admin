@@ -60,21 +60,8 @@ jobs:
               run: |
                   sudo apt-get update && sudo apt-get install -y sshpass
 
-                  # Transfer built image
-                  sshpass -p "$HOST_PASSWORD" scp -o StrictHostKeyChecking=no \
-                    app.tar "${{ secrets.HOST_USER }}"@${{ env.HOST }}:~/onrequestlab_reactjs.tar
-
-                  # Transfer docker-compose.yml (or compose.yaml) — critical!
-                  if [ -f docker-compose.yml ]; then
-                    sshpass -p "$HOST_PASSWORD" scp -o StrictHostKeyChecking=no \
-                      docker-compose.yml "${{ secrets.HOST_USER }}"@${{ env.HOST }}:~/onrequestlab_reactjs/docker-compose.yml
-                  elif [ -f compose.yaml ]; then
-                    sshpass -p "$HOST_PASSWORD" scp -o StrictHostKeyChecking=no \
-                      compose.yaml "${{ secrets.HOST_USER }}"@${{ env.HOST }}:~/onrequestlab_reactjs/compose.yaml
-                  else
-                    echo "ERROR: No docker-compose file found in repo!"
-                    exit 1
-                  fi
+                  # Transfer built image, Dockerfile & docker-compose.yml
+                  sshpass -p "$HOST_PASSWORD" scp -o StrictHostKeyChecking=no app.tar Dockerfile compose.yml "${{ secrets.HOST_USER }}"@${{ env.HOST }}:~/onrequestlab_reactjs/
 
             # Load image and restart containers
             - name: Load image & restart on server
@@ -87,13 +74,13 @@ jobs:
                     cd ~/onrequestlab_reactjs
 
                     echo "Loading new image..."
-                    docker load < ../onrequestlab_reactjs.tar
+                    docker load < onrequestlab_reactjs.tar
 
                     echo "Restarting containers..."
                     docker compose down || true
                     docker compose up -d --remove-orphans
 
-                    rm -f ../onrequestlab_reactjs.tar
+                    rm -f onrequestlab_reactjs.tar
                     echo "Deployed ${{ env.ENV }} successfully!"
                   EOF
 

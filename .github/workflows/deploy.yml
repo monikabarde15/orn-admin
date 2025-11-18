@@ -54,14 +54,14 @@ jobs:
                     .
 
             # Transfer image + docker-compose file
-            - name: Transfer image + compose file to server
+            - name: Transfer image, Dockerfile and docker-compose.yml file to server
               env:
                   HOST_PASSWORD: ${{ secrets.HOST_PASSWORD }}
               run: |
                   sudo apt-get update && sudo apt-get install -y sshpass
 
                   # Transfer built image, Dockerfile & docker-compose.yml
-                  sshpass -p "$HOST_PASSWORD" scp -o StrictHostKeyChecking=no app.tar Dockerfile compose.yml "${{ secrets.HOST_USER }}"@${{ env.HOST }}:~/onrequestlab_reactjs/
+                  sshpass -p "$HOST_PASSWORD" scp -o StrictHostKeyChecking=no app.tar Dockerfile docker-compose.yml "${{ secrets.HOST_USER }}"@${{ env.HOST }}:~/onrequestlab_reactjs/
 
             # Load image and restart containers
             - name: Load image & restart on server

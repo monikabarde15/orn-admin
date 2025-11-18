@@ -1,0 +1,12 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: sleep infinity
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/workspace:cached
+    env_file:
+      - .env

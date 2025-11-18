@@ -1,0 +1,18 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: react_app
+    command: >
+      sh -c "
+        npm install
+        npm start
+      "
+    ports:
+      - "3000:3000"
+      - "5173:5173"
+    volumes:
+      - .:/app
+    env_file:
+      - .env

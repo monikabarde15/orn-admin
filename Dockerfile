@@ -5,7 +5,7 @@ WORKDIR /app
 # Copy only package files first (best practice)
 COPY package*.json ./
 
-RUN npm ci                     
+RUN npm install                     
 
 # Copy source code
 COPY . .

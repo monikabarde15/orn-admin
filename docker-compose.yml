@@ -4,9 +4,15 @@ services:
             context: .
             dockerfile: Dockerfile
         container_name: react_app
-        command: npm run preview
+        command: >
+            sh -c "
+                npm install &&
+                npm install -g serve &&
+                npm run build &&
+                serve dist -s -l 3000
+            "
         ports:
-            - '3000:4173'
+            - '3000:3000'
         volumes:
             - .:/app
         env_file:

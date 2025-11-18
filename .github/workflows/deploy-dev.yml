@@ -1,4 +1,4 @@
-name: Deploy To Development Server
+name: Deploy to Dev
 
 on:
     push:
@@ -6,53 +6,62 @@ on:
             - dev
 
 jobs:
-    build-and-deploy:
+    deploy:
         runs-on: ubuntu-latest
+        timeout-minutes: 10
 
         steps:
-            - name: Checkout code
+            - name: Checkout
               uses: actions/checkout@v4
+              with:
+                  fetch-depth: 1
 
-            - name: Setup Known Hosts
+            - name: Cache node_modules + Docker layers
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      ~/.npm
+                      /tmp/.buildx-cache
+                  key: ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+                  restore-keys: |
+                      ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}-
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
+            - name: Build & export image to tar (no registry!)
               run: |
-                  mkdir -p ~/.ssh
-                  ssh-keyscan -H ${{ secrets.DEV_HOST_SERVER }} >> ~/.ssh/known_hosts
+                  docker buildx create --use
+                  docker buildx build \
+                    --cache-from=type=local,src=/tmp/.buildx-cache \
+                    --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max \
+                    --tag onrequestlab_reactjs:latest \
+                    --output type=docker,dest=app.tar \
+                    .
 
-            - name: SSH into EC2 and clone repo
+            - name: Transfer image + .env to EC2 (tiny & fast)
               env:
                   HOST_PASSWORD: ${{ secrets.HOST_PASSWORD }}
               run: |
-                  sudo apt-get update
-                  sudo apt-get install -y sshpass
+                  sudo apt-get update && sudo apt-get install -y sshpass
+                  sshpass -p "$HOST_PASSWORD" scp -o StrictHostKeyChecking=no app.tar "${{ secrets.HOST_USER }}"@"${{ secrets.DEV_HOST_SERVER }}":~/onrequestlab_reactjs.tar
+
+            - name: Load image & restart
+              env:
+                  HOST_PASSWORD: ${{ secrets.HOST_PASSWORD }}
+              run: |
                   sshpass -p "$HOST_PASSWORD" ssh -o StrictHostKeyChecking=no "${{ secrets.HOST_USER }}"@"${{ secrets.DEV_HOST_SERVER }}" << 'EOF'
                     set -e
-
-                    sudo rm -rf ~/onrequestlab_reactjs
-                    git clone https://${{ secrets.PAT_TOKEN }}@github.com/onrequestlab/Onrequestreactjs.git ~/onrequestlab_reactjs
                     cd ~/onrequestlab_reactjs
 
-                    git fetch origin dev
-                    git checkout dev || git checkout -b dev origin/dev
+                    docker load < ../onrequestlab_reactjs.tar
+                    docker compose down
+                    docker compose up -d
 
-                    # Preserve newlines in .env
-                    printf "%s\n" "${{ secrets.DEV_ENV_FILE }}" > .env
-
-                    sudo docker compose down
-                    sudo docker compose up -d --build
+                    rm -f ../onrequestlab_reactjs.tar
+                    echo "Deployed successfully!"
                   EOF
 
-            - name: Deployment Summary
+            - name: Success message
               if: success()
-              run: |
-                  echo "🎉 Deployment Summary:"
-                  echo "✅ Successfully deployed with Docker Compose"
-                  echo "🔗 React App: http://localhost:3000"
-                  echo "🐳 Compose project: $COMPOSE_PROJECT_NAME"
-                  echo "📊 Services: web"
-
-            - name: Notify on failure
-              if: failure()
-              run: |
-                  echo "❌ Deployment failed!"
-                  echo "Please check the logs above for details."
-                  echo "The previous version should still be running if rollback was successful."
+              run: echo "Deployed to http://${{ secrets.DEV_HOST_SERVER }}:3000"

@@ -10,7 +10,7 @@ services:
                 npm run preview
             "
         ports:
-            - '3000:4173'
+            - '4173:4173'
         volumes:
             - .:/app
         env_file:

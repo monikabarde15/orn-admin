@@ -1,0 +1,63 @@
+name: Deploy To Development Server
+
+on:
+    push:
+        branches:
+            - dev
+
+jobs:
+    build-and-deploy:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Known Hosts
+              run: |
+                  mkdir -p ~/.ssh
+                  ssh-keyscan -H ${{ secrets.DEV_HOST_SERVER }} >> ~/.ssh/known_hosts
+
+            - name: SSH into EC2 and clone repo
+              env:
+                  HOST_PASSWORD: ${{ secrets.HOST_PASSWORD }}
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y sshpass
+                  sshpass -p "$HOST_PASSWORD" ssh -o StrictHostKeyChecking=no "${{ secrets.HOST_USER }}"@"${{ secrets.DEV_HOST_SERVER }}" << 'EOF'
+                    set -e
+
+                    sudo rm -rf ~/onrequestlab_backend
+                    git clone https://${{ secrets.PAT_TOKEN }}@github.com/onrequestlab/onrequestlab_backend.git ~/onrequestlab_backend
+                    cd ~/onrequestlab_backend
+
+                    git fetch origin dev
+                    git checkout dev || git checkout -b dev origin/dev
+
+                    # Preserve newlines in .env
+                    printf "%s\n" "${{ secrets.DEV_ENV_FILE }}" > .env
+
+                    #copy certs
+                    sudo cp /etc/letsencrypt/live/dev.backend.onrequestlab.com/fullchain.pem .
+                    sudo cp /etc/letsencrypt/live/dev.backend.onrequestlab.com/privkey.pem .
+
+                    sudo docker compose down
+                    sudo docker system prune -af
+                    sudo docker compose up -d --build
+                  EOF
+
+            - name: Deployment Summary
+              if: success()
+              run: |
+                  echo "🎉 Deployment Summary:"
+                  echo "✅ Successfully deployed with Docker Compose"
+                  echo "🔗 React App: http://localhost:3000"
+                  echo "🐳 Compose project: $COMPOSE_PROJECT_NAME"
+                  echo "📊 Services: web"
+
+            - name: Notify on failure
+              if: failure()
+              run: |
+                  echo "❌ Deployment failed!"
+                  echo "Please check the logs above for details."
+                  echo "The previous version should still be running if rollback was successful."

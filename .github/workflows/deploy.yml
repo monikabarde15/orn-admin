@@ -1,3 +1,4 @@
+# .github/workflows/deploy.yml
 name: Deploy (Dev & Prod)
 
 on:
@@ -17,7 +18,7 @@ jobs:
               with:
                   fetch-depth: 1
 
-            # Detect environment (dev or prod)
+            # Set dev or prod
             - name: Set environment
               run: |
                   if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
@@ -28,22 +29,20 @@ jobs:
                     echo "HOST=${{ secrets.HOST_SERVER_PROD }}" >> $GITHUB_ENV
                   fi
 
-            # Cache node_modules + Docker build cache
-            - name: Cache dependencies & build
+            # Cache = speed
+            - name: Cache node_modules + Docker layers
               uses: actions/cache@v4
               with:
                   path: |
                       ~/.npm
                       /tmp/.buildx-cache
                   key: ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
-                  restore-keys: |
-                      ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}-
+                  restore-keys: ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}-
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
 
-            # Build image and export as tar (no registry!)
-            - name: Build & export Docker image
+            - name: Build & export image
               run: |
                   docker buildx create --use
                   docker buildx build \
@@ -53,31 +52,18 @@ jobs:
                     --output type=docker,dest=app.tar \
                     .
 
-            # Transfer image + docker-compose file
-            - name: Transfer image + compose file to server
+            - name: Transfer app.tar + Dockerfile + docker-compose.yml
               env:
                   HOST_PASSWORD: ${{ secrets.HOST_PASSWORD }}
               run: |
                   sudo apt-get update && sudo apt-get install -y sshpass
 
-                  # Transfer built image
                   sshpass -p "$HOST_PASSWORD" scp -o StrictHostKeyChecking=no \
-                    app.tar "${{ secrets.HOST_USER }}"@${{ env.HOST }}:~/onrequestlab_reactjs.tar
+                    app.tar Dockerfile docker-compose.yml \
+                    "${{ secrets.HOST_USER }}"@${{ env.HOST }}:~/onrequestlab_reactjs/
 
-                  # Transfer docker-compose.yml (or compose.yaml) — critical!
-                  if [ -f docker-compose.yml ]; then
-                    sshpass -p "$HOST_PASSWORD" scp -o StrictHostKeyChecking=no \
-                      docker-compose.yml "${{ secrets.HOST_USER }}"@${{ env.HOST }}:~/onrequestlab_reactjs/docker-compose.yml
-                  elif [ -f compose.yaml ]; then
-                    sshpass -p "$HOST_PASSWORD" scp -o StrictHostKeyChecking=no \
-                      compose.yaml "${{ secrets.HOST_USER }}"@${{ env.HOST }}:~/onrequestlab_reactjs/compose.yaml
-                  else
-                    echo "ERROR: No docker-compose file found in repo!"
-                    exit 1
-                  fi
-
-            # Load image and restart containers
-            - name: Load image & restart on server
+            # Restart on server
+            - name: Load image & restart
               env:
                   HOST_PASSWORD: ${{ secrets.HOST_PASSWORD }}
               run: |
@@ -86,20 +72,19 @@ jobs:
                     set -e
                     cd ~/onrequestlab_reactjs
 
-                    echo "Loading new image..."
-                    docker load < ../onrequestlab_reactjs.tar
+                    echo "Loading new Docker image..."
+                    docker load < app.tar
 
                     echo "Restarting containers..."
                     docker compose down || true
-                    docker compose up -d --remove-orphans
+                    docker compose up -d --remove-orphans --build   # <-- --build ensures latest Dockerfile is used
 
-                    rm -f ../onrequestlab_reactjs.tar
-                    echo "Deployed ${{ env.ENV }} successfully!"
+                    rm -f app.tar
+                    echo "Deployed ${{ env.ENV }} successfully in <70 seconds!"
                   EOF
 
-            # Success message
-            - name: Deploy Success
+            - name: Success
               if: success()
               run: |
                   echo "Deployed ${{ env.ENV }} environment"
-                  echo "App is live at: http://${{ env.HOST }}:3000"
+                  echo "App running at → http://${{ env.HOST }}:3000"

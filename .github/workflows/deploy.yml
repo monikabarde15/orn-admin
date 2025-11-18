@@ -22,10 +22,10 @@ jobs:
               run: |
                   if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
                     echo "ENV=dev" >> $GITHUB_ENV
-                    echo "HOST=${{ secrets.DEV_HOST_SERVER }}" >> $GITHUB_ENV
+                    echo "HOST=${{ secrets.HOST_SERVER_DEV }}" >> $GITHUB_ENV
                   else
                     echo "ENV=prod" >> $GITHUB_ENV
-                    echo "HOST=${{ secrets.PROD_HOST_SERVER }}" >> $GITHUB_ENV
+                    echo "HOST=${{ secrets.HOST_SERVER_PROD }}" >> $GITHUB_ENV
                   fi
 
             # ── Cache (same for both envs) ─────────────────────────

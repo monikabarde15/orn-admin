@@ -39,7 +39,7 @@ jobs:
                     --output type=docker,dest=app.tar \
                     .
 
-            - name: Transfer image + .env to EC2 (tiny & fast)
+            - name: Transfer image to server
               env:
                   HOST_PASSWORD: ${{ secrets.HOST_PASSWORD }}
               run: |

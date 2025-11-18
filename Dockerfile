@@ -12,10 +12,6 @@ RUN npm ci --omit=dev
 # Copy source
 COPY . .
 
-# Build-time API URL
-ARG VITE_API_URL=https://backend.onrequestlab.com
-ENV VITE_API_URL=$VITE_API_URL
-
 # Build the app
 RUN npm run build
 

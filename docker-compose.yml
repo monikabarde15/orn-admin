@@ -7,12 +7,10 @@ services:
         command: >
             sh -c "
                 npm install &&
-                npm install -g serve &&
-                npm run build &&
-                serve dist -s -l 3000
+                npm run preview
             "
         ports:
-            - '3000:3000'
+            - '3000:4173'
         volumes:
             - .:/app
         env_file:

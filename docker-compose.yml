@@ -3,6 +3,9 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
+            args:
+                APP_DIR: app
         container_name: react_app
         ports:
             - '3000:3000'
+        restart: unless-stopped

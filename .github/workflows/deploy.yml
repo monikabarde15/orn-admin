@@ -46,6 +46,7 @@ jobs:
               run: |
                   docker buildx create --use
                   docker buildx build \
+                    --build-arg APP_DIR=app \
                     --cache-from=type=local,src=/tmp/.buildx-cache \
                     --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max \
                     --tag onrequestlab_reactjs:${{ env.ENV }} \

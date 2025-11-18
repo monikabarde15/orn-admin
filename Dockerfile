@@ -1,19 +1,22 @@
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+RUN npm run build
+
+
 FROM node:22-alpine
 
 WORKDIR /app
 
-# Copy only package files first (best practice)
-COPY package*.json ./
+COPY --from=builder /app/build ./build 
 
-RUN npm install                     
-
-# Copy source code
-COPY . .
-
-# Build the app
-RUN npm run build
-
-# Install lightweight static server
 RUN npm install -g serve
 
 EXPOSE 3000

@@ -46,22 +46,19 @@ jobs:
               run: |
                   docker buildx create --use
                   docker buildx build \
-                    --build-arg APP_DIR=app \
                     --cache-from=type=local,src=/tmp/.buildx-cache \
                     --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max \
                     --tag onrequestlab_reactjs:${{ env.ENV }} \
                     --output type=docker,dest=app.tar \
                     .
 
-            - name: Transfer app.tar + Dockerfile + docker-compose.yml
+            - name: Transfer image
               env:
                   HOST_PASSWORD: ${{ secrets.HOST_PASSWORD }}
               run: |
                   sudo apt-get update && sudo apt-get install -y sshpass
 
-                  sshpass -p "$HOST_PASSWORD" scp -o StrictHostKeyChecking=no \
-                    app.tar Dockerfile docker-compose.yml \
-                    "${{ secrets.HOST_USER }}"@${{ env.HOST }}:~/onrequestlab_reactjs/
+                  sshpass -p "$HOST_PASSWORD" scp -o StrictHostKeyChecking=no app.tar "${{ secrets.HOST_USER }}"@${{ env.HOST }}:~/onrequestlab_reactjs.tar
 
             # Restart on server
             - name: Load image & restart
@@ -71,16 +68,15 @@ jobs:
                   sshpass -p "$HOST_PASSWORD" ssh -o StrictHostKeyChecking=no \
                     "${{ secrets.HOST_USER }}"@${{ env.HOST }} << 'EOF'
                     set -e
-                    cd ~/onrequestlab_reactjs
 
                     echo "Loading new Docker image..."
-                    docker load < app.tar
+                    docker load -i onrequestlab_reactjs.tar
 
                     echo "Restarting containers..."
                     docker compose down || true
                     docker compose up -d --remove-orphans --build   # <-- --build ensures latest Dockerfile is used
 
-                    rm -f app.tar
+                    rm -f onrequestlab_reactjs.tar
                     echo "Deployed ${{ env.ENV }} successfully in <70 seconds!"
                   EOF
 

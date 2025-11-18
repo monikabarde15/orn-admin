@@ -2,11 +2,20 @@ FROM node:22-alpine
 
 WORKDIR /app
 
+# Copy only package files first (best practice)
+COPY package*.json ./
+
+RUN npm ci                     
+
+# Copy source code
 COPY . .
 
-RUN npm install --omit=dev \
-    && npm run build
+# Build the app
+RUN npm run build
+
+# Install lightweight static server
+RUN npm install -g serve
 
 EXPOSE 3000
 
-CMD ["npx", "serve", "-s", "dist", "-l", "3000"]
+CMD ["serve", "-s", "dist", "-l", "3000"]

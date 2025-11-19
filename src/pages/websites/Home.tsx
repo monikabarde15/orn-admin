@@ -9,17 +9,25 @@ import ContactUs from '../Components/ContactUs';
 import OfferService from "../Components/OfferService";
 import ClusterLabCard from '../Components/ClusterLabCard';
 import Footer from '../Components/Footer';
+import FAQ from '../Components/FAQ';
+import HeroVideo from '../Components/HeroVideo';
+import LabPricing from '../Components/LabPricing';
+// import Faq from '../Pages/Faq';
+
 const HomePage = () => (
   <div style={{ minHeight: '100vh', background: '#140f1c' }}>
-    <Navbar />
+    <Navbar  />
     <HeroSection />
+    <HeroVideo />
     <Services />
     <Portfilo />
-    <ClusterLabCard />
+    {/* <ClusterLabCard /> */}
     {/* <ProcessSection /> */}
     <OfferService />
+    <LabPricing />
     <TestimonialSection />
     <ContactUs />
+    <FAQ />
     <Footer />
   </div>
 );

@@ -65,13 +65,13 @@ const HeroSection = () => {
                 whileTap={{ scale: 0.95 }}
                 className="flex items-center px-8 py-3 bg-[#944DFF] text-white font-bold rounded-xl shadow-lg transition-all group text-lg"
               >
-                Start Your Campaign
+                Book Your Lab Now
                 <span className="ml-2 group-hover:translate-x-1 transition-transform text-xl">
                   →
                 </span>
               </motion.button>
             </a>
-             <a href="#Portfilo"> <motion.button
+             {/* <a href="#Portfilo"> <motion.button
                 whileHover={{
                   scale: 1.05,
                   backgroundColor: "rgba(131,88,255,0.2)",
@@ -80,11 +80,12 @@ const HeroSection = () => {
                 className="flex items-center px-8 py-3 bg-transparent border-2 border-[#8358ff] text-white font-bold rounded-xl shadow-lg transition-all text-lg"
               >
                 View Our Work
-              </motion.button></a>
+              </motion.button>
+              </a> */}
             </motion.div>
 
             {/* Stats */}
-            <motion.div
+            {/* <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ delay: 0.5, duration: 1 }}
@@ -103,7 +104,7 @@ const HeroSection = () => {
                   <div className="text-base text-[#bfc0c4]">{stat.label}</div>
                 </motion.div>
               ))}
-            </motion.div>
+            </motion.div> */}
           </motion.div>
 
           {/* ================= Right Image & Floating Cards ================= */}

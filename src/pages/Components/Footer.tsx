@@ -85,6 +85,16 @@ const Footer = () => {
               </a>
             </li>
             <li>
+              <a href="/our-services" className="hover:text-white">
+                Our Services
+              </a>
+            </li>
+            <li>
+              <a href="/about-us" className="hover:text-white">
+                About Us
+              </a>
+            </li>
+            <li>
               <a href="contact-us" className="hover:text-white">
                 Contact Us
               </a>
@@ -126,6 +136,26 @@ const Footer = () => {
             <li>
               <a href="terms-and-conditions" className="hover:text-white">
                 Terms and Condition
+              </a>
+            </li>
+            <li>
+              <a href="feedback" className="hover:text-white">
+                Feedback Form
+              </a>
+            </li>
+            <li>
+              <a href="#courses" className="hover:text-white">
+                Request a Course
+              </a>
+            </li>
+            <li>
+              <a href="support" className="hover:text-white">
+                Support
+              </a>
+            </li>
+            <li>
+              <a href="contact-us" className="hover:text-white">
+                Contact Us
               </a>
             </li>
             <li>

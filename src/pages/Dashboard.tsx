@@ -66,7 +66,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
 const refreshAccessToken = async () => {
   try {
     const refreshToken = getCookie('refresh');
-    const response = await fetch('https://dev.backend.onrequestlab.com/api/v1/token/refresh/', {
+    const response = await fetch('https://backend.onrequestlab.com/api/v1/token/refresh/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh: refreshToken }),

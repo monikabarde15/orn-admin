@@ -488,22 +488,42 @@ const userID = JSON.parse(localStorage.getItem("userId") || "{}");
                                 offset={[0, 8]}
                                 placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
                                 btnClassName="relative group block"
-                                button={<img className="w-18 h-9 rounded-full object-cover saturate-50 group-hover:saturate-100" src="/assets/orllogo.png" alt="userProfile" />}
+                                button={
+                                <img className="w-18 h-9 rounded-full object-cover saturate-50 group-hover:saturate-100" src="https://t4.ftcdn.net/jpg/01/24/65/69/240_F_124656969_x3y8YVzvrqFZyv3YLWNo6PJaC88SYxqM.jpg" alt="userProfile" />
+                            }
                             >
                                 <ul className="text-dark dark:text-white-dark !py-0 w-[230px] font-semibold dark:text-white-light/90">
                                     <li>
                                         <div className="flex items-center px-4 py-4">
-                                            <img className="rounded-md w-10 h-10 object-cover" src="/assets/orllogo.png" alt="userProfile" />
+                                            <img className="rounded-md w-10 h-10 object-cover" src="https://t4.ftcdn.net/jpg/01/24/65/69/240_F_124656969_x3y8YVzvrqFZyv3YLWNo6PJaC88SYxqM.jpg" alt="userProfile" />
                                             <div className="ltr:pl-4 rtl:pr-4 truncate">
                                                 <h4 className="text-base">
                                                     {username}
-                                                    <span className="text-xs bg-success-light rounded text-success px-1 ltr:ml-2 rtl:ml-2">Pro</span>
+                                                    {/* <span className="text-xs bg-success-light rounded text-success px-1 ltr:ml-2 rtl:ml-2">Pro</span> */}
                                                 </h4>
                                                 {/*<button type="button" className="text-black/60 hover:text-primary dark:text-dark-light/60 dark:hover:text-white">
                                                     {email}
                                                 </button>*/}
                                             </div>
                                         </div>
+                                    </li>
+                                    <li>
+                                        <Link to="/users/profile" className="dark:hover:text-white">
+                                            <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
+                                            Courses
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link to="/users/profile" className="dark:hover:text-white">
+                                            <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
+                                            Payment
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link to="/users/profile" className="dark:hover:text-white">
+                                            <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
+                                            Change Password
+                                        </Link>
                                     </li>
                                     {/*<li>
                                         <Link to="/users/profile" className="dark:hover:text-white">

@@ -116,9 +116,19 @@ const Navbar = () => {
                 {cartItems.length === 0 ? <p>No items added</p> : cartItems.map((item, idx) => (
                   <div key={idx} className="cart-item-row">
                     <span>{item.name}</span>
-                    <strong>₹{item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0}</strong>
+                    <strong> ₹ {item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0}</strong>
                   </div>
                 ))}
+                <div className="cart-total-row">
+                  <span className="cart-total-label">Total</span>
+                  <div className="vertical-line"></div>
+                  <strong className="cart-total-amount">
+                    ₹ {cartItems.reduce((total, item) => {
+                      return total + (item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0);
+                    }, 0).toFixed(2)}
+                  </strong>
+                </div>
+
                 <button className="blue-btn w-full" onClick={() => navigateTo("/cart")}>Go to Cart</button>
               </div>
             )}
@@ -164,9 +174,19 @@ const Navbar = () => {
                 {cartItems.length === 0 ? <p>No items added</p> : cartItems.map((item, idx) => (
                   <div key={idx} className="cart-item-row">
                     <span>{item.name}</span>
-                    <strong>₹{item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0}</strong>
+                    <strong> ₹ {item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0}</strong>
                   </div>
                 ))}
+                <hr />
+                <div className="cart-total-row">
+                  <span className="cart-total-label">Total</span>
+                 &nbsp;&nbsp; <strong className="cart-total-amount">
+                      ₹ {cartItems.reduce((total, item) => {
+                      return total + (item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0);
+                    }, 0).toFixed(2)}
+                  </strong>
+                </div>
+
                 <button className="blue-btn w-full" onClick={() => navigateTo("/cart")}>Go to Cart</button>
               </div>
             )}

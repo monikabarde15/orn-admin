@@ -240,7 +240,7 @@ const routes = [
         layout:'web',
     },
      {
-        path: '/pricing',
+        path: '/labs',
         element: <Pricing />,
         layout:'web',
     },
@@ -255,7 +255,7 @@ const routes = [
         layout:'web',
     },
     {
-        path: '/blog-all',
+        path: '/blogs',
         element: <BlogList />,
         layout:'web',
     },

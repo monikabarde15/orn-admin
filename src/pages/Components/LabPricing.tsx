@@ -574,8 +574,9 @@ const cartTotal = (Array.isArray(cartItems) ? cartItems : []).reduce(
   }
 
   if (!token) {
-    notify("Please login to continue", "error");
-    navigate("/login");
+    // notify("Please login to continue", "error");
+    //navigate("/login");
+    await addToCart(lab, billingType);
     return;
   }
 
@@ -876,11 +877,11 @@ useEffect(() => {
             Wallet: {loadingWallet ? "Checking..." : walletBalance !== null ? `₹${walletBalance}` : "Unknown"}{" "}
             {walletBalance !== null && <span className="ml-3 text-xs text-gray-400">(You can pay from wallet if sufficient)</span>}
           </div> */}
-          <div className="mt-3">
+          {/* <div className="mt-3">
             <button onClick={() => navigate("/cart")} className="text-sm text-gray-300 hover:text-white px-3 py-1 border border-white/10 rounded-full">
               Cart ({Array.isArray(cartItems) ? cartItems.length : 0}) — ₹{cartTotal}
             </button>
-          </div>
+          </div> */}
         </div>
 
         {/* Billing Toggle */}

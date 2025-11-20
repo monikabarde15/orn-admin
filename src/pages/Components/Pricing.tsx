@@ -7,12 +7,12 @@ import ProcessSection from "../../pages/Components/ProcessSection";
 import TestimonialSection from '../Components/TestimonialSection';
 import ContactUs from '../Components/ContactUs';
 import OfferService from "../Components/OfferService";
-import ClusterLabCard from '../Components/ClusterLabCard';
+import LabPricing from '../Components/LabPricing';
 import Footer from '../Components/Footer';
 const Pricing = () => (
   <div style={{ minHeight: '100vh', background: '#140f1c' }}>
     <Navbar />
-    <ClusterLabCard />
+    <LabPricing />
     <Footer />
   </div>
 );

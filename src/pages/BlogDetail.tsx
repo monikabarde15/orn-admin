@@ -35,7 +35,7 @@ export default function BlogDetail() {
       <div className="min-h-screen flex flex-col items-center justify-center text-white bg-[#0b0718]">
         <p className="text-lg mb-3">⚠️ Blog not found or server error.</p>
         <Link
-          to="/blog-all"
+          to="/blogs"
           className="px-5 py-2 rounded-lg bg-gradient-to-r from-[#7c4dff] to-[#3f95ff] hover:from-[#9063ff] hover:to-[#66b9ff] transition-all duration-300 transform hover:scale-105 shadow-lg"
         >
           ← Back to Blogs
@@ -107,7 +107,7 @@ export default function BlogDetail() {
           transition={{ delay: 0.4 }}
         >
           <Link
-            to="/blog-all"
+            to="/blogs"
             className="inline-block px-6 py-3 rounded-full bg-gradient-to-r from-[#7c4dff] to-[#3f95ff] hover:from-[#9b6aff] hover:to-[#5fb8ff] transition-all duration-300 transform hover:scale-110 shadow-[0_0_20px_#7b4dff40] font-medium text-black"
           >
             ← Back to Blogs

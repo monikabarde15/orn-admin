@@ -65,8 +65,8 @@ const Navbar = () => {
   const navigateTo = (path) => (window.location.href = path);
 
   const links = isLoggedIn
-    ? ["/", "/contact-us"]
-    : ["/", "/about-us", "/pricing", "/process", "/blog-all", "/contact-us"];
+    ? ["/", "/about-us", "/labs", "/process", "/blogs","/contact-us"]
+    : ["/", "/about-us", "/labs", "/process", "/blogs", "/contact-us"];
 
   return (
     <>

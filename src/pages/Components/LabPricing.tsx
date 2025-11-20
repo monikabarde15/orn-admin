@@ -993,7 +993,7 @@ useEffect(() => {
         </div>
 
         {/* Instances Panel */}
-        <div className="mt-12 max-w-4xl mx-auto">
+        {/* <div className="mt-12 max-w-4xl mx-auto">
           <div className="bg-white/5 border border-white/10 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-bold">Your Instances</h3>
@@ -1022,7 +1022,7 @@ useEffect(() => {
               </ul>
             )}
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Lab List Modal */}

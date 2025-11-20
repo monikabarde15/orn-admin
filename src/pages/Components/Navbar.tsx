@@ -12,16 +12,13 @@ const Navbar = () => {
   const [walletBalance, setWalletBalance] = useState(null);
   const [loadingWallet, setLoadingWallet] = useState(false);
   const [profileMenu, setProfileMenu] = useState(false);
-  const [cartItems, setCartItems] = useState(
-    JSON.parse(localStorage.getItem("orl_cart") || "[]")
-  );
+  const [cartItems, setCartItems] = useState(JSON.parse(localStorage.getItem("orl_cart") || "[]"));
   const [cartOpen, setCartOpen] = useState(false);
 
   const menuRef = useRef(null);
   const cartRef = useRef(null);
   const API_BASE = "https://backend.onrequestlab.com/api/v1";
 
-  // Check login & fetch wallet
   useEffect(() => {
     const token = localStorage.getItem("jwt-auth");
     setIsLoggedIn(!!token);
@@ -43,17 +40,13 @@ const Navbar = () => {
     }
   };
 
-  // Close menus on outside click & update cart from localStorage
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target))
-        setProfileMenu(false);
-      if (cartRef.current && !cartRef.current.contains(e.target))
-        setCartOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target)) setProfileMenu(false);
+      if (cartRef.current && !cartRef.current.contains(e.target)) setCartOpen(false);
     };
-    const handleStorageChange = () => {
-      setCartItems(JSON.parse(localStorage.getItem("orl_cart") || "[]"));
-    };
+    const handleStorageChange = () => setCartItems(JSON.parse(localStorage.getItem("orl_cart") || "[]"));
+
     document.addEventListener("mousedown", handleClickOutside);
     window.addEventListener("storage", handleStorageChange);
 
@@ -71,10 +64,9 @@ const Navbar = () => {
 
   const navigateTo = (path) => (window.location.href = path);
 
-  // Links for nav
   const links = isLoggedIn
-    ? ["/", "/contact-us"] // only Home & Contact Us when logged in
-    : ["/", "/about-us", "/pricing", "/process", "/blog-all", "/contact-us"]; // full links when logged out
+    ? ["/", "/contact-us"]
+    : ["/", "/about-us", "/pricing", "/process", "/blog-all", "/contact-us"];
 
   return (
     <>
@@ -82,22 +74,21 @@ const Navbar = () => {
 
       <nav className="navbar">
         {/* Logo */}
-        <div className="navbar-logo bg-white rounded-xl flex items-center justify-center shadow-md">
-          <img src={logoimg} alt="logo" width="150" />
+        <div className="navbar-logo">
+          <span className="logo-icon">
+            <img src={logoimg} alt="logo" width="200" height="100" />
+          </span>
         </div>
 
-        {/* Hamburger for mobile */}
+        {/* Hamburger */}
         <div className="navbar-toggle" onClick={() => setMenuOpen(!menuOpen)}>
-          <span></span>
-          <span></span>
-          <span></span>
+          <div></div>
+          <div></div>
+          <div></div>
         </div>
 
         {/* Mobile menu backdrop */}
-        <div
-          className={`menu-backdrop ${menuOpen ? "show" : ""}`}
-          onClick={() => setMenuOpen(false)}
-        ></div>
+        <div className={`menu-backdrop ${menuOpen ? "show" : ""}`} onClick={() => setMenuOpen(false)} />
 
         {/* Mobile Menu */}
         <div className={`mobile-menu ${menuOpen ? "open" : ""}`}>
@@ -122,19 +113,13 @@ const Navbar = () => {
             </div>
             {cartOpen && (
               <div className="cart-dropdown-mobile">
-                {cartItems.length === 0 ? (
-                  <p>No items added</p>
-                ) : (
-                  cartItems.map((item, index) => (
-                    <div key={index} className="cart-item-row">
-                      <span>{item.name}</span>
-                      <strong>₹{item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0}</strong>
-                    </div>
-                  ))
-                )}
-                <button className="blue-btn w-full" onClick={() => navigateTo("/cart")}>
-                  Go to Cart
-                </button>
+                {cartItems.length === 0 ? <p>No items added</p> : cartItems.map((item, idx) => (
+                  <div key={idx} className="cart-item-row">
+                    <span>{item.name}</span>
+                    <strong>₹{item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0}</strong>
+                  </div>
+                ))}
+                <button className="blue-btn w-full" onClick={() => navigateTo("/cart")}>Go to Cart</button>
               </div>
             )}
           </div>
@@ -176,19 +161,13 @@ const Navbar = () => {
             </div>
             {cartOpen && (
               <div className="cart-dropdown clean-card">
-                {cartItems.length === 0 ? (
-                  <p>No items added</p>
-                ) : (
-                  cartItems.map((item, index) => (
-                    <div key={index} className="cart-item-row">
-                      <span>{item.name}</span>
-                      <strong>₹{item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0}</strong>
-                    </div>
-                  ))
-                )}
-                <button className="blue-btn w-full" onClick={() => navigateTo("/cart")}>
-                  Go to Cart
-                </button>
+                {cartItems.length === 0 ? <p>No items added</p> : cartItems.map((item, idx) => (
+                  <div key={idx} className="cart-item-row">
+                    <span>{item.name}</span>
+                    <strong>₹{item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0}</strong>
+                  </div>
+                ))}
+                <button className="blue-btn w-full" onClick={() => navigateTo("/cart")}>Go to Cart</button>
               </div>
             )}
           </div>

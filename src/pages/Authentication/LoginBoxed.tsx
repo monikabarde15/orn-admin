@@ -112,8 +112,8 @@ const LoginBoxed = () => {
 
     setResetLoading(true);
     try {
-      const response = await axios.post(
-        "https://backend.onrequestlab.com/api/v1/users/auth/password/reset/",
+      const response = await axios.post( 
+        " https://backend.onrequestlab.com/api/v1/users/password/reset/",
         { email: resetEmail },
         { headers: { "Content-Type": "application/json" } }
       );

@@ -516,6 +516,47 @@ const price = useEffect(() => {
 // In your page/component
 
 
+// const addToCart = (lab, billingType) => {
+//   if (!lab) return;
+
+//   const savedCart = JSON.parse(localStorage.getItem("orl_cart") || "[]");
+
+//   const price =
+//     billingType === "monthly"
+//       ? lab.monthlyPrice
+//       : billingType === "yearly"
+//       ? lab.yearlyPrice ?? lab.monthlyPrice
+//       : 0;
+
+//   // Check duplicate
+//   const exists = savedCart.find(
+//     (item) =>
+//       item.planId === lab.planId &&
+//       item.billingType === billingType
+//   );
+
+//   if (exists) {
+//     toast.info("Already in cart");
+//     return;
+//   }
+
+//   const newCartItem = {
+//     planId: lab.planId,
+//     name: lab.name,
+//     billingType,
+//     price,
+//   };
+
+//   savedCart.push(newCartItem);
+
+//   // Save to localStorage
+//   localStorage.setItem("orl_cart", JSON.stringify(savedCart));
+
+//   // ✅ Update state in the parent (Navbar)
+//   setCartItems(savedCart);
+
+//   toast.success("Added to cart");
+// };
 const addToCart = (lab, billingType) => {
   if (!lab) return;
 
@@ -536,7 +577,7 @@ const addToCart = (lab, billingType) => {
   );
 
   if (exists) {
-    toast.info("Already in cart");
+    toast.info("Already in cart", { autoClose: 2000 }); // auto closes after 2s
     return;
   }
 
@@ -555,7 +596,13 @@ const addToCart = (lab, billingType) => {
   // ✅ Update state in the parent (Navbar)
   setCartItems(savedCart);
 
-  toast.success("Added to cart");
+  // Show toast and auto close after 2 seconds
+  toast.success("Added to cart", { autoClose: 2000 });
+
+  // Reload page after 2.5 seconds
+  setTimeout(() => {
+    window.location.reload();
+  }, 2500);
 };
 
 

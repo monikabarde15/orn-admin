@@ -29,6 +29,13 @@ jobs:
                     echo "HOST=${{ secrets.HOST_SERVER_PROD }}" >> $GITHUB_ENV
                   fi
 
+            - name: Setup SSH Key
+              run: |
+                mkdir -p ~/.ssh
+                echo "${{ secrets.HOST_SERVER_KEY_PAIR }}" > ~/.ssh/id_rsa
+                chmod 600 ~/.ssh/id_rsa
+                ssh-keyscan -H "${{ env.HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
             # Cache = speed
             - name: Cache node_modules + Docker layers
               uses: actions/cache@v4
@@ -53,20 +60,15 @@ jobs:
                     .
 
             - name: Transfer image
-              env:
-                  HOST_PASSWORD: ${{ secrets.HOST_PASSWORD }}
               run: |
-                  sudo apt-get update && sudo apt-get install -y sshpass
-
-                  sshpass -p "$HOST_PASSWORD" scp -o StrictHostKeyChecking=no app.tar "${{ secrets.HOST_USER }}"@${{ env.HOST }}:~/onrequestlab_reactjs.tar
+                  scp app.tar root@${{ env.HOST }}:~/onrequestlab_reactjs.tar
 
             # Restart on server
             - name: Load image & restart
               env:
                   HOST_PASSWORD: ${{ secrets.HOST_PASSWORD }}
               run: |
-                  sshpass -p "$HOST_PASSWORD" ssh -o StrictHostKeyChecking=no \
-                    "${{ secrets.HOST_USER }}"@${{ env.HOST }} << 'EOF'
+                  ssh root@${{ env.HOST }} << 'EOF'
                     set -e
 
                     echo "Loading new Docker image..."

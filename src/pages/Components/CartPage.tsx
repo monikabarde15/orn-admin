@@ -2,335 +2,373 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
-
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const API_BASE = "https://backend.onrequestlab.com/api/v1";
 
-interface CartItem {
-  planId: string;
-  name: string;
-  billingType: string;
-  price: number;
-}
-
 const CartPage = () => {
-  const navigate = useNavigate();
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const pollRef = useRef<any>(null);
+const navigate = useNavigate();
+const [cartItems, setCartItems] = useState([]);
+const [loading, setLoading] = useState(false);
+const [processing, setProcessing] = useState(false);
+const [upgradeInProgress, setUpgradeInProgress] = useState(false);
+const pollRef = useRef(null);
 
-  // ---------------- COOKIE ----------------
-  const getCookie = (name) => {
-    if (typeof document === "undefined") return "";
-    const v = `; ${document.cookie}`;
-    const parts = v.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-    return "";
-  };
+const getCookie = (name) => {
+if (typeof document === "undefined") return "";
+const v = `; ${document.cookie}`;
+const parts = v.split(`; ${name}=`);
+if (parts.length === 2) return parts.pop().split(";").shift();
+return "";
+};
 
-  const tokenFromCookie = getCookie("access");
-  const userId = getCookie("user_id");
-  const tokenFromStorage =
-    localStorage.getItem("jwt-auth") ||
-    localStorage.getItem("access") ||
-    localStorage.getItem("token") ||
-    "";
-  const token = (tokenFromCookie || tokenFromStorage || "").trim();
+const token =
+(getCookie("access") ||
+localStorage.getItem("access") ||
+localStorage.getItem("jwt-auth"))?.trim();
+const userId = getCookie("user_id");
 
-  // const userId = getCookie("user_id");
+const notify = (msg, type = "info", opts = {}) =>
+toast[type](msg, {
+position: "top-center",
+autoClose: 2000,
+closeButton: true,
+closeOnClick: true,
+pauseOnHover: true,
+draggable: true,
+...opts,
+});
 
-  // ---------------- LOAD CART ----------------
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("orl_cart") || "[]");
-    setCartItems(saved);
-  }, []);
+useEffect(() => {
+try {
+const saved = JSON.parse(localStorage.getItem("orl_cart") || "[]");
+setCartItems(saved || []);
+} catch {
+setCartItems([]);
+}
+}, []);
 
-  const totalAmount = cartItems.reduce((sum, i) => sum + i.price, 0);
-
-  // ---------------- LOAD RAZORPAY ----------------
-  const loadScript = () =>
-    new Promise((resolve) => {
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-
-  // ---------------- REMOVE ITEM ----------------
-  const removeItem = (planId: string, billingType: string) => {
-    const updated = cartItems.filter(
-      (i) => !(i.planId === planId && i.billingType === billingType)
-    );
-    setCartItems(updated);
-    localStorage.setItem("orl_cart", JSON.stringify(updated));
-    toast.info("🗑️ Item removed");
-  };
-
-  // ---------------- CREATE ORDER ----------------
-  const createOrder = async (amount: number) => {
-    try {
-      const res = await axios.post(
-        `${API_BASE}/users/create-order/`,
-        { amount },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      return res.data;
-    } catch {
-      toast.error("❌ Failed to create order");
-      navigate("/login");
-      return null;
-    }
-  };
-
-  // ---------------- VERIFY PAYMENT ----------------
-  const verifyPayment = async (payload: any) => {
-    try {
-      const res = await axios.post(
-        `${API_BASE}/users/verify-payment/`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      return res.data;
-    } catch {
-      toast.error("❌ Payment verification failed");
-      return null;
-    }
-  };
-
-  // ---------------- POLLING ----------------
-  const startPolling = (payment_id: string) => {
-    pollRef.current = setInterval(async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/lab/userinst/${userId}/`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const list = res.data || [];
-
-        const newly = list.find((i: any) => {
-          const launched = i.status === "Launched";
-          const payMatch =
-            payment_id === "free"
-              ? i.is_free || !i.payment_id
-              : i.payment_id === payment_id;
-          return launched && payMatch;
-        });
-
-        if (newly) {
-          clearInterval(pollRef.current);
-          toast.success("🚀 Instance Launched Successfully!");
-          navigate("/");
-
-          const url =
-            newly.web_ssh_url ||
-            newly.webssh_url ||
-            newly.user_instance_link;
-
-          if (url) window.open(url, "_blank");
-
-          setProcessing(false);
-          navigate("/instances");
-        }
-      } catch {}
-    }, 3000);
-  };
-
-  const formatAction = (name: string) =>
-    name.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-
-  // ---------------- LAUNCH SINGLE ----------------
-  const launchSingleInstance = async (lab: CartItem, paymentId: string) => {
-    try {
-      const actionName = formatAction(lab.name);
-
-      const endpoint =
-        paymentId === "free"
-          ? `${API_BASE}/users/deploy-free/${actionName}/`
-          : `${API_BASE}/users/deploy/${actionName}/`;
-
-      const payload: any = {
-        user_id: userId,
-        action: lab.name,
-      };
-      if (paymentId !== "free") payload.payment_id = paymentId;
-
-      await axios.post(endpoint, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      startPolling(paymentId);
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.error ||
-        err?.response?.data?.detail ||
-        err?.response?.data?.message ||
-        "Instance launch failed";
-
-      toast.error(`❌ ${msg}`);
-      setProcessing(false);
-    }
-  };
-
-  // ---------------- LAUNCH ALL ----------------
-  const launchAll = async (paymentId: string) => {
-    for (const item of cartItems) {
-      await launchSingleInstance(item, paymentId);
-    }
-    localStorage.removeItem("orl_cart");
-  };
-
-  // ---------------- CHECKOUT ----------------
-  const checkout = async () => {
-    if (loading || processing) return;
-    if (!cartItems.length) return toast.error("🛒 Cart is empty");
-
-    setLoading(true);
-
-    const loaded = await loadScript();
-    if (!loaded) {
-      toast.error("Razorpay failed to load");
-      setLoading(false);
-      return;
-    }
-
-    const order = await createOrder(totalAmount);
-    if (!order) return setLoading(false);
-
-    const options: any = {
-      key: order.key_id,
-      amount: totalAmount * 100,
-      currency: "INR",
-      name: "OnRequestLab",
-      order_id: order.order_id,
-
-      handler: async (resp: any) => {
-        setProcessing(true);
-        setLoading(false);
-
-        const verify = await verifyPayment({
-          order_id: order.order_id,
-          razorpay_payment_id: resp.razorpay_payment_id,
-          razorpay_order_id: resp.razorpay_order_id,
-          razorpay_signature: resp.razorpay_signature,
-        });
-
-        if (!verify || !verify.success) {
-          toast.error("❌ Payment verification failed");
-          setProcessing(false);
-          return;
-        }
-
-        toast.success("🎉 Payment Successful!");
-        await launchAll(resp.razorpay_payment_id);
-      },
-    };
-
-    new (window as any).Razorpay(options).open();
-  };
-
-  // ---------------- UI ----------------
-  return (
-  <>
-    <Navbar />
-
-    <div className="min-h-screen bg-[#070B19] text-white px-4 py-10">
-      <h1 className="text-4xl font-bold text-center mb-12 tracking-wide text-purple-300">
-        🛒 Your Cart
-      </h1>
-
-      {!cartItems.length ? (
-        <p className="text-center text-xl text-gray-400">
-          Your cart is empty. Add something!
-        </p>
-      ) : (
-        <div className="max-w-3xl mx-auto space-y-6">
-          {cartItems.map((item, i) => (
-            <div
-              key={i}
-              className="
-                bg-[#10172A]
-                border border-white/10 
-                p-6 rounded-2xl shadow-lg 
-                flex justify-between items-center
-                transition-all duration-300
-                hover:scale-[1.02]
-                hover:shadow-purple-500/30
-              "
-            >
-              <div>
-                <h2 className="text-2xl font-semibold text-purple-300">
-                  {item.name}
-                </h2>
-
-                <p className="text-gray-300 mt-1">
-                  Billing:{" "}
-                  <span className="text-purple-400 font-bold">
-                    {item.billingType.toUpperCase()}
-                  </span>
-                </p>
-
-                {/* PRICE FIXED (Bright, visible) */}
-                <p className="text-3xl font-bold text-green-400 mt-3 drop-shadow-lg">
-                  ₹ {item.price}
-                </p>
-              </div>
-
-              <button
-                className="
-                  bg-red-600 
-                  hover:bg-red-700 
-                  transition-all 
-                  px-6 py-2 rounded-xl text-lg 
-                  hover:shadow-red-500/30
-                "
-                onClick={() => removeItem(item.planId, item.billingType)}
-                disabled={processing}
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-
-          {/* TOTAL FIX (Bright, visible) */}
-          <div className="text-4xl font-bold text-right mt-6 text-green-400 drop-shadow-xl">
-            Total: ₹{totalAmount}
-          </div>
-
-          {/* CHECKOUT BUTTON FIX (Brighter + Visible) */}
-          <button
-            onClick={checkout}
-            disabled={loading || processing}
-            className={`
-              w-full py-4 rounded-xl mt-5 text-2xl font-semibold
-              transition-all duration-300 shadow-xl
-              ${
-                loading || processing
-                  ? "bg-gray-700 cursor-not-allowed"
-                  : "w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40"
-              }
-            `}
-          >
-            {loading
-              ? "Processing Payment..."
-              : processing
-              ? "Launching Instances..."
-              : "Checkout & Pay"}
-          </button>
-        </div>
-      )}
-
-      <ToastContainer position="top-right" autoClose={2000} theme="dark" />
-    </div>
-
-    <Footer />
-  </>
+const totalAmount = cartItems.reduce(
+(sum, i) => sum + Number(i.price || 0),
+0
 );
 
+useEffect(() => {
+return () => {
+if (pollRef.current) clearInterval(pollRef.current);
+};
+}, []);
+
+const removeItem = (index) => {
+const updated = [...cartItems];
+updated.splice(index, 1);
+setCartItems(updated);
+localStorage.setItem("orl_cart", JSON.stringify(updated));
+toast.dismiss();
+notify("Item removed from cart", "info");
+};
+
+const checkWallet = async () => {
+try {
+const res = await axios.get(`${API_BASE}/users/wallet/balance/`, {
+headers: { Authorization: `Bearer ${token}` },
+});
+return res.data?.balance ?? 0;
+} catch {
+return 0;
+}
+};
+
+const formatAction = (name) =>
+name.toLowerCase().replace(/\s+/g, "*").replace(/[^a-z0-9*]/g, "");
+
+// const createSubscriptionOnBackend = async (planId) => {
+//   try {
+//   const res = await axios.post(
+//   `${API_BASE}/users/subscriptions/create/${planId}/`,
+//   {},
+//   { headers: { Authorization: `Bearer ${token}` } }
+//   );
+//   return res.data;
+//   } catch (err) {
+//   console.error(
+//   "createSubscriptionOnBackend error:",
+//   err?.response?.data ?? err
+//   );
+
+//   return null;
+//   }
+// };
+const createSubscriptionOnBackend = async (planId, price) => {
+  try {
+    const res = await axios.post(
+      `${API_BASE}/users/subscriptions/create/${planId}/`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return res.data;
+  } catch (err) {
+    const data = err?.response?.data;
+    if (data?.error === "Insufficient wallet balance") {
+      const balance = data.balance || 0;
+      const required = data.required || price;
+      const remaining = required - balance;
+      notify(`Wallet insufficient. Paying ₹${remaining} via Razorpay`, "warning");
+      await openRazorpay(remaining);
+    } else {
+      notify(data?.error || "Subscription creation failed", "error");
+    }
+    return null;
+  }
+};
+
+const launchSingle = async (lab, paymentId) => {
+try {
+if (!lab.subscription) {
+const createdSub = await createSubscriptionOnBackend(lab.planId);
+if (createdSub) {
+lab.subscription = createdSub;
+notify(`Subscription for ${lab.name} created automatically!`, "success");
+} else {
+notify(`Failed to create subscription for ${lab.name}`, "error");
+return;
+}
+}
+
+  const action = formatAction(lab.name);
+  const endpoint =
+    paymentId === "free"
+      ? `${API_BASE}/users/deploy-free/${action}/`
+      : `${API_BASE}/users/deploy/${action}/`;
+
+  const body =
+    paymentId === "free"
+      ? { user_id: userId, action }
+      : { user_id: userId, action, payment_id: paymentId };
+
+  await axios.post(endpoint, body, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  notify(`Instance ${lab.name} launched successfully!`, "success");
+} catch (err) {
+  notify(err?.response?.data?.message || "Instance launch failed", "error");
+}
+
+};
+
+const pollForLaunchedInstances = (paymentId = null) => {
+if (pollRef.current) clearInterval(pollRef.current);
+
+pollRef.current = setInterval(async () => {
+  try {
+    const res = await axios.get(`${API_BASE}/lab/userinst/${userId}/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const instances = res.data || [];
+
+    const launched = instances.find((i) => {
+      const isLaunched = i.status === "Launched";
+      if (!isLaunched) return false;
+
+      if (!paymentId) return true;
+      if (paymentId === "free")
+        return i.is_free || !i.payment_id || i.payment_id === "free";
+      return i.payment_id === paymentId;
+    });
+
+    if (launched) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+
+      localStorage.removeItem("orl_cart");
+      setCartItems([]);
+
+      const url = launched.web_ssh_url || launched.webssh_url || launched.user_instance_link;
+      if (url) try { window.open(url, "_blank"); } catch (err) {}
+
+      window.location.href = `/lab?user=${userId}`;
+      notify(
+        `Instance launched: ${launched.instance_ip || launched.user_instance_id}`,
+        "success"
+      );
+    }
+  } catch (err) {
+    console.error("Polling error:", err);
+  }
+}, 1000);
+
+};
+
+const loadRazorpay = () =>
+new Promise((resolve) => {
+if (window.Razorpay) return resolve(true);
+const s = document.createElement("script");
+s.src = "https://checkout.razorpay.com/v1/checkout.js";
+s.onload = () => resolve(true);
+s.onerror = () => resolve(false);
+document.body.appendChild(s);
+});
+
+const openRazorpay = async (amount) => {
+try {
+const loaded = await loadRazorpay();
+if (!loaded) return notify("Failed to load Razorpay", "error");
+
+  const orderRes = await axios.post(
+    `${API_BASE}/users/create-order/`,
+    { amount },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const order = orderRes.data;
+
+  const options = {
+    key: order.key_id,
+    amount: order.amount * 100,
+    currency: "INR",
+    name: "OnRequestLab",
+    description: "Lab Instance Payment",
+    order_id: order.order_id,
+    handler: async function (response) {
+      try {
+        const verify = await axios.post(
+          `${API_BASE}/users/verify-payment/`,
+          {
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_signature: response.razorpay_signature,
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (!verify.data.success)
+          return notify("Payment verification failed", "error");
+
+        notify("Payment Successful! Launching Instances...", "success");
+        setProcessing(true);
+
+        await Promise.all(
+          cartItems.map((item) => launchSingle(item, response.razorpay_payment_id))
+        );
+        pollForLaunchedInstances();
+      } catch {
+        notify("Payment verification failed", "error");
+      }
+    },
+    modal: { ondismiss: () => notify("Payment cancelled", "info") },
+    theme: { color: "#3399cc" },
+  };
+
+  new window.Razorpay(options).open();
+} catch (err) {
+  console.error("Razorpay Error:", err);
+  notify("Payment Failed!", "error");
+}
+
+};
+
+const handleCheckout = async () => {
+if (loading || processing || upgradeInProgress) return;
+if (!cartItems.length) return notify("Cart empty", "info");
+
+setLoading(true);
+
+try {
+  for (const item of cartItems) {
+    if (!item.subscription) {
+      const sub = await createSubscriptionOnBackend(item.planId);
+      if (!sub) {
+        notify(`Failed to create subscription for ${item.name}`, "error");
+        continue;
+      }
+      item.subscription = sub;
+      notify(`Subscription created for ${item.name}`, "success");
+    }
+
+    const wallet = await checkWallet();
+    const remaining = Math.max(0, item.price - wallet);
+
+    if (remaining === 0) {
+      notify(`₹${item.price} deducted from Wallet. Launching ${item.name}...`, "success");
+      await launchSingle(item, "wallet");
+    } else {
+      notify(`Wallet ₹${wallet} insufficient for ${item.name}. Paying ₹${remaining} via Razorpay`, "warning");
+      await new Promise((resolve) => { openRazorpay(remaining); resolve(); });
+    }
+  }
+  pollForLaunchedInstances();
+} catch (err) {
+  notify(err?.response?.data?.message || "Checkout failed", "error");
+} finally {
+  setLoading(false);
+}
+
+};
+
+const handleUpgrade = async (item) => {
+if (upgradeInProgress) return;
+const confirmUpgrade = window.confirm("Do you want to upgrade this plan?");
+if (!confirmUpgrade) return;
+
+setUpgradeInProgress(true);
+
+try {
+  const wallet = await checkWallet();
+  const remaining = Math.max(0, item.price - wallet);
+
+  if (remaining === 0) {
+    notify(`₹${item.price} deducted from Wallet. Upgrading ${item.name}...`, "success");
+    await launchSingle(item, "wallet");
+    pollForLaunchedInstances();
+  } else {
+    notify(`Wallet ₹${wallet} insufficient. Paying ₹${remaining} via Razorpay for upgrade`, "warning");
+    await new Promise((resolve) => { openRazorpay(remaining); resolve(); });
+  }
+} catch (err) {
+  notify(err?.response?.data?.message || "Upgrade failed", "error");
+} finally {
+  setUpgradeInProgress(false);
+}
+
+};
+
+return (
+<> <Navbar /> <ToastContainer /> <div className="min-h-screen bg-[#070B19] text-white px-4 py-10"> <h1 className="text-4xl font-bold text-center mb-12 text-purple-300">🛒 Your Cart</h1>
+
+    {!cartItems.length ? (
+      <p className="text-center text-xl text-gray-400">Your cart is empty.</p>
+    ) : (
+      <div className="max-w-3xl mx-auto space-y-6">
+        {cartItems.map((item, idx) => (
+          <div key={idx} className="bg-[#10172A] border border-white/10 p-6 rounded-2xl flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-semibold text-purple-300">{item.name}</h2>
+              <p className="text-gray-300 mt-1">
+                Billing: <span className="text-purple-400 ml-2 font-bold">{item.billingType.toUpperCase()}</span>
+              </p>
+              <p className="text-3xl font-bold text-green-400 mt-3">₹ {item.price}</p>
+            </div>
+            <div className="flex space-x-3">
+              <button onClick={() => removeItem(idx)} className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl font-bold text-white">Remove</button>
+              <button onClick={() => handleUpgrade(item)} disabled={!item.subscription || loading || processing || upgradeInProgress} className={`px-4 py-2 rounded-xl font-bold text-white ${item.subscription ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-600 cursor-not-allowed"}`}>Upgrade</button>
+            </div>
+          </div>
+        ))}
+
+        <div className="text-4xl font-bold text-right mt-6 text-green-400">Total: ₹{totalAmount}</div>
+
+        <button onClick={handleCheckout} disabled={loading || processing || upgradeInProgress || !cartItems.some((i) => !i.subscription)} className={`w-full py-4 rounded-xl mt-5 text-2xl font-semibold ${loading || processing || upgradeInProgress || !cartItems.some((i) => !i.subscription) ? "bg-gray-700 cursor-not-allowed" : "bg-gradient-to-r from-purple-500 to-blue-500 hover:scale-105"}`}>
+          {loading ? "Processing..." : processing ? "Launching..." : "Checkout & Pay"}
+        </button>
+      </div>
+    )}
+  </div>
+  <Footer />
+</>
+
+);
 };
 
 export default CartPage;

@@ -47,7 +47,7 @@ export default function BlogList() {
     const s = new URLSearchParams();
     if (newQuery) s.set("q", newQuery);
     if (newPage && newPage !== 1) s.set("page", newPage);
-    navigate({ pathname: "/blog-all", search: s.toString() }, { replace: false });
+    navigate({ pathname: "/blogs", search: s.toString() }, { replace: false });
   };
 
   const debouncedFetch = useMemo(

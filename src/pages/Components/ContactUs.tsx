@@ -178,7 +178,7 @@ const ContactUs = () => {
             <input
               type="email"
               name="email"
-              placeholder="john@company.com"
+              placeholder="name@gmail.com"
               value={formData.email}
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
@@ -205,7 +205,7 @@ const ContactUs = () => {
             <label>Message</label>
             <textarea
               name="message"
-              placeholder="Tell us about your project..."
+              placeholder="Tell us about your requirement..."
               rows={3}
               value={formData.message}
               onChange={(e) =>
@@ -271,7 +271,7 @@ const ContactUs = () => {
             </div>
             <div>
               <div className="contactus-info-label">Phone</div>
-              <div className="contactus-info-text">+91 (838) 309-7074</div>
+              <div className="contactus-info-text">+91 8383092074</div>
             </div>
           </div>
 

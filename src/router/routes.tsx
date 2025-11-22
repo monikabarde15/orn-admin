@@ -25,7 +25,8 @@ const PaymentListNormal = lazy(() => import('../pages/Components/PaymentListNorm
 
 const LabList = lazy(() => import('../pages/Components/LabList.tsx'));
 const LabListNormal = lazy(() => import('../pages/Components/LabListNormal.tsx'));
-
+const Cart = lazy(() => import('../pages/Components/CartPage'));
+const Checkout =lazy(() => import('../pages/Components/Checkout'));
 const UsersList = lazy(() => import('../pages/Components/UserList.tsx'));
 
 
@@ -150,6 +151,14 @@ const BlogList = lazy(() => import('../pages/BlogList'));
 const BlogDetail = lazy(() => import('../pages/BlogDetail'));
 const PageOfferService = lazy(() => import('../pages/Components/PageOfferService'));
 const LabDashboard = lazy(() => import('../pages/Components/LabDashboard'));
+const FeedbackForm = lazy(() => import('../pages/Components/FeedbackForm'));
+const AboutUs = lazy(() => import('../pages/Components/AboutUs'));
+const OurServices = lazy(() => import('../pages/Components/OurServices'));
+const Support = lazy(() => import('../pages/Components/Support'));
+const WalletHistory = lazy(() => import('../pages/Components/WalletHistory'));
+
+const UserInstances = lazy(() => import('../pages/Components/UserInstances'));
+
 
 
 const routes = [
@@ -159,7 +168,39 @@ const routes = [
         element: <Home />,
         layout:'web',
     },
+     {
+        path: '/wallet-history',
+        element: <WalletHistory />,
+        layout:'web',
+    },
     {
+        path: '/your-instances',
+        element: <UserInstances />,
+        layout:'web',
+    },
+     {
+        path: '/change-password',
+        element: <ChangePasswordPortal />,
+        layout:'web',
+
+    },
+    {
+        path: '/apps/PaymentListNormal',
+        element: <PaymentListNormal />,
+        layout:'web',
+
+    },
+    {
+        path: '/cart',
+        element: <Cart />,
+        layout:'web',
+    },
+     {
+        path: '/checkout',
+        element: <Checkout />,
+        layout:'web',
+    },
+     {
         path: '/index',
         element: <Index />,
     },
@@ -169,8 +210,28 @@ const routes = [
         layout:'web',
     },
     {
+        path: '/about-us',
+        element: <AboutUs />,
+        layout:'web',
+    },
+    {
+        path: '/support',
+        element: <Support />,
+        layout:'web',
+    },
+    {
+        path: '/our-services',
+        element: <OurServices />,
+        layout:'web',
+    },
+    {
         path: '/privacy-policy',
         element: <PrivacyPolicy />,
+        layout:'web',
+    },
+    {
+        path: '/feedback',
+        element: <FeedbackForm />,
         layout:'web',
     },
     {
@@ -179,7 +240,7 @@ const routes = [
         layout:'web',
     },
      {
-        path: '/pricing',
+        path: '/labs',
         element: <Pricing />,
         layout:'web',
     },
@@ -194,7 +255,7 @@ const routes = [
         layout:'web',
     },
     {
-        path: '/blog-all',
+        path: '/blogs',
         element: <BlogList />,
         layout:'web',
     },
@@ -229,10 +290,7 @@ const routes = [
         path: '/blogs',
          element: <BlogAdmin />,
     },
-    {
-        path: '/change-password',
-         element: <ChangePasswordPortal />,
-    },
+   
    
     // analytics page
     {
@@ -273,10 +331,7 @@ const routes = [
         path: '/apps/LabListNormal',
         element: <LabListNormal />,
     },
-    {
-        path: '/apps/PaymentListNormal',
-        element: <PaymentListNormal />,
-    },
+    
      {
         path: '/apps/PaymentList',
         element: <PaymentList />,

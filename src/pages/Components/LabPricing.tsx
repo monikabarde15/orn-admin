@@ -14,9 +14,12 @@ const notify = (msg, type = "info") => {
 
 const LabPricing = () => {
   const navigate = useNavigate();
+  // const [billingType, setBillingType] = useState("monthly");
+  const [billingTypes, setBillingTypes] = useState([]);
+const [billingType, setBillingType] = useState("hourly");
+  const [labs, setLabs] = useState([]);
+  const [loadingLabs, setLoadingLabs] = useState(false);  // UI state
 
-  // UI state
-  const [billingType, setBillingType] = useState("monthly");
   const [showLabListModal, setShowLabListModal] = useState(false);
 
   // Payment popup states
@@ -53,21 +56,24 @@ const LabPricing = () => {
 
   // Token helpers (existing)
   const getCookie = (name) => {
-    if (typeof document === "undefined") return "";
-    const v = `; ${document.cookie}`;
-    const parts = v.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-    return "";
-  };
+if (typeof document === "undefined") return "";
+const v = `; ${document.cookie}`;
+const parts = v.split(`; ${name}=`);
+if (parts.length === 2) return parts.pop().split(";").shift();
+return "";
+};
 
-  const tokenFromCookie = getCookie("access");
   const userId = getCookie("user_id");
-  const tokenFromStorage =
-    localStorage.getItem("jwt-auth") ||
-    localStorage.getItem("access") ||
-    localStorage.getItem("token") ||
-    "";
-  const token = (tokenFromCookie || tokenFromStorage || "").trim();
+
+let rawToken =
+getCookie("access") ||
+getCookie("jwt-auth") ||
+localStorage.getItem("jwt-auth") ||
+localStorage.getItem("token") || "";
+
+
+rawToken = rawToken.replace("Bearer ", "").trim();
+const token = rawToken;
 
   const user = {
     name: getCookie("username"),
@@ -82,108 +88,210 @@ const LabPricing = () => {
     "Terraform Infrastructure as Code",
     "Python",
   ];
+  useEffect(() => {
+  const fetchBillingTypes = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/packages/`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.data && Array.isArray(res.data)) {
+        // Extract unique billing_cycle values
+        const uniqueTypes = [...new Set(res.data.map((pkg) => pkg.billing_cycle.toLowerCase()))];
+        setBillingTypes(uniqueTypes);
+        if (uniqueTypes.length > 0) setBillingType(uniqueTypes[0]); // default selected
+      }
+    } catch (err) {
+      console.error("Failed to fetch packages", err);
+    }
+  };
+  fetchBillingTypes();
+}, []);
+const fetchLabsFromApi = async (type = "") => {
+  setLoadingLabs(true);
+  try {
+    const res = await axios.get(`${API_BASE}/packages/`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
 
-  const labs = [
-    {
-      planId: 1,
-      name: "Redhat Cluster",
-      subtitle: "5 VMs",
-      monthlyPrice: 5000,
-      yearlyPrice: 15000,
-      payAsYouGo: { walletAmount: 15000, hourlyRate: 100 },
-      free: { available: true, duration: "7 days trial" },
-      freeFeatures: [
-        "Limited Access Lab (60 mins)",
-        "No real-time project environments",
-        "Read-only access to blogs and tutorials",
-        "Community Support",
-      ],
-      paidFeatures: ["Full Cluster Access", "5 Virtual Machines", "24/7 Availability", "Technical Support"],
-      popular: true,
-    },
-    {
-      planId: 2,
-      name: "Linux",
-      subtitle: "2 Node Setup",
-      monthlyPrice: 500,
-      yearlyPrice: 4000,
-      payAsYouGo: { walletAmount: 4000, hourlyRate: 30 },
-      free: { available: true, duration: "14 days trial" },
-      freeFeatures: [
-        "Limited Access Lab (60 mins)",
-        "No real-time project environments",
-        "Read-only access to blogs and tutorials",
-        "Community Support",
-      ],
-      paidFeatures: ["2 Node Configuration", "SSH Access", "Basic Support", { text: "List of Lab Access", hasModal: true }],
-      popular: false,
-    },
-    {
-      planId: 3,
-      name: "Docker",
-      subtitle: "Container Platform",
-      monthlyPrice: 500,
-      yearlyPrice: 4000,
-      payAsYouGo: { walletAmount: 4000, hourlyRate: 30 },
-      free: { available: true, duration: "14 days trial" },
-      freeFeatures: [
-        "Limited Access Lab (60 mins)",
-        "No real-time project environments",
-        "Read-only access to blogs and tutorials",
-        "Community Support",
-      ],
-      paidFeatures: [
-        "Docker Environment",
-        "Container Management",
-        "Image Registry Access",
-        "Documentation Included",
-        { text: "List of Lab Access", hasModal: true },
-      ],
-      popular: false,
-    },
-    {
-      planId: 4,
-      name: "Kubernetes",
-      subtitle: "Orchestration Lab",
-      monthlyPrice: 500,
-      yearlyPrice: 4000,
-      payAsYouGo: { walletAmount: 4000, hourlyRate: 30 },
-      free: { available: true, duration: "14 days trial" },
-      freeFeatures: [
-        "Limited Access Lab (60 mins)",
-        "No real-time project environments",
-        "Read-only access to blogs and tutorials",
-        "Community Support",
-      ],
-      paidFeatures: [
-        "K8s Cluster",
-        "Kubectl Access",
-        "Helm Charts",
-        "Load Balancing",
-        { text: "List of Lab Access", hasModal: true },
-      ],
-      popular: false,
-    },
-    {
-      planId: 5,
-      name: "Terraform",
-      subtitle: "IaC Platform",
-      monthlyPrice: 500,
-      yearlyPrice: 4000,
-      payAsYouGo: { walletAmount: 4000, hourlyRate: 30 },
-      free: { available: true, duration: "14 days trial" },
-      freeFeatures: [
-        "Limited Access Lab (60 mins)",
-        "No real-time project environments",
-        "Read-only access to blogs and tutorials",
-        "Community Support",
-      ],
-      paidFeatures: ["Terraform Setup", "State Management", "Multiple Providers", "Best Practices Guide", { text: "List of Lab Access", hasModal: true }],
-      popular: false,
-    },
-  ];
+    const raw = Array.isArray(res.data) ? res.data : [];
 
-  const getCurrentFeatures = (lab) => (billingType === "free" ? lab.freeFeatures : lab.paidFeatures);
+    // Filter by billing_cycle if specified
+    const filteredRaw = type ? raw.filter(pkg => pkg.billing_cycle.toLowerCase() === type.toLowerCase()) : raw;
+
+    const grouped = {};
+
+   filteredRaw.forEach((pkg) => {
+  const parts = (pkg.name || "").split("-");
+  const baseName = parts[0]?.trim() || pkg.name;
+  const subtitle = parts.slice(1).join("-").trim();
+  const description = (pkg.description || "").split(";").map(d => d.trim());
+
+  if (!grouped[baseName]) {
+    grouped[baseName] = {
+      name: baseName,
+      subtitle,
+      description,
+      monthlyPrice: null,
+      monthlyPackageId: null,
+      yearlyPrice: null,
+      yearlyPackageId: null,
+      payAsYouGo: { hourlyRate: null, packageId: null },
+      free: { available: false, duration: "" },
+      freeFeatures: ["Limited Access for Trial"],
+      paidFeatures: ["Full Access", "SSH", "Support"],
+      subscription: pkg.subscription || null,
+      planId: null,
+    };
+  }
+
+  const t = grouped[baseName];
+  const cycle = (pkg.billing_cycle || "").toLowerCase();
+
+  if (cycle === "monthly") {
+    t.monthlyPrice = pkg.price;
+    t.monthlyPackageId = pkg.package_id;
+  }
+  if (cycle === "yearly") {
+    t.yearlyPrice = pkg.price;
+    t.yearlyPackageId = pkg.package_id;
+  }
+  if (cycle === "hourly" || cycle === "hour") {
+    t.payAsYouGo.hourlyRate = pkg.price;
+    t.payAsYouGo.packageId = pkg.package_id;
+  }
+  if (cycle === "hourly") {
+    t.free.available = true;
+    t.free.duration = pkg.free_trial_duration || "Free Trial";
+  }
+
+  // Set planId to first available package
+  t.planId = t.monthlyPackageId || t.yearlyPackageId || t.payAsYouGo.packageId;
+});
+
+
+    const labsList = Object.values(grouped).map(l => {
+      l.planId = l.monthlyPackageId || l.yearlyPackageId || l.payAsYouGo.packageId;
+      return l;
+    });
+
+    setLabs(labsList);
+  } catch (err) {
+    console.error(err);
+    setLabs([]);
+  } finally {
+    setLoadingLabs(false);
+  }
+};
+
+// Fetch labs whenever billingType changes
+useEffect(() => {
+  if (billingType) fetchLabsFromApi(billingType);
+}, [billingType]);
+
+  // const labs = [
+  //   {
+  //     planId: 1,
+  //     name: "Redhat Cluster",
+  //     subtitle: "5 VMs",
+  //     monthlyPrice: 5000,
+  //     yearlyPrice: 15000,
+  //     payAsYouGo: { walletAmount: 15000, hourlyRate: 100 },
+  //     free: { available: true, duration: "7 days trial" },
+  //     freeFeatures: [
+  //       "Limited Access Lab (60 mins)",
+  //       "No real-time project environments",
+  //       "Read-only access to blogs and tutorials",
+  //       "Community Support",
+  //     ],
+  //     paidFeatures: ["Full Cluster Access", "5 Virtual Machines", "24/7 Availability", "Technical Support"],
+  //     popular: true,
+  //   },
+  //   {
+  //     planId: 2,
+  //     name: "Linux",
+  //     subtitle: "2 Node Setup",
+  //     monthlyPrice: 500,
+  //     yearlyPrice: 4000,
+  //     payAsYouGo: { walletAmount: 4000, hourlyRate: 30 },
+  //     free: { available: true, duration: "14 days trial" },
+  //     freeFeatures: [
+  //       "Limited Access Lab (60 mins)",
+  //       "No real-time project environments",
+  //       "Read-only access to blogs and tutorials",
+  //       "Community Support",
+  //     ],
+  //     paidFeatures: ["2 Node Configuration", "SSH Access", "Basic Support", { text: "List of Lab Access", hasModal: true }],
+  //     popular: false,
+  //   },
+  //   {
+  //     planId: 3,
+  //     name: "Docker",
+  //     subtitle: "Container Platform",
+  //     monthlyPrice: 500,
+  //     yearlyPrice: 4000,
+  //     payAsYouGo: { walletAmount: 4000, hourlyRate: 30 },
+  //     free: { available: true, duration: "14 days trial" },
+  //     freeFeatures: [
+  //       "Limited Access Lab (60 mins)",
+  //       "No real-time project environments",
+  //       "Read-only access to blogs and tutorials",
+  //       "Community Support",
+  //     ],
+  //     paidFeatures: [
+  //       "Docker Environment",
+  //       "Container Management",
+  //       "Image Registry Access",
+  //       "Documentation Included",
+  //       { text: "List of Lab Access", hasModal: true },
+  //     ],
+  //     popular: false,
+  //   },
+  //   {
+  //     planId: 4,
+  //     name: "Kubernetes",
+  //     subtitle: "Orchestration Lab",
+  //     monthlyPrice: 500,
+  //     yearlyPrice: 4000,
+  //     payAsYouGo: { walletAmount: 4000, hourlyRate: 30 },
+  //     free: { available: true, duration: "14 days trial" },
+  //     freeFeatures: [
+  //       "Limited Access Lab (60 mins)",
+  //       "No real-time project environments",
+  //       "Read-only access to blogs and tutorials",
+  //       "Community Support",
+  //     ],
+  //     paidFeatures: [
+  //       "K8s Cluster",
+  //       "Kubectl Access",
+  //       "Helm Charts",
+  //       "Load Balancing",
+  //       { text: "List of Lab Access", hasModal: true },
+  //     ],
+  //     popular: false,
+  //   },
+  //   {
+  //     planId: 5,
+  //     name: "Terraform",
+  //     subtitle: "IaC Platform",
+  //     monthlyPrice: 500,
+  //     yearlyPrice: 4000,
+  //     payAsYouGo: { walletAmount: 4000, hourlyRate: 30 },
+  //     free: { available: true, duration: "14 days trial" },
+  //     freeFeatures: [
+  //       "Limited Access Lab (60 mins)",
+  //       "No real-time project environments",
+  //       "Read-only access to blogs and tutorials",
+  //       "Community Support",
+  //     ],
+  //     paidFeatures: ["Terraform Setup", "State Management", "Multiple Providers", "Best Practices Guide", { text: "List of Lab Access", hasModal: true }],
+  //     popular: false,
+  //   },
+  // ];
+const getCurrentFeatures = (lab) => {
+  return billingType === "free" ? lab.billing_cycle : lab.paidFeatures;
+};
+
+  //const getCurrentFeatures = (lab) => (billingType === "free" ? lab.freeFeatures : lab.paidFeatures);
 const price = useEffect(() => {
     const handleStorageChange = () => {
         const savedCart = JSON.parse(localStorage.getItem("orl_cart") || "[]");
@@ -458,7 +566,7 @@ const price = useEffect(() => {
         } catch (err) {
           // continue polling
         }
-      }, 3000);
+      }, 1000);
 
       return true;
     } catch (err) {
@@ -470,6 +578,7 @@ const price = useEffect(() => {
 
   // ------- Free instance wrapper -------
   const launchFreeInstance = async (lab) => {
+    console.log('lab=',lab);
     if (!token) {
       notify("Please login to continue", "error");
       navigate("/login");
@@ -483,85 +592,13 @@ const price = useEffect(() => {
     if (!ok) notify("Failed launching free instance", "error");
   };
 
-  // ------- Add to cart (localStorage + UI) -------
-// const addToCart = (lab: { planId: string; name: string; monthlyPrice: number; yearlyPrice?: number }, billingType: string) => {
-//   const savedCart: CartItem[] = JSON.parse(localStorage.getItem("orl_cart") || "[]");
-
-//   const price =
-//     billingType === "monthly"
-//       ? lab.monthlyPrice
-//       : billingType === "yearly"
-//       ? lab.yearlyPrice ?? lab.monthlyPrice
-//       : 0;
-
-//   // Avoid duplicates
-//   const exists = savedCart.find((item) => item.planId === lab.planId && item.billingType === billingType);
-//   if (exists) {
-//     toast.info("Already in cart");
-//     return;
-//   }
-
-//   const newCartItem: CartItem = {
-//     planId: lab.planId,
-//     name: lab.name,
-//     billingType,
-//     price,
-//   };
-
-//   savedCart.push(newCartItem);
-//   localStorage.setItem("orl_cart", JSON.stringify(savedCart));
-//   toast.success("Added to cart");
-// };
-
-// In your page/component
-
-
-// const addToCart = (lab, billingType) => {
-//   if (!lab) return;
-
-//   const savedCart = JSON.parse(localStorage.getItem("orl_cart") || "[]");
-
-//   const price =
-//     billingType === "monthly"
-//       ? lab.monthlyPrice
-//       : billingType === "yearly"
-//       ? lab.yearlyPrice ?? lab.monthlyPrice
-//       : 0;
-
-//   // Check duplicate
-//   const exists = savedCart.find(
-//     (item) =>
-//       item.planId === lab.planId &&
-//       item.billingType === billingType
-//   );
-
-//   if (exists) {
-//     toast.info("Already in cart");
-//     return;
-//   }
-
-//   const newCartItem = {
-//     planId: lab.planId,
-//     name: lab.name,
-//     billingType,
-//     price,
-//   };
-
-//   savedCart.push(newCartItem);
-
-//   // Save to localStorage
-//   localStorage.setItem("orl_cart", JSON.stringify(savedCart));
-
-//   // ✅ Update state in the parent (Navbar)
-//   setCartItems(savedCart);
-
-//   toast.success("Added to cart");
-// };
+  
 const addToCart = (lab, billingType) => {
+  console.log('lab=',lab);
   if (!lab) return;
 
   const savedCart = JSON.parse(localStorage.getItem("orl_cart") || "[]");
-
+  const subscription=lab.subscription!=null?lab.subscription:'';
   const price =
     billingType === "monthly"
       ? lab.monthlyPrice
@@ -586,6 +623,8 @@ const addToCart = (lab, billingType) => {
     name: lab.name,
     billingType,
     price,
+    subscription:subscription,
+    
   };
 
   savedCart.push(newCartItem);
@@ -627,7 +666,7 @@ const cartTotal = (Array.isArray(cartItems) ? cartItems : []).reduce(
     return;
   }
 
-  if (billingType === "free") {
+  if (billingType === "hourly") {
     await launchFreeInstance(lab);
     return;
   }
@@ -934,7 +973,7 @@ useEffect(() => {
         {/* Billing Toggle */}
         <div className="flex justify-center mb-12">
           <div className="inline-flex items-center bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-1">
-            {["free", "monthly", "yearly", "payAsYouGo"].map((type) => (
+            {["hourly", "monthly", "yearly"].map((type) => (
               <button
                 key={type}
                 onClick={() => setBillingType(type)}
@@ -963,16 +1002,17 @@ useEffect(() => {
                 <div className="relative p-8">
                   <div className="mb-8">
                     <h3 className="text-3xl font-bold text-white mb-2">{lab.name}</h3>
-                    <p className="text-purple-300 text-sm font-medium">{lab.subtitle}</p>
+                    {/* <p className="text-purple-300 text-sm font-medium">{lab.subtitle}</p> */}
+                    <p className="text-purple-300 text-sm font-medium">{lab.description}</p>
                   </div>
 
                   {/* Pricing */}
                   <div className="mb-8">
-                    {billingType === "free" && lab.free && (lab.free.available ? (
+                    {billingType === "hourly" && lab.free && (lab.free.available ? (
                       <>
                         <div className="flex items-baseline gap-2 mb-2"><span className="text-3xl font-bold text-white">Free</span></div>
                         <div className="inline-block bg-green-500/20 border border-green-500/30 rounded-full px-3 py-1 mt-2">
-                          <span className="text-green-400 text-xs font-semibold">{lab.free.duration}</span>
+                          <span className="text-green-400 text-xs font-semibold">{lab.billing_cycle}</span>
                         </div>
                         <p className="text-gray-400 text-sm mt-2">No credit card required</p>
                       </>
@@ -988,9 +1028,9 @@ useEffect(() => {
                     {billingType === "yearly" && (
                       <div>
                         <div className="flex items-baseline gap-2 mb-2"><span className="text-3xl font-bold text-white">₹{lab.yearlyPrice}</span><span className="text-gray-400 text-lg">/year</span></div>
-                        <div className="inline-block bg-green-500/20 border border-green-500/30 rounded-full px-3 py-1 mt-2">
+                        {/* <div className="inline-block bg-green-500/20 border border-green-500/30 rounded-full px-3 py-1 mt-2">
                           <span className="text-green-400 text-xs font-semibold">Save ₹{(lab.monthlyPrice * 12 - lab.yearlyPrice).toLocaleString()}</span>
-                        </div>
+                        </div> */}
                       </div>
                     )}
 
@@ -1031,7 +1071,7 @@ useEffect(() => {
                       className="w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40"
                       onClick={() => handlePlanClick(lab)}
                     >
-                      {billingType === "free" ? (launchingInstance ? "Launching..." : "Start Free Trial") : "Get Started"}
+                      {billingType === "hourly" ? (launchingInstance ? "Launching..." : "Start Free Trial") : "Subscribe"}
                     </button>
                   </div>
                 </div>

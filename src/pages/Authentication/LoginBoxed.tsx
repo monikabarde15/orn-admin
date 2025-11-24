@@ -68,7 +68,7 @@ const LoginBoxed = () => {
           if (data.user.id < 2) {
             window.location.href = "/index";
           } else {
-            window.location.href = "/index/overview";
+            window.location.href = "/";
           }
         }, 1200);
       }

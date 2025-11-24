@@ -56,10 +56,29 @@ const Navbar = () => {
     };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("jwt-auth");
-    toast.info("You have been logged out!", { position: "top-center" });
-    setTimeout(() => (window.location.href = "/"), 800);
+  // const handleLogout = () => {
+  //   localStorage.removeItem("jwt-auth");
+  //   toast.info("You have been logged out!", { position: "top-center" });
+  //   setTimeout(() => (window.location.href = "/"), 800);
+  // };
+   const handleLogout = () => {
+    // localStorage.removeItem("jwt-auth");
+    // localStorage.removeItem("user_id");
+    // toast.info("You have been logged out!", { position: "top-center" });
+    // setTimeout(() => (window.location.href = "/"), 800);
+    // Remove localStorage items
+localStorage.removeItem("jwt-auth");
+localStorage.removeItem("access");
+localStorage.removeItem("user_id");
+
+
+// Remove cookies
+document.cookie = "access=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+document.cookie = "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+
+toast.info("You have been logged out!", { position: "top-center" });
+setTimeout(() => (window.location.href = "/"), 800);
   };
 
   const navigateTo = (path) => (window.location.href = path);

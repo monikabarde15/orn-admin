@@ -1011,9 +1011,9 @@ useEffect(() => {
                     {billingType === "hourly" && lab.free && (lab.free.available ? (
                       <>
                         <div className="flex items-baseline gap-2 mb-2"><span className="text-3xl font-bold text-white">Free</span></div>
-                        <div className="inline-block bg-green-500/20 border border-green-500/30 rounded-full px-3 py-1 mt-2">
+                        {/* <div className="inline-block bg-green-500/20 border border-green-500/30 rounded-full px-3 py-1 mt-2">
                           <span className="text-green-400 text-xs font-semibold">{lab.billing_cycle}</span>
-                        </div>
+                        </div> */}
                         <p className="text-gray-400 text-sm mt-2">No credit card required</p>
                       </>
                     ) : <div className="text-gray-400 text-sm">Free trial not available for this lab</div>)}

@@ -162,11 +162,11 @@ const LoginBoxed = () => {
               {!showForgotModal && (
                 <form className="space-y-5 dark:text-white" onSubmit={submitForm}>
                   <div>
-                    <label>{i18next.t("Username or Email")}</label>
+                    <label>{i18next.t("Username")}</label>
                     <div className="relative text-white-dark">
                       <input
                         type="text"
-                        placeholder={i18next.t("Enter username or email")}
+                        placeholder={i18next.t("Enter username")}
                         className={`form-input ps-10 placeholder:text-white-dark`}
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}

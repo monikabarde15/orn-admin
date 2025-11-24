@@ -55,7 +55,7 @@ jobs:
                   docker buildx build \
                     --cache-from=type=local,src=/tmp/.buildx-cache \
                     --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max \
-                    --tag onrequestlab_reactjs:${{ env.ENV }} \
+                    --tag onrequestlab_reactjs:latest \
                     --output type=docker,dest=app.tar \
                     .
 
@@ -76,7 +76,7 @@ jobs:
 
                     echo "Restarting containers..."
                     docker rm -f onrequestlab_reactjs
-                    docker run -d -p 3000:3000 --name onrequestlab_reactjs onrequestlab_reactjs:${{ env.ENV }}  
+                    docker run -d -p 127.0.0.1:3000:3000 --name onrequestlab_reactjs onrequestlab_reactjs:latest 
                     
                     rm -f onrequestlab_reactjs.tar
                     echo "Deployed ${{ env.ENV }} successfully!"
@@ -86,4 +86,4 @@ jobs:
               if: success()
               run: |
                   echo "Deployed ${{ env.ENV }} environment"
-                  echo "App running at → http://${{ env.HOST }}:3000"
+                  echo "App running at → http://localhost:3000"

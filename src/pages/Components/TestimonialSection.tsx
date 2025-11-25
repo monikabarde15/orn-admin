@@ -1,45 +1,64 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import '../../pages/Components/TestimonialSection.css';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const testimonials = [
-    {
-      quote: "I recently completed the 21-day learning module, and I must say, it exceeded my expectations! The course materials were detailed and easy to follow, and the self-practice labs allowed me to gain hands-on experience at my own pace. The Red Hat Linux High-Availability Cluster Lab was particularly impressive—it gave me the confidence to handle real-world scenarios. I highly recommend this platform to anyone looking to upskill in Linux!",
-      author: "Andy Smith",
-      role: "Los Angeles, CA",
-      rating: 5,
-    },
-    {
-      quote: "The team's expertise in social media marketing is unmatched. They grew our Instagram following by 300% and engagement is through the roof.",
-      author: "Michael Rodriguez",
-      role: "Marketing Director, FashionBrand",
-      rating: 5,
-    },
-    {
-      quote: "Working with PrismDigital was a game-changer. Their strategic approach and attention to detail delivered results beyond our expectations.",
-      author: "Emily Thompson",
-      role: "Founder, StartupX",
-      rating: 5,
-    },
-    // {
-    //   quote: "Exceptional service and incredible results. The campaign they created for our product launch reached 40M+ people and drove massive sales.",
-    //   author: "David Kim",
-    //   role: "CMO, EcommPlus",
-    //   rating: 5,
-    // },
-    // {
-    //   quote: "PrismDigital doesn't just deliver campaigns - they deliver growth. Our conversion rates have increased by 85% since partnering with them.",
-    //   author: "Lisa Anderson",
-    //   role: "VP Marketing, RetailCo",
-    //   rating: 5,
-    // },
-    // {
-    //   quote: "The best marketing agency we've ever worked with. Professional, creative, and most importantly - they get results.",
-    //   author: "James Wilson",
-    //   role: "Director, MediaGroup",
-    //   rating: 5,
-    // },
-  ];
+  {
+    quote: "I recently completed the 21-day learning module, and I must say, it exceeded my expectations! The course materials were detailed and easy to follow, and the self-practice labs allowed me to gain hands-on experience at my own pace. The Red Hat Linux High-Availability Cluster Lab was particularly impressive—it gave me the confidence to handle real-world scenarios.",
+    author: "Andy Smith",
+    role: "Los Angeles, CA",
+    rating: 5,
+    company: "Tech Solutions Inc"
+  },
+  {
+    quote: "The team's expertise in social media marketing is unmatched. They grew our Instagram following by 300% and engagement is through the roof. The ROI we've seen has been incredible and beyond what we anticipated.",
+    author: "Michael Rodriguez",
+    role: "Marketing Director",
+    rating: 5,
+    company: "FashionBrand"
+  },
+  {
+    quote: "Working with PrismDigital was a game-changer. Their strategic approach and attention to detail delivered results beyond our expectations. Every campaign was meticulously planned and executed.",
+    author: "Emily Thompson",
+    role: "Founder",
+    rating: 5,
+    company: "StartupX"
+  },
+  {
+    quote: "Exceptional service and incredible results. The campaign they created for our product launch reached 40M+ people and drove massive sales. The team was professional and responsive throughout.",
+    author: "David Kim",
+    role: "CMO",
+    rating: 5,
+    company: "EcommPlus"
+  },
+  {
+    quote: "PrismDigital doesn't just deliver campaigns - they deliver growth. Our conversion rates have increased by 85% since partnering with them. Best decision we've made for our marketing.",
+    author: "Lisa Anderson",
+    role: "VP Marketing",
+    rating: 5,
+    company: "RetailCo"
+  },
+  {
+    quote: "The best marketing agency we've ever worked with. Professional, creative, and most importantly - they get results. Their data-driven approach has transformed our business.",
+    author: "James Wilson",
+    role: "Director",
+    rating: 5,
+    company: "MediaGroup"
+  },
+  {
+    quote: "Outstanding platform for continuous learning. The hands-on labs and real-world scenarios have significantly improved my technical skills. I feel much more confident in my abilities now.",
+    author: "Priya Sharma",
+    role: "DevOps Engineer",
+    rating: 5,
+    company: "CloudTech"
+  },
+  {
+    quote: "The customer support is phenomenal. Every question was answered promptly and the team went above and beyond to ensure our success. Highly recommend to anyone serious about growth.",
+    author: "Robert Chang",
+    role: "Product Manager",
+    rating: 5,
+    company: "InnovateCorp"
+  }
+];
 
 function QuoteIcon() {
   return (
@@ -52,67 +71,152 @@ function QuoteIcon() {
   );
 }
 
-// Animation variants for Framer Motion
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.2, // Stagger each card
+const Testimonials = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
+
+  const itemsPerPage = 3;
+  const totalPages = Math.ceil(testimonials.length / itemsPerPage);
+
+  const handleNext = () => {
+    setDirection(1);
+    setCurrentIndex((prev) => (prev + 1) % totalPages);
+  };
+
+  const handlePrev = () => {
+    setDirection(-1);
+    setCurrentIndex((prev) => (prev - 1 + totalPages) % totalPages);
+  };
+
+  const currentTestimonials = testimonials.slice(
+    currentIndex * itemsPerPage,
+    (currentIndex + 1) * itemsPerPage
+  );
+
+  const slideVariants = {
+    enter: (direction) => ({
+      x: direction > 0 ? 1000 : -1000,
+      opacity: 0
+    }),
+    center: {
+      x: 0,
+      opacity: 1
     },
-  },
-};
+    exit: (direction) => ({
+      x: direction < 0 ? 1000 : -1000,
+      opacity: 0
+    })
+  };
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 50 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { type: 'spring', bounce: 0.2, duration: 0.8 } 
-  },
-};
+  return (
+    <section className="py-20 px-4 bg-gradient-to-b from-gray-900 to-black">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-16">
+          <span className="text-purple-400 text-sm font-semibold tracking-wider uppercase">
+            REAL CUSTOMERS
+          </span>
+          <h2 className="text-4xl md:text-5xl font-bold text-white mt-4 mb-4">
+            Customers <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Feedback</span>
+          </h2>
+          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+            From career changes to dream jobs, here's how we helped.
+          </p>
+        </div>
 
-const Testimonials = () => (
-  <section className="testimonial-section">
-    <div className="testimonial-header">
-      <span className="testimonial-sub">Testimonials</span>
-      <h2 className="testimonial-title">
-        What Our Clients <span className="gradient-text">Say</span>
-      </h2>
-      {/* <p className="testimonial-desc">
-        Don't just take our word for it - hear from the businesses we've helped transform.
-      </p> */}
-    </div>
-
-    <motion.div 
-      className="testimonial-grid max-w-7xl mx-auto"
-      variants={containerVariants}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: false, amount: 0.2 }} // triggers when 20% in view
-    >
-      {testimonials.map((t, i) => (
-        <motion.div
-          className="testimonial-card text-justify"
-          key={i}
-          variants={cardVariants}
-        >
-          <div className="testimonial-icon text-justify">
-            <QuoteIcon />
+        <div className="relative">
+          {/* Navigation Arrows */}
+          <div className="flex items-center justify-center gap-4 mb-8">
+            <button
+              onClick={handlePrev}
+              className="bg-black hover:bg-gray-800 text-white p-3 rounded-full transition-all duration-300 border border-gray-700 hover:border-purple-500"
+              aria-label="Previous testimonials"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <button
+              onClick={handleNext}
+              className="bg-black hover:bg-gray-800 text-white p-3 rounded-full transition-all duration-300 border border-gray-700 hover:border-purple-500"
+              aria-label="Next testimonials"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
           </div>
-          <div className="testimonial-rating text-justify">
-            {Array.from({ length: t.rating }).map((_, idx) => (
-              <span key={idx} className="testimonial-star">★</span>
+
+          {/* Testimonials Grid */}
+          <div className="overflow-hidden">
+            <AnimatePresence initial={false} custom={direction} mode="wait">
+              <motion.div
+                key={currentIndex}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2 }
+                }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              >
+                {currentTestimonials.map((t, i) => (
+                  <div
+                    key={`${currentIndex}-${i}`}
+                    className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 border border-gray-700 hover:border-purple-500 transition-all duration-300 flex flex-col"
+                  >
+                    <div className="mb-4">
+                      <QuoteIcon />
+                    </div>
+                    <div className="flex mb-4">
+                      {Array.from({ length: t.rating }).map((_, idx) => (
+                        <span key={idx} className="text-yellow-400 text-xl">★</span>
+                      ))}
+                    </div>
+                    <blockquote className="text-gray-300 text-base leading-relaxed mb-6 flex-grow">
+                      "{t.quote}"
+                    </blockquote>
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
+                        {t.author.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <div>
+                        <div className="text-white font-semibold">{t.author}</div>
+                        <div className="text-gray-400 text-sm">
+                          {t.role} {t.company && `at ${t.company}`}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Pagination Dots */}
+          <div className="flex justify-center gap-2 mt-8">
+            {Array.from({ length: totalPages }).map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setDirection(idx > currentIndex ? 1 : -1);
+                  setCurrentIndex(idx);
+                }}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  idx === currentIndex 
+                    ? 'bg-purple-500 w-8' 
+                    : 'bg-gray-600 hover:bg-gray-500'
+                }`}
+                aria-label={`Go to page ${idx + 1}`}
+              />
             ))}
           </div>
-          <blockquote className="testimonial-quote">"{t.quote}"</blockquote>
-          <div className="testimonial-author">
-            <span className="testimonial-name">{t.author}</span>
-            <span className="testimonial-role">{t.role}</span>
-          </div>
-        </motion.div>
-      ))}
-    </motion.div>
-  </section>
-);
+        </div>
+      </div>
+    </section>
+  );
+};
 
 export default Testimonials;

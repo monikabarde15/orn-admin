@@ -39,7 +39,7 @@ const OtpVerification = () => {
     setResending(true);
     try {
       const response = await axios.post(
-        "https://backend.onrequestlab.com/api/v1/users/auth/resend-otp/",
+        "https://dev.backend.onrequestlab.com/api/v1/users/auth/resend-otp/",
         { email }, // ✅ Correct key
         { headers: { "Content-Type": "application/json" } }
       );
@@ -80,7 +80,7 @@ const OtpVerification = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "https://backend.onrequestlab.com/api/v1/users/auth/verify-otp/",
+        "https://dev.backend.onrequestlab.com/api/v1/users/auth/verify-otp/",
         { email, otp }, // ✅ Correct key
         { headers: { "Content-Type": "application/json" } }
       );

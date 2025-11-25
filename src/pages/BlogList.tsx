@@ -10,7 +10,7 @@ export default function BlogList() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const API_BASE = "https://backend.onrequestlab.com/api/v1";
+  const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
   const getToken = () => localStorage.getItem("token") || "";
 
   const api = axios.create({
@@ -28,7 +28,7 @@ export default function BlogList() {
   const getFullImageUrl = (path) => {
     if (!path) return "/assets/default-blog.jpg";
     if (path.startsWith("http")) return path;
-    return `https://backend.onrequestlab.com${path}`;
+    return `https://dev.backend.onrequestlab.com${path}`;
   };
 
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);

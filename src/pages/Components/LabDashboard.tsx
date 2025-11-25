@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
 
-const API_BASE = "https://backend.onrequestlab.com/api/v1";
+const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
 
 interface Instance {
   user_instance_id: string;
@@ -105,10 +105,10 @@ const LabDashboard: React.FC = () => {
 
   const tutorialSrc =
     instanceType === "aws"
-      ? "https://backend.onrequestlab.com/learn/aws/"
+      ? "https://dev.backend.onrequestlab.com/learn/aws/"
       : instanceType === "iscsi"
-      ? "https://backend.onrequestlab.com/learn/iscsi/"
-      : "https://backend.onrequestlab.com/learn/docker/";
+      ? "https://dev.backend.onrequestlab.com/learn/iscsi/"
+      : "https://dev.backend.onrequestlab.com/learn/docker/";
 
   const sshUrl =
     instance.web_ssh_url

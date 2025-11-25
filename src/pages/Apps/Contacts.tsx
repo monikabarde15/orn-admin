@@ -13,7 +13,7 @@ import IconTwitter from "../../components/Icon/IconTwitter";
 import IconX from "../../components/Icon/IconX";
 import axios from "axios";
 
-const API_URL = "https://backend.onrequestlab.com/api/v1/admin/contact/";
+const API_URL = "https://dev.backend.onrequestlab.com/api/v1/admin/contact/";
 
 const Contacts = () => {
   const dispatch = useDispatch();

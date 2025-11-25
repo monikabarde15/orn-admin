@@ -92,8 +92,8 @@ const refreshAccessToken = async () => {
       if (!token) return; // token refresh fail → exit
     }
     const apis = [
-      { url: `https://backend.onrequestlab.com/api/v1/users/payments/count/${user}/`, name: 'Payments' },
-        { url: `https://backend.onrequestlab.com/api/v1/lab/userinst/count/${user}/`, name: 'Instances' }
+      { url: `https://dev.backend.onrequestlab.com/api/v1/users/payments/count/${user}/`, name: 'Payments' },
+        { url: `https://dev.backend.onrequestlab.com/api/v1/lab/userinst/count/${user}/`, name: 'Instances' }
     ];
 
     const colors = [

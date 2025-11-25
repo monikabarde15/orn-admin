@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
-const API_BASE = "https://backend.onrequestlab.com/api/v1/support/chats/messages/";
+const API_BASE = "https://dev.backend.onrequestlab.com/api/v1/support/chats/messages/";
 
 export default function SupportChat() {
   const [email, setEmail] = useState("");

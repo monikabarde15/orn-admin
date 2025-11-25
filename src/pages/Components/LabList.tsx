@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import html2pdf from "html2pdf.js";
 
-const API_URL = "https://backend.onrequestlab.com/api/v1/admin/instances/";
+const API_URL = "https://dev.backend.onrequestlab.com/api/v1/admin/instances/";
 const ROWS_PER_PAGE = 5;
 
 const LabList = () => {

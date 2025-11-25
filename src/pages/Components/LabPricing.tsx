@@ -6,7 +6,7 @@ import { Check } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE = "https://backend.onrequestlab.com/api/v1";
+const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
 const notify = (msg, type = "info") => {
   toast[type](msg, { position: "top-center", autoClose: 2500 });
 };

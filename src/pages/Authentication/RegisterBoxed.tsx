@@ -104,7 +104,7 @@ const RegisterBoxed = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "https://backend.onrequestlab.com/api/v1/users/auth/registration/",
+        "https://dev.backend.onrequestlab.com/api/v1/users/auth/registration/",
         {
           ...formData,
           phone: finalPhone,

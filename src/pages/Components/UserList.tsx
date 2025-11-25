@@ -3,7 +3,7 @@ import axios from "axios";
 import html2pdf from "html2pdf.js";
 import Swal from "sweetalert2";
 
-const API_URL = "https://backend.onrequestlab.com/api/v1/admin/users/";
+const API_URL = "https://dev.backend.onrequestlab.com/api/v1/admin/users/";
 const ROWS_PER_PAGE = 5;
 
 const UsersList = () => {

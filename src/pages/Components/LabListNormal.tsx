@@ -24,7 +24,7 @@ const LabPricing = () => {
 
     try {
       const response = await axios.post(
-        "https://backend.onrequestlab.com/api/v1/payment/subscription/create",
+        "https://dev.backend.onrequestlab.com/api/v1/payment/subscription/create",
         {
           planType: billingType, // monthly / yearly
         },
@@ -77,7 +77,7 @@ const LabPricing = () => {
   const verifyPayment = async (paymentData, orderId) => {
     try {
       const verifyRes = await axios.post(
-        "https://backend.onrequestlab.com/api/v1/payment/subscription/verify",
+        "https://dev.backend.onrequestlab.com/api/v1/payment/subscription/verify",
         {
           ...paymentData,
           order_id: orderId,

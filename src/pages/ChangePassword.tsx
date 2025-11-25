@@ -45,7 +45,7 @@ const ChangePassword = () => {
     setLoading(true);
     try {
       await axios.post(
-        "httpshttps://backend.onrequestlab.com/api/v1/users/auth/password/change/",
+        "https://dev.backend.onrequestlab.com/api/v1/users/auth/password/change/",
         {
           new_password1: formData.new_password1,
           new_password2: formData.new_password2,

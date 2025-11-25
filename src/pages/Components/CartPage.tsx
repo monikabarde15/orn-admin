@@ -6,7 +6,7 @@ import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const API_BASE = "https://backend.onrequestlab.com/api/v1";
+const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
 
 const CartPage = () => {
 const navigate = useNavigate();

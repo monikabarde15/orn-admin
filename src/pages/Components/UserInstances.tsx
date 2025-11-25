@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
 
-const API_BASE = "https://backend.onrequestlab.com/api/v1";
+const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
 const notify = (msg, type = "info") => {
   toast[type](msg, { position: "top-center", autoClose: 2500 });
 };

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 
-const API_BASE = "https://backend.onrequestlab.com/api/v1/admin/support";
+const API_BASE = "https://dev.backend.onrequestlab.com/api/v1/admin/support";
 
 const AdminSupportChat = () => {
   const [chats, setChats] = useState([]);

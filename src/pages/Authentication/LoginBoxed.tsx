@@ -42,7 +42,7 @@ const LoginBoxed = () => {
 
     try {
       const response = await axios.post(
-        "https://backend.onrequestlab.com/api/v1/users/auth/login",
+        "https://dev.backend.onrequestlab.com/api/v1/users/auth/login",
         { username, password },
         { headers: { "Content-Type": "application/json" }, withCredentials: true }
       );
@@ -113,7 +113,7 @@ const LoginBoxed = () => {
     setResetLoading(true);
     try {
       const response = await axios.post( 
-        " https://backend.onrequestlab.com/api/v1/users/password/reset/",
+        " https://dev.backend.onrequestlab.com/api/v1/users/password/reset/",
         { email: resetEmail },
         { headers: { "Content-Type": "application/json" } }
       );

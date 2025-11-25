@@ -61,7 +61,7 @@ const ContactUs = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        "https://backend.onrequestlab.com/api/contact/submit/",
+        "https://dev.backend.onrequestlab.com/api/contact/submit/",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

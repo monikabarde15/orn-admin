@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import Footer from '../pages/Components/Footer';
 import Navbar from '../pages/Components/Navbar';
 
-const API_BASE = "https://backend.onrequestlab.com/api/v1";
+const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
 
 export default function BlogDetail() {
   const { id } = useParams();
@@ -69,7 +69,7 @@ export default function BlogDetail() {
             transition={{ duration: 0.6 }}
             src={
               blog.image
-                ? `https://backend.onrequestlab.com${blog.image}`
+                ? `https://dev.backend.onrequestlab.com${blog.image}`
                 : "https://via.placeholder.com/800x400"
             }
             alt={blog.title}

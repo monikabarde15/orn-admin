@@ -66,7 +66,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
 const refreshAccessToken = async () => {
   try {
     const refreshToken = getCookie('refresh');
-    const response = await fetch('https://backend.onrequestlab.com/api/v1/token/refresh/', {
+    const response = await fetch('https://dev.backend.onrequestlab.com/api/v1/token/refresh/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh: refreshToken }),
@@ -92,8 +92,8 @@ const refreshAccessToken = async () => {
       if (!token) return; // token refresh fail → exit
     }
     const apis = [
-      { url: `https://backend.onrequestlab.com/api/v1/users/payments/count/${user}/`, name: 'Payments' },
-        { url: `https://backend.onrequestlab.com/api/v1/lab/userinst/count/${user}/`, name: 'Instances' }
+      { url: `https://dev.backend.onrequestlab.com/api/v1/users/payments/count/${user}/`, name: 'Payments' },
+        { url: `https://dev.backend.onrequestlab.com/api/v1/lab/userinst/count/${user}/`, name: 'Instances' }
     ];
 
     const colors = [

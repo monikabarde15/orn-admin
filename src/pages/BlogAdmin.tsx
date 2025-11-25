@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const API_BASE = "https://backend.onrequestlab.com/api/v1/admin/blog/";
-const IMAGE_BASE = "https://backend.onrequestlab.com";
+const API_BASE = "https://dev.backend.onrequestlab.com/api/v1/admin/blog/";
+const IMAGE_BASE = "https://dev.backend.onrequestlab.com";
 
 const AdminBlogPanel = () => {
   const [blogs, setBlogs] = useState([]);

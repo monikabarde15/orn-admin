@@ -29,7 +29,7 @@ const PaymentListNormal = () => {
     if (!userid) return;
     setLoading(true);
     try {
-      const res = await axios.get(`https://backend.onrequestlab.com/api/v1/users/payments/${userid}/`, {
+      const res = await axios.get(`https://dev.backend.onrequestlab.com/api/v1/users/payments/${userid}/`, {
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
         withCredentials: true,
       });
@@ -128,7 +128,7 @@ const PaymentListNormal = () => {
   const handleInvoice = async (paymentId, action) => {
     if (!paymentId) return alert("Payment ID missing!");
     try {
-      const res = await axios.get(`https://backend.onrequestlab.com/api/v1/users/payment-detail/${paymentId}/`, {
+      const res = await axios.get(`https://dev.backend.onrequestlab.com/api/v1/users/payment-detail/${paymentId}/`, {
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
         withCredentials: true,
       });

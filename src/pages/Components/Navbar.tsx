@@ -17,7 +17,7 @@ const Navbar = () => {
 
   const menuRef = useRef(null);
   const cartRef = useRef(null);
-  const API_BASE = "https://backend.onrequestlab.com/api/v1";
+  const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
 
   useEffect(() => {
     const token = localStorage.getItem("jwt-auth");

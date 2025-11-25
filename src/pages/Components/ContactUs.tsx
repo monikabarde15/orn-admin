@@ -18,6 +18,9 @@ const ContactUs = () => {
     message: "",
   });
 
+  // 🌍 Country Code State Added
+  const [countryCode, setCountryCode] = useState("+91");
+
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -33,10 +36,13 @@ const ContactUs = () => {
       newErrors.email = "Email is required.";
     else if (!/\S+@\S+\.\S+/.test(formData.email))
       newErrors.email = "Invalid email address.";
+
     if (!formData.phone.trim())
       newErrors.phone = "Phone number is required.";
-    else if (!/^\d{7,10}$/.test(formData.phone))
-      newErrors.phone = "Phone must contain only digits (max 10).";
+    // Updated validation (7–15 digits)
+    else if (!/^\d{7,15}$/.test(formData.phone))
+      newErrors.phone = "Phone must contain 7–15 digits.";
+
     if (!formData.message.trim())
       newErrors.message = "Message is required.";
     else if (formData.message.length < 10)
@@ -66,7 +72,10 @@ const ContactUs = () => {
             first_name: formData.first_name,
             last_name: formData.last_name,
             email: formData.email,
-            phone: formData.phone,
+
+            // 🌍 Full Phone Number
+            phone: `${countryCode}${formData.phone}`,
+
             message: formData.message,
           }),
         }
@@ -77,7 +86,6 @@ const ContactUs = () => {
       if (!response.ok) {
         const backendErrors = {};
 
-        // ✅ Handle backend validation messages
         if (data.message && typeof data.message === "object") {
           Object.keys(data.message).forEach((key) => {
             backendErrors[key] = data.message[key][0];
@@ -187,17 +195,43 @@ const ContactUs = () => {
             {errors.email && <p className="error-text">{errors.email}</p>}
           </div>
 
+          {/* 🌍 Phone with Country Code */}
           <div className="contact-field">
             <label>Phone</label>
-            <input
-              type="text"
-              name="phone"
-              placeholder="9876543210"
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
-            />
+
+            <div style={{ display: "flex", gap: "10px" }}>
+              <select
+                value={countryCode}
+                onChange={(e) => setCountryCode(e.target.value)}
+                style={{
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #ddd",
+                  background: "#4845a5ff",
+                  width: "110px",
+                }}
+              >
+                <option value="+91">🇮🇳 +91</option>
+                <option value="+1">🇺🇸 +1</option>
+                <option value="+44">🇬🇧 +44</option>
+                <option value="+61">🇦🇺 +61</option>
+                <option value="+971">🇦🇪 +971</option>
+                <option value="+81">🇯🇵 +81</option>
+                <option value="+49">🇩🇪 +49</option>
+              </select>
+
+              <input
+                type="text"
+                name="phone"
+                placeholder="9876543210"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
+                style={{ flex: 1 }}
+              />
+            </div>
+
             {errors.phone && <p className="error-text">{errors.phone}</p>}
           </div>
 
@@ -221,7 +255,7 @@ const ContactUs = () => {
           </button>
         </motion.form>
 
-        {/* Info Section with Icons */}
+        {/* Info Section */}
         <motion.div
           className="contactus-info"
           initial="hidden"
@@ -300,7 +334,6 @@ const ContactUs = () => {
             </div>
           </div>
 
-          {/* Ready to Get Started Card */}
           <div className="ready-card">
             <h3 className="ready-card-title">Signup</h3>
             <p className="ready-card-text">
@@ -308,9 +341,10 @@ const ContactUs = () => {
               how we can help your business thrive.
             </p>
             <a href="auth/boxed-signup">
-            <button className="ready-card-btn">
-              Schedule a Free Consultation
-            </button></a>
+              <button className="ready-card-btn">
+                Schedule a Free Consultation
+              </button>
+            </a>
           </div>
         </motion.div>
       </div>

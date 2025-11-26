@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Navbar from "../../pages/Components/Navbar";
+import Footer from "../Components/Footer";
 
 const API_BASE = "https://backend.onrequestlab.com/api/v1";
 
@@ -44,7 +46,9 @@ const WalletHistory = () => {
   };
 
   return (
-    <div className="min-h-screen p-6 bg-gray-900 text-white">
+    <>
+     <Navbar />
+     <div className="min-h-screen p-6 bg-gray-900 text-white">
       <ToastContainer />
       <h1 className="text-3xl font-bold mb-6 text-center">Wallet / Subscription History</h1>
 
@@ -79,6 +83,9 @@ const WalletHistory = () => {
         </div>
       )}
     </div>
+      <Footer />
+    </>
+    
   );
 };
 

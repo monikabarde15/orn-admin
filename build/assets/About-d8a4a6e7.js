@@ -1,1 +1,0 @@
-import{c as e,r as a,s as o,j as r,a as s,L as c}from"./index-3af3bb31.js";const n=()=>{const t=e();return a.useEffect(()=>{t(o("About"))}),r("div",{children:[s(c,{to:"/",children:"Home"}),s("h1",{children:"About!"})]})};export{n as default};

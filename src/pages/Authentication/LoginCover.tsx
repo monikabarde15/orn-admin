@@ -95,10 +95,10 @@ const LoginBoxed = () => {
         toast.success("Login successful!", { position: "top-center" });
 
         setTimeout(() => {
-          if (data.user.id === 7) {
-            window.location.href = "/";
-          } else {
+          if (data.user.id === 1) {
             window.location.href = "/index";
+          } else {
+            window.location.href = "/";
           }
         }, 1200);
       } else {

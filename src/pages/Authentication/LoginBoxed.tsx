@@ -66,8 +66,15 @@ const LoginBoxed = () => {
 
         toast.success("Login successful!", { position: "top-center" });
 
+        // setTimeout(() => {
+        //   if (data.user.id < 2) {
+        //     window.location.href = "/index";
+        //   } else {
+        //     window.location.href = "/";
+        //   }
+        // }, 1200);
         setTimeout(() => {
-          if (data.user.id < 2) {
+          if (data.user.id === 1) {
             window.location.href = "/index";
           } else {
             window.location.href = "/";

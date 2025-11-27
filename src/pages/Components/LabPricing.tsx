@@ -341,7 +341,11 @@ const LabPricing = () => {
     const savedCart = JSON.parse(
       localStorage.getItem("orl_cart") || "[]"
     );
-
+    console.log('savedCart=',savedCart.length);
+    if(savedCart.length>0){
+      toast.info("You can select only one plan at a time", { autoClose: 2000 });
+      return;
+    }
     const subscription =
       lab.subscription != null ? lab.subscription : "";
 

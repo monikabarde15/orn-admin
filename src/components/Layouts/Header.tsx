@@ -225,7 +225,7 @@ const userID = JSON.parse(localStorage.getItem("userId") || "{}");
                                 </Link>
                             </li>*/}
                             <li>
-                                <Link to="/change-password" className="block p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:text-primary hover:bg-white-light/90 dark:hover:bg-dark/60">
+                                <Link to="/admin-change-password" className="block p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:text-primary hover:bg-white-light/90 dark:hover:bg-dark/60">
                                     <IconEdit />
                                 </Link>
                             </li>
@@ -519,12 +519,12 @@ const userID = JSON.parse(localStorage.getItem("userId") || "{}");
                                             Payment
                                         </Link>
                                     </li> */}
-                                    <li>
+                                    {/* <li>
                                         <Link to="/users/profile" className="dark:hover:text-white">
                                             <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
                                             Change Password
                                         </Link>
-                                    </li>
+                                    </li> */}
                                     {/*<li>
                                         <Link to="/users/profile" className="dark:hover:text-white">
                                             <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />

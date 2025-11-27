@@ -67,10 +67,10 @@ const LoginBoxed = () => {
         toast.success("Login successful!", { position: "top-center" });
         console.log('data=',data,'user=',data.user);
         setTimeout(() => {
-          if (data.user.id == 1) {
-            window.location.href = "/index";
-          } else {
-            window.location.href = "/index";
+          if (Number(data.user.id) === 1) {
+              navigate("/index");
+            }else{
+            window.location.href = "/";
           }
         }, 1200);
         // setTimeout(() => {

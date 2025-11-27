@@ -3,6 +3,8 @@ import "../../pages/Components/Navbar.css";
 import logoimg from "../../../public/assets/orllogo.png";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
+
 import axios from "axios";
 import { Wallet, User, LogOut, Laptop, ShoppingCart, Lock, DollarSign } from "lucide-react";
 
@@ -33,6 +35,10 @@ localStorage.getItem("access") ||
 localStorage.getItem("jwt-auth"))?.trim();
 const userId = getCookie("user_id");
 console.log('userId=',userId);
+
+if (Number(userId) === 1) {
+  navigate("/index");
+}
   useEffect(() => {
     const token = tokennew;//localStorage.getItem("jwt-auth");
     setIsLoggedIn(!!token);

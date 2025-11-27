@@ -9,6 +9,8 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import IconMail from "../../components/Icon/IconMail";
 import IconLockDots from "../../components/Icon/IconLockDots";
+import Navbar from "../../pages/Components/Navbar";
+import Footer from "../Components/Footer";
 
 const LoginBoxed = () => {
   const dispatch = useDispatch();
@@ -136,7 +138,9 @@ const LoginBoxed = () => {
   };
 
   return (
-    <div>
+    <>
+     <Navbar />
+     <div>
       <div className="absolute inset-0">
         <img
           src="/assets/images/auth/bg-gradient.png"
@@ -258,6 +262,9 @@ const LoginBoxed = () => {
 
       <ToastContainer autoClose={2000} theme="colored" />
     </div>
+      <Footer />
+    </>
+    
   );
 };
 

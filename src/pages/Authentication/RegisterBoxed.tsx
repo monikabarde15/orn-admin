@@ -11,6 +11,8 @@ import IconUser from "../../components/Icon/IconUser";
 import IconMail from "../../components/Icon/IconMail";
 import IconLockDots from "../../components/Icon/IconLockDots";
 import CountryList from "country-list-with-dial-code-and-flag";
+import Navbar from "../../pages/Components/Navbar";
+import Footer from "../Components/Footer";
 
 const RegisterBoxed = () => {
   const dispatch = useDispatch();
@@ -155,52 +157,56 @@ const RegisterBoxed = () => {
   ];
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-[url(/assets/images/auth/map.png)] bg-cover bg-center px-6 py-10 dark:bg-[#060818] sm:px-16">
+    <>
+     <Navbar />
+      <div className="relative flex min-h-screen items-center justify-center bg-[url(/assets/images/auth/map.png)] bg-cover bg-center px-6 py-10 dark:bg-[#060818] sm:px-16">
 
       <div className="w-full max-w-[480px] rounded-lg bg-white/80 dark:bg-black/60 backdrop-blur-md p-8 shadow-lg">
         <h1 className="text-3xl font-extrabold text-primary mb-6 uppercase text-center">
           {i18next.t("Sign Up")}
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
 
-          {/* Normal fields */}
-          {fields.map((field) => (
-            <div key={field.name}>
-              <label className="block text-sm font-semibold">{field.label}</label>
+          {/* GRID: Two fields per row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {fields.map((field) => (
+              <div key={field.name} className="space-y-1">
+                <label className="block text-xs font-semibold">{field.label}</label>
 
-              <div className="relative">
-                <input
-                  name={field.name}
-                  type={field.type || "text"}
-                  value={(formData as any)[field.name]}
-                  onChange={handleChange}
-                  placeholder={`Enter ${field.label}`}
-                  className={`form-input ps-10 w-full placeholder:text-white-dark 
-                    ${(errors[field.name] || apiErrors[field.name]) ? "border-red-500" : ""}
-                  `}
-                />
-                <span className="absolute start-4 top-1/2 -translate-y-1/2 text-white-dark">
-                  {field.icon}
-                </span>
+                <div className="relative">
+                  <input
+                    name={field.name}
+                    type={field.type || "text"}
+                    value={(formData as any)[field.name]}
+                    onChange={handleChange}
+                    placeholder={`Enter ${field.label}`}
+                    className={`form-input ps-9 w-full h-10 text-sm 
+                      placeholder:text-white-dark
+                      ${(errors[field.name] || apiErrors[field.name]) ? "border-red-500" : ""}
+                    `}
+                  />
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-white-dark text-sm">
+                    {field.icon}
+                  </span>
+                </div>
+
+                {(errors[field.name] || apiErrors[field.name]) && (
+                  <p className="text-red-500 text-xs mt-0.5">
+                    {errors[field.name] || apiErrors[field.name]}
+                  </p>
+                )}
               </div>
+            ))}
+          </div>
 
-              {(errors[field.name] || apiErrors[field.name]) && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors[field.name] || apiErrors[field.name]}
-                </p>
-              )}
-            </div>
-          ))}
+          {/* PHONE + COUNTRY CODE - Full Width */}
+          <div className="space-y-1">
+            <label className="block text-xs font-semibold">Phone</label>
 
-          {/* PHONE + COUNTRY CODE */}
-          <div>
-            <label className="block text-sm font-semibold">Phone</label>
             <div className="flex gap-2">
-
-              {/* Country Code */}
               <select
-                className="border rounded-md bg-white text-black px-2 w-32"
+                className="border rounded-md bg-white text-black px-2 w-28 h-10 text-sm"
                 value={formData.country_code}
                 onChange={(e) =>
                   setFormData((prev) => ({
@@ -216,7 +222,6 @@ const RegisterBoxed = () => {
                 ))}
               </select>
 
-              {/* Phone Input */}
               <div className="relative flex-1">
                 <input
                   name="phone"
@@ -224,18 +229,18 @@ const RegisterBoxed = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="Enter Phone Number"
-                  className={`form-input ps-10 w-full 
+                  className={`form-input ps-9 w-full h-10 text-sm
                     ${(errors.phone || apiErrors.phone) ? "border-red-500" : ""}
                   `}
                 />
-                <span className="absolute start-4 top-1/2 -translate-y-1/2 text-white-dark">
+                <span className="absolute start-3 top-1/2 -translate-y-1/2 text-white-dark text-sm">
                   <IconUser />
                 </span>
               </div>
             </div>
 
             {(errors.phone || apiErrors.phone) && (
-              <p className="text-red-500 text-sm mt-1">
+              <p className="text-red-500 text-xs mt-0.5">
                 {errors.phone || apiErrors.phone}
               </p>
             )}
@@ -244,7 +249,7 @@ const RegisterBoxed = () => {
           <button
             type="submit"
             disabled={loading}
-            className="btn btn-gradient w-full mt-6 uppercase"
+            className="btn btn-gradient w-full mt-4 uppercase h-10 text-sm"
           >
             {loading ? "Registering..." : "Sign Up"}
           </button>
@@ -260,6 +265,9 @@ const RegisterBoxed = () => {
 
       <ToastContainer autoClose={2000} theme="colored" />
     </div>
+     <Footer />
+    </>
+   
   );
 };
 

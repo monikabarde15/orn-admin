@@ -10,6 +10,8 @@ import { Wallet, User, LogOut, Laptop, ShoppingCart, Lock, DollarSign } from "lu
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+    const navigate = useNavigate();  // ✅ ADD THIS
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [walletBalance, setWalletBalance] = useState(null);
   const [loadingWallet, setLoadingWallet] = useState(false);

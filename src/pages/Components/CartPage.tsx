@@ -432,33 +432,36 @@ const CartPage = () => {
               {cartItems.map((item, idx) => (
   <div
     key={idx}
-    className="flex flex-col sm:flex-row justify-center items-center mt-4 space-y-2 sm:space-y-0 sm:space-x-4"
+    className="flex justify-between items-center mt-4 w-full max-w-md mx-auto"
   >
+    {/* Upgrade Button - Left */}
     <button
       onClick={() => handleUpgrade(item)}
       disabled={!item.subscription}
-      className={`px-6 py-3 rounded-xl font-bold text-white transition-transform duration-200 ${
+      className={`px-6 py-7 rounded-2xl font-bold text-white shadow-lg transition-all duration-300 transform w-[48%] ${
         item.subscription
-          ? "bg-blue-600 hover:bg-blue-700 transform hover:scale-105"
-          : "bg-gray-600 cursor-not-allowed"
+          ? "bg-gradient-to-r from-purple-600 via-purple-500 to-blue-500 hover:scale-105 hover:shadow-2xl"
+          : "bg-gray-600 cursor-not-allowed opacity-70"
       }`}
     >
       Upgrade
     </button>
 
+    {/* Checkout Button - Right */}
     <button
       onClick={() => handleCheckout(item)}
       disabled={item.subscription}
-      className={`px-6 py-3 rounded-xl font-bold text-white transition-transform duration-200 ${
+      className={`px-6 py-7 rounded-2xl font-bold text-white shadow-lg transition-all duration-300 transform w-[48%] ${
         !item.subscription
-          ? "bg-purple-600 hover:bg-purple-700 transform hover:scale-105"
-          : "bg-gray-700 cursor-not-allowed"
+          ? "bg-gradient-to-r from-pink-500 via-purple-500 to-purple-600 hover:scale-105 hover:shadow-2xl"
+          : "bg-gray-700 cursor-not-allowed opacity-70"
       }`}
     >
       Checkout
     </button>
   </div>
 ))}
+
           </div>
         )}
       </div>

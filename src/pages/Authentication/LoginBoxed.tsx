@@ -68,9 +68,9 @@ const LoginBoxed = () => {
         console.log('data=',data,'user=',data.user);
         setTimeout(() => {
           if (data.user.id === 1) {
-            window.location.href = "/index";
-          } else {
             window.location.href = "/";
+          } else {
+            window.location.href = "/index";
           }
         }, 1200);
         // setTimeout(() => {

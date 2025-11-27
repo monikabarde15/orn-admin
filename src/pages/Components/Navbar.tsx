@@ -19,8 +19,22 @@ const Navbar = () => {
   const cartRef = useRef(null);
   const API_BASE = "https://backend.onrequestlab.com/api/v1";
 
+const getCookie = (name) => {
+if (typeof document === "undefined") return "";
+const v = `; ${document.cookie}`;
+const parts = v.split(`; ${name}=`);
+if (parts.length === 2) return parts.pop().split(";").shift();
+return "";
+};
+
+const tokennew =
+(getCookie("access") ||
+localStorage.getItem("access") ||
+localStorage.getItem("jwt-auth"))?.trim();
+const userId = getCookie("user_id");
+console.log('userId=',userId);
   useEffect(() => {
-    const token = localStorage.getItem("jwt-auth");
+    const token = tokennew;//localStorage.getItem("jwt-auth");
     setIsLoggedIn(!!token);
     if (token) fetchWalletBalance(token);
   }, []);

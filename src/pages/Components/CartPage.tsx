@@ -429,33 +429,36 @@ const CartPage = () => {
               Total: ₹{totalAmount}
             </div>
 
-            {cartItems.map((item, idx) => (
-              <div key={idx} className="flex space-x-3 mt-4">
-                <button
-                  onClick={() => handleUpgrade(item)}
-                  disabled={!item.subscription}
-                  className={`px-4 py-2 rounded-xl font-bold text-white bg-gradient-to-r from-purple-500 to-blue-500 hover:scale-105 ${
-                    item.subscription
-                      ? "bg-blue-600 hover:bg-blue-700"
-                      : "bg-gray-600 cursor-not-allowed"
-                  }`}
-                >
-                  Upgrade
-                </button>
+              {cartItems.map((item, idx) => (
+  <div
+    key={idx}
+    className="flex flex-col sm:flex-row justify-center items-center mt-4 space-y-2 sm:space-y-0 sm:space-x-4"
+  >
+    <button
+      onClick={() => handleUpgrade(item)}
+      disabled={!item.subscription}
+      className={`px-6 py-3 rounded-xl font-bold text-white transition-transform duration-200 ${
+        item.subscription
+          ? "bg-blue-600 hover:bg-blue-700 transform hover:scale-105"
+          : "bg-gray-600 cursor-not-allowed"
+      }`}
+    >
+      Upgrade
+    </button>
 
-                <button
-                  onClick={() => handleCheckout(item)}
-                  disabled={item.subscription}
-                  className={`px-4 py-2 rounded-xl font-bold text-white ${
-                    !item.subscription
-                      ? "bg-purple-600 hover:bg-purple-700"
-                      : "bg-gray-700 cursor-not-allowed"
-                  }`}
-                >
-                  Checkout
-                </button>
-              </div>
-            ))}
+    <button
+      onClick={() => handleCheckout(item)}
+      disabled={item.subscription}
+      className={`px-6 py-3 rounded-xl font-bold text-white transition-transform duration-200 ${
+        !item.subscription
+          ? "bg-purple-600 hover:bg-purple-700 transform hover:scale-105"
+          : "bg-gray-700 cursor-not-allowed"
+      }`}
+    >
+      Checkout
+    </button>
+  </div>
+))}
           </div>
         )}
       </div>

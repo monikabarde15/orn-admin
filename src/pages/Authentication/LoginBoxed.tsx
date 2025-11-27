@@ -65,7 +65,7 @@ const LoginBoxed = () => {
         localStorage.setItem("username", data.user.username);
 
         toast.success("Login successful!", { position: "top-center" });
-
+        console.log('data=',data,'user=',data.user);
         // setTimeout(() => {
         //   if (data.user.id < 2) {
         //     window.location.href = "/index";
@@ -73,13 +73,13 @@ const LoginBoxed = () => {
         //     window.location.href = "/";
         //   }
         // }, 1200);
-        setTimeout(() => {
-          if (data.user.id === 1) {
-            window.location.href = "/index";
-          } else {
-            window.location.href = "/";
-          }
-        }, 1200);
+        // setTimeout(() => {
+        //   if (data.user.id === 1) {
+        //     window.location.href = "/index";
+        //   } else {
+        //     window.location.href = "/";
+        //   }
+        // }, 1200);
       }
     } catch (err: any) {
       let msg = "Invalid username or password.";

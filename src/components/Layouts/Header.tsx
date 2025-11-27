@@ -507,18 +507,18 @@ const userID = JSON.parse(localStorage.getItem("userId") || "{}");
                                             </div>
                                         </div>
                                     </li>
-                                    <li>
-                                        <Link to="/users/profile" className="dark:hover:text-white">
+                                    {/* <li>
+                                        <Link to="/labs" className="dark:hover:text-white">
                                             <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
                                             Courses
                                         </Link>
-                                    </li>
-                                    <li>
+                                    </li> */}
+                                    {/* <li>
                                         <Link to="/users/profile" className="dark:hover:text-white">
                                             <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
                                             Payment
                                         </Link>
-                                    </li>
+                                    </li> */}
                                     <li>
                                         <Link to="/users/profile" className="dark:hover:text-white">
                                             <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />

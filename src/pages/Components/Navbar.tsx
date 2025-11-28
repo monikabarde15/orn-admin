@@ -31,6 +31,11 @@ if (parts.length === 2) return parts.pop().split(";").shift();
 return "";
 };
 
+  const user = {
+    name: getCookie("username"),
+    email: getCookie("email"),
+  };
+
 const tokennew =
 (getCookie("access") ||
 localStorage.getItem("access") ||
@@ -178,6 +183,9 @@ setTimeout(() => (window.location.href = "/"), 800);
           {/* Mobile Profile */}
           {isLoggedIn ? (
             <div className="mobile-profile">
+              <div className="blue-btn">
+              <p>{(user?.name || "").slice(0, 5) + (user?.name?.length > 2 ? "..." : "")}</p>
+            </div>
               <p className="wallet-line">
                 <Wallet size={16} /> {loadingWallet ? "Loading..." : `₹${walletBalance}`}
               </p>
@@ -241,6 +249,10 @@ setTimeout(() => (window.location.href = "/"), 800);
               </div>
               {profileMenu && (
                 <div className="profile-dropdown clean-card">
+                  <div className="dropdown-wallet">
+                    {/* <p>{user.name||''}</p> */}
+                     <p onClick={() => navigateTo("/users/user-profile")} >{(user?.name || "").slice(0, 5) + (user?.name?.length > 4 ? "..." : "")}</p>
+                  </div>
                   <div className="dropdown-wallet">
                     <Wallet size={16} /> <span>{loadingWallet ? "Loading..." : `₹${walletBalance}`}</span>
                   </div>

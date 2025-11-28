@@ -103,6 +103,8 @@ const RangeSearch = lazy(() => import('../pages/DataTables/RangeSearch'));
 const Export = lazy(() => import('../pages/DataTables/Export'));
 const ColumnChooser = lazy(() => import('../pages/DataTables/ColumnChooser'));
 const Profile = lazy(() => import('../pages/Users/Profile'));
+const UserProfile = lazy(() => import('../pages/Users/UserProfile'));
+
 const AccountSetting = lazy(() => import('../pages/Users/AccountSetting'));
 const KnowledgeBase = lazy(() => import('../pages/Pages/KnowledgeBase'));
 const ContactUsBoxed = lazy(() => import('../pages/Pages/ContactUsBoxed'));
@@ -631,10 +633,15 @@ const routes = [
         path: '/datatables/column-chooser',
         element: <ColumnChooser />,
     },
-    // Users page
+    // Users page //UserProfile
     {
         path: '/users/profile',
         element: <Profile />,
+    },
+    {
+        path: '/users/user-profile',
+        element: <UserProfile />,
+        layout: 'web',
     },
     {
         path: '/users/user-account-settings',

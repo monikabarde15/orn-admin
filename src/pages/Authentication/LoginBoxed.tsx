@@ -44,7 +44,7 @@ const LoginBoxed = () => {
 
     try {
       const response = await axios.post(
-        "https://backend.onrequestlab.com/api/v1/users/auth/login",
+        "https://backend.onrequestlab.com/api/v1/users/login/",
         { username, password },
         { headers: { "Content-Type": "application/json" }, withCredentials: true }
       );
@@ -53,6 +53,8 @@ const LoginBoxed = () => {
       if (data.user) {
         // Save cookies
         document.cookie = `username=${encodeURIComponent(data.user.username)}; path=/; max-age=86400`;
+        document.cookie = `first_name=${encodeURIComponent(data.user.first_name)}; path=/; max-age=86400`;
+        document.cookie = `date_joined=${encodeURIComponent(data.user.date_joined)}; path=/; max-age=86400`;
         document.cookie = `user_id=${encodeURIComponent(data.user.id)}; path=/; max-age=86400`;
         document.cookie = `email=${encodeURIComponent(data.user.email)}; path=/; max-age=86400`;
         document.cookie = `is_staff=${data.user.is_staff}; path=/; max-age=86400`;
@@ -63,14 +65,16 @@ const LoginBoxed = () => {
         localStorage.setItem("userId", data.user.id);
         localStorage.setItem("email", data.user.email);
         localStorage.setItem("username", data.user.username);
+        localStorage.setItem("first_name", data.user.first_name);
+        localStorage.setItem("date_joined", data.user.date_joined);
 
         toast.success("Login successful!", { position: "top-center" });
-        console.log('data=',data,'user=',data.user);
+        console.log('data=',data.user.first_name,'user=',data.user);
         setTimeout(() => {
-          if (Number(data.user.id) === 1) {
-              navigate("/index");
+          if (data.user.is_superuser === true) {
+             navigate("/index");
             }else{
-            window.location.href = "/";
+           window.location.href = "/";
           }
         }, 1200);
         // setTimeout(() => {

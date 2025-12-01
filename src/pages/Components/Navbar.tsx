@@ -41,9 +41,11 @@ const tokennew =
 localStorage.getItem("access") ||
 localStorage.getItem("jwt-auth"))?.trim();
 const userId = getCookie("user_id");
+const is_superuser = getCookie("is_superuser");
+
 console.log('userId=',userId);
 
-if (Number(userId) === 1) {
+if (is_superuser === true) {
   navigate("/index");
 }
   useEffect(() => {

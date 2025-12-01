@@ -15,7 +15,7 @@ const LabPricing = () => {
   const navigate = useNavigate();
 
   const [billingTypes, setBillingTypes] = useState([]);
-  const [billingType, setBillingType] = useState("hourly");
+  const [billingType, setBillingType] = useState("free");
   const [labs, setLabs] = useState([]);
   const [loadingLabs, setLoadingLabs] = useState(false);
   const [launchingLabId, setLaunchingLabId] = useState(null);
@@ -142,7 +142,7 @@ const LabPricing = () => {
           t.yearlyPackageId = pkg.package_id;
         }
 
-        if (cycle === "hourly" || cycle === "hour") {
+        if (cycle === "free" || cycle === "free") {
           t.payAsYouGo.hourlyRate = pkg.price;
           t.payAsYouGo.packageId = pkg.package_id;
           t.free.available = true;
@@ -171,8 +171,8 @@ const LabPricing = () => {
     }
   }, [billingType, allPackages]);
 
-  const getCurrentFeatures = (lab) =>
-    billingType === "free" ? lab.billing_cycle : lab.paidFeatures;
+const getCurrentFeatures = (lab) =>
+  billingType === "free" ? lab.freeFeatures || [] : lab.paidFeatures || [];
 
   const getFreeAction = (labName) => {
     const name = (labName || "").toLowerCase();
@@ -278,13 +278,15 @@ const LabPricing = () => {
 
             return isLaunched && (isNew || paymentMatch);
           });
-
+          const lab=getFreeAction(
+              lab.name
+            );
           if (newlyLaunched) {
             clearInterval(pollRef.current);
             pollRef.current = null;
             setLaunchingLabId(null);
             setLaunching(false);
-            navigate(`/lab?user=${userId}`);
+            navigate(`/lab?user=${userId}&lab=${lab}`);
             notify(
               `Instance launched: ${
                 newlyLaunched.instance_ip ||
@@ -494,7 +496,7 @@ console.log('lab=',lab);
         {/* BILLING TOGGLE */}
         <div className="flex justify-center mb-12">
           <div className="inline-flex items-center bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-1">
-            {["hourly", "monthly", "yearly"].map((type) => (
+            {["free", "monthly", "yearly"].map((type) => (
               <button
                 key={type}
                 onClick={() => setBillingType(type)}
@@ -584,7 +586,7 @@ console.log('lab=',lab);
                       onClick={() => handlePlanClick(lab)}
                       disabled={launchingLabId === lab.planId}
                     >
-                      {billingType === "hourly"
+                      {billingType === "free"
                         ? launchingLabId === lab.planId
                           ? "Launching..."
                           : "Start Free Trial"

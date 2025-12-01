@@ -102,7 +102,7 @@ const RegisterBoxed = () => {
     if (!validate()) return;
 
     const finalPhone = `${formData.country_code}${formData.phone}`;
-
+localStorage.setItem("email", formData.email);
     setLoading(true);
     try {
       const response = await axios.post(

@@ -26,11 +26,14 @@ const UserProfile = () => {
   const userNew = {
     name: getCookie("username"),
     email: getCookie("email"),
+    first_name:getCookie("first_name"),
+    date_joined:getCookie("date_joined"),
   };
   const [user, setUser] = useState({
     name: userNew.name,//"User Name",
-    // email: "email@example.com",
-    // role: "Web Developer",
+    email: userNew.email,
+    first_name: userNew.first_name,
+    date_joined:userNew.date_joined,
     // dob: "Jan 01, 1990",
     // location: "Unknown",
     // phone: "+1 (000) 000-0000",
@@ -88,17 +91,30 @@ const UserProfile = () => {
                 alt="profile"
               />
 
-              <h3 className="text-2xl font-bold text-white mb-2">{userNew.name}</h3>
-              {/* <p className="text-white/70 mb-6">{user.role}</p> */}
+             <h3 className="text-2xl font-bold text-white mb-2">
+  {decodeURIComponent(userNew.name)}
+</h3>
+
+<p className="text-white/70 mb-6">
+  {decodeURIComponent(user.email)}
+</p>
+
+<p className="text-white/70 mb-6">
+  {decodeURIComponent(user.first_name)}
+</p>
+
+<p className="text-white/70 mb-6">
+  {decodeURIComponent(user.date_joined)}
+</p>
 
               {/* <ul className="mt-4 space-y-4 text-white font-medium text-lg text-center">
                 <li className="flex items-center gap-3 justify-center">
-                  <IconCoffee /> {user.role}
+                  <IconCoffee /> {user.first_name}
                 </li>
                 <li className="flex items-center gap-3 justify-center">
-                  <IconCalendar /> {user.dob}
+                  <IconCalendar /> {user.date_joined}
                 </li>
-                <li className="flex items-center gap-3 justify-center">
+                {/* <li className="flex items-center gap-3 justify-center">
                   <IconMapPin /> {user.location}
                 </li>
                 <li className="flex items-center gap-3 justify-center">
@@ -107,7 +123,7 @@ const UserProfile = () => {
                 </li>
                 <li className="flex items-center gap-3 justify-center">
                   <IconPhone /> {user.phone}
-                </li>
+                </li> 
               </ul> */}
 
               {/* <div className="flex items-center justify-center gap-4 mt-6">

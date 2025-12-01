@@ -14,35 +14,42 @@ interface Instance {
   secret_key?: string;
   AccessKeyId?: string;
   SecretAccessKey?: string;
+  instance_name?: string;
 }
 
 const LabDashboard: React.FC = () => {
   const location = useLocation();
   const [instance, setInstance] = useState<Instance | null>(null);
   const [loading, setLoading] = useState(true);
-  const [leftWidth, setLeftWidth] = useState(70); // %
+  const [leftWidth, setLeftWidth] = useState(70);
   const isResizing = useRef(false);
 
   const query = new URLSearchParams(location.search);
   const userId = query.get("user");
 
   const token =
-    localStorage.getItem("jwt-auth") || localStorage.getItem("access") || "";
+    localStorage.getItem("jwt-auth") ||
+    localStorage.getItem("access") ||
+    "";
 
-  // ✅ Fetch instance only when userId + token exist
+  // Fetch Instance
   useEffect(() => {
     const fetchInstance = async () => {
       if (!userId || !token) {
         setLoading(false);
         return;
       }
+
       try {
         const res = await axios.get(`${API_BASE}/lab/userinst/${userId}/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+
         const instances: Instance[] = res.data || [];
         const active =
-          instances.find((i) => i.status === "Launched") || instances[0];
+          instances.find((i) => i.status === "Launched") ||
+          instances[0];
+
         setInstance(active || null);
       } catch (err) {
         console.error("Error fetching instance:", err);
@@ -54,7 +61,7 @@ const LabDashboard: React.FC = () => {
     fetchInstance();
   }, [userId, token]);
 
-  // ✅ Resizing logic always runs (hooks order fixed)
+  // Resizing Logic
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing.current) return;
@@ -71,6 +78,7 @@ const LabDashboard: React.FC = () => {
 
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", stopResizing);
+
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", stopResizing);
@@ -82,7 +90,11 @@ const LabDashboard: React.FC = () => {
     document.body.style.cursor = "col-resize";
   };
 
-  // ✅ Conditional rendering happens AFTER hooks
+  const extractTypeFromName = (name = "") => {
+    const parts = name.split("-");
+    return parts.length >= 2 ? parts[1] : "unknown"; // "linux"
+  };
+
   if (loading)
     return (
       <div className="flex items-center justify-center h-screen text-gray-300 bg-black">
@@ -96,22 +108,59 @@ const LabDashboard: React.FC = () => {
         No active instance
       </div>
     );
+const instanceTnew=instance.instance_type;
+  const instanceType =
+    extractTypeFromName(instance.instance_name || "") ||
+    instance.instance_type ||
+    "container";
 
-  const ip = instance.instance_ip || "N/A";
-  const username = instance.userName || instance.AccessKeyId || "root";
-  const password =
-    instance.AccessKeyId || instance.SecretAccessKey || "lab123";
-  const instanceType = instance.instance_type || "container";
+  console.log("instance=", instance.instance_name, "instanceType=", instanceType,'instanceTnew=',instanceTnew);
 
-  const tutorialSrc =
-    instanceType === "aws"
-      ? "https://backend.onrequestlab.com/learn/aws/"
-      : instanceType === "iscsi"
-      ? "https://backend.onrequestlab.com/learn/iscsi/"
-      : "https://backend.onrequestlab.com/learn/docker/";
+  // ------------------------------
+  // FIXED: define tutorialUrls ONCE
+  // ------------------------------
+  
+ // Mapping dictionary
+const tutorialUrls: Record<string, string> = {
+  terraform: "https://backend.onrequestlab.com/learn/terraform/",
+};
 
-  const sshUrl =
-    instance.web_ssh_url
+// tutorialSrc should be let (not const)
+let tutorialSrc = "";
+
+// 1️⃣ Special case → linux from instanceName
+if (instanceType === "linux") {
+  tutorialSrc = "https://backend.onrequestlab.com/learn/linux/";
+}
+
+// 2️⃣ VM → kubernetes
+else if (instance.instance_name !== "nodea" && instance.instance_name !== "iscsiclient" && instanceTnew === "VM") {
+  tutorialSrc = "https://backend.onrequestlab.com/learn/kubernetes/";
+}
+
+else if(instance.instance_name === "nodea" && instanceTnew === "VM"){
+  tutorialSrc = "https://backend.onrequestlab.com/learn/redhat/";
+
+}else if (instance.instance_name === "iscsiclient" && instanceTnew === "VM") {
+  tutorialSrc = "https://backend.onrequestlab.com/learn/terraform/";
+}
+// 3️⃣ NODE → docker
+else if (instanceTnew === "NODE") {
+  tutorialSrc = "https://backend.onrequestlab.com/learn/docker/";
+}
+
+// 4️⃣ dictionary fallback if still empty
+else if (tutorialUrls[instanceType]) {
+  tutorialSrc = tutorialUrls[instanceType];
+} 
+else if (tutorialUrls[instanceTnew]) {
+  tutorialSrc = tutorialUrls[instanceTnew];
+}
+
+// SSH URL
+const sshUrl = instance.web_ssh_url || "";
+
+console.log("tutorialSrc =", tutorialSrc);
 
   return (
     <div
@@ -123,7 +172,7 @@ const LabDashboard: React.FC = () => {
         overflow: "hidden",
       }}
     >
-      {/* ✅ Left Panel - Tutorial */}
+      {/* Left Panel - Tutorial */}
       <div
         style={{
           width: `${leftWidth}%`,
@@ -147,7 +196,7 @@ const LabDashboard: React.FC = () => {
         />
       </div>
 
-      {/* ✅ Draggable Divider */}
+      {/* Divider */}
       <div
         onMouseDown={startResizing}
         style={{
@@ -164,7 +213,7 @@ const LabDashboard: React.FC = () => {
         }
       ></div>
 
-      {/* ✅ Right Panel - WebSSH */}
+      {/* Right Panel - Terminal */}
       <div
         style={{
           width: `${100 - leftWidth}%`,

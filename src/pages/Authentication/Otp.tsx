@@ -15,24 +15,27 @@ const OtpVerification = () => {
   const [showOtpInput, setShowOtpInput] = useState(true);
   const [otpExpired, setOtpExpired] = useState(false);
 
-  // ✅ Get email from cookie
+  // Get cookie email
   const getCookie = (name: string) => {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
     return null;
   };
-
-  // ✅ Load email from cookie on mount
+    const cookieEmailnew = localStorage.getItem("email");
+console.log('cookieEmail1',cookieEmailnew);
   useEffect(() => {
-    const cookieEmail = getCookie("email");
+    const cookieEmail = cookieEmailnew;//getCookie("email");
+    console.log('cookieEmail',cookieEmail);
     if (cookieEmail) setEmail(decodeURIComponent(cookieEmail));
   }, []);
 
-  // ✅ Handle sending/resending OTP
+  // SEND / RESEND OTP
   const handleSendOTP = async () => {
     if (!email.trim()) {
-      toast.error("Please enter your email.", { position: "top-center" });
+      toast.error("Email not found. Please login again.", {
+        position: "top-center",
+      });
       return;
     }
 
@@ -40,13 +43,14 @@ const OtpVerification = () => {
     try {
       const response = await axios.post(
         "https://backend.onrequestlab.com/api/v1/users/auth/resend-otp/",
-        { email }, // ✅ Correct key
+        { email },
         { headers: { "Content-Type": "application/json" } }
       );
 
-      toast.success(response.data?.message || "OTP has been sent!", {
+      toast.success(response.data?.message || "OTP Sent Successfully!", {
         position: "top-center",
       });
+
       setShowOtpInput(true);
       setOtpExpired(false);
       setOtp("");
@@ -54,14 +58,14 @@ const OtpVerification = () => {
       const msg =
         err.response?.data?.message ||
         err.response?.data?.error ||
-        "Failed to send OTP.";
+        "Failed to resend OTP.";
       toast.error(msg, { position: "top-center" });
     } finally {
       setResending(false);
     }
   };
 
-  // ✅ Handle OTP verification
+  // VERIFY OTP
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -70,31 +74,25 @@ const OtpVerification = () => {
       return;
     }
 
-    if (!email.trim()) {
-      toast.error("Email is missing.", { position: "top-center" });
-      setShowOtpInput(false);
-      setOtpExpired(true);
-      return;
-    }
-
     setLoading(true);
     try {
       const response = await axios.post(
         "https://backend.onrequestlab.com/api/v1/users/auth/verify-otp/",
-        { email, otp }, // ✅ Correct key
+        { email, otp },
         { headers: { "Content-Type": "application/json" } }
       );
 
-      toast.success("OTP verified successfully!", { position: "top-center" });
-      setOtpExpired(false);
+      toast.success("OTP Verified Successfully!", { position: "top-center" });
+
       setTimeout(() => navigate("/login"), 1200);
     } catch (err: any) {
       const msg =
         err.response?.data?.message ||
         err.response?.data?.error ||
-        "OTP verification failed.";
+        "OTP Invalid or Expired.";
       toast.error(msg, { position: "top-center" });
 
+      // Show resend section
       setOtpExpired(true);
       setShowOtpInput(false);
     } finally {
@@ -109,12 +107,13 @@ const OtpVerification = () => {
           {i18next.t("Verify OTP")}
         </h1>
 
-        {/* Show OTP input if allowed */}
         {showOtpInput ? (
+          // OTP INPUT Screen
           <form onSubmit={handleVerifyOTP} className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
               OTP sent to <b>{email}</b>
             </p>
+
             <input
               type="text"
               placeholder="Enter OTP"
@@ -122,6 +121,7 @@ const OtpVerification = () => {
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
             />
+
             <button
               type="submit"
               disabled={loading}
@@ -129,22 +129,37 @@ const OtpVerification = () => {
             >
               {loading ? "Verifying..." : "Verify OTP"}
             </button>
+
+            {/* Default Resend OTP Button */}
+            <button
+              type="button"
+              onClick={handleSendOTP}
+              disabled={resending}
+              className={`btn btn-outline-primary w-full mt-2 ${
+                resending ? "opacity-60 cursor-not-allowed" : ""
+              }`}
+            >
+              {resending ? "Sending..." : "Resend OTP"}
+            </button>
           </form>
         ) : (
-          // Resend OTP section
+          // RESEND OTP SCREEN
           <div className="space-y-4">
             {otpExpired && (
               <p className="text-red-500 text-center">
-                OTP expired or invalid. Please resend OTP.
+                OTP invalid or expired. Please resend OTP.
               </p>
             )}
+
+            {/* EMAIL FROM COOKIE (not editable) */}
             <input
               type="email"
-              placeholder="Enter your email"
-              className="form-input w-full"
+              className="form-input w-full bg-gray-200 cursor-not-allowed"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              disabled
             />
+
+            {/* Resend Button */}
             <button
               type="button"
               onClick={handleSendOTP}

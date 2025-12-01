@@ -157,8 +157,16 @@ const CartPage = () => {
           return;
         }
       }
+ 
+     const actionnew = formatAction(lab.name);
+        let action = "";
 
-      const action = formatAction(lab.name);
+        if (actionnew === "terraform") {
+          action = "iscsi";
+        } else {
+          action = actionnew;
+        }
+
       const endpoint =
         paymentId === "free"
           ? `${API_BASE}/users/deploy-free/${action}/`
@@ -305,17 +313,20 @@ const CartPage = () => {
       setProcessing(false);
     }
   };
+    console.log('cartItems=',cartItems);
 
   const handleCheckout = async () => {
     if (!requireLogin()) return;
     if (loading || processing || upgradeInProgress || isLaunching) return;
     if (!cartItems.length) return notify("Cart empty", "info");
-
+    console.log('cartItems=',cartItems);
     setLoading(true);
     setIsLaunching(true);
 
     try {
       for (const item of cartItems) {
+        if(cartItems.billingType!=="free"){
+           console.log('cartItems1=',cartItems);
         if (!item.subscription) {
           const sub = await createSubscriptionOnBackend(item.planId);
           item.subscription = sub;
@@ -338,6 +349,7 @@ const CartPage = () => {
           );
           await openRazorpay(remaining);
         }
+      }
       }
 
       pollForLaunchedInstances();
@@ -438,19 +450,19 @@ const CartPage = () => {
 
                     {/* HOURS INPUT */}
                     <div className="mt-3">
-                      <label className="text-sm text-gray-400">Hours:</label>
+                      {/* <label className="text-sm text-gray-400">Hours:</label> */}
 
-                      <input
+                      {/* <input
                         type="number"
                         min="1"
                         value={item.hours || 1}
                         onChange={(e) => updateHours(idx, e.target.value)}
                         className="ml-2 px-2 py-1 w-20 bg-gray-800 text-white rounded border border-gray-600"
-                      />
+                      /> */}
 
-                      <p className="text-sm mt-1 text-purple-300">
+                      {/* <p className="text-sm mt-1 text-purple-300">
                         ₹{item.basePrice} / hour
-                      </p>
+                      </p> */}
                     </div>
 
                     <button

@@ -79,11 +79,11 @@ const Footer = () => {
               </a>
             </li>
            
-            <li>
+            {/* <li>
              <a href="#process" className="hover:text-white">
                 Process
               </a>
-            </li>
+            </li> */}
             <li>
               <a href="/our-services" className="hover:text-white">
                 Our Services
@@ -111,11 +111,11 @@ const Footer = () => {
                 Pricing
               </a>
             </li>
-            <li>
+            {/* <li>
               <a href="process" className="hover:text-white">
                 Process
               </a>
-            </li>
+            </li> */}
             <li>
               <a href="blogs" className="hover:text-white">
                 Blog

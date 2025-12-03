@@ -81,10 +81,10 @@ console.log('cookieEmail1',cookieEmailnew);
         { email, otp },
         { headers: { "Content-Type": "application/json" } }
       );
-
+      console.log('response=',response);
       toast.success("OTP Verified Successfully!", { position: "top-center" });
 
-      setTimeout(() => navigate("/login"), 1200);
+     setTimeout(() => navigate("/login"), 1200);
     } catch (err: any) {
       const msg =
         err.response?.data?.message ||

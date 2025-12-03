@@ -85,7 +85,7 @@ const Footer = () => {
               </a>
             </li> */}
             <li>
-              <a href="/our-services" className="hover:text-white">
+              <a href="/services" className="hover:text-white">
                 Our Services
               </a>
             </li>
@@ -106,21 +106,32 @@ const Footer = () => {
         <div>
           <h3 className="font-semibold mb-4 text-white">Resources</h3>
           <ul className="space-y-2 text-gray-400 text-sm">
-          <li>
-             <a href="pricing" className="hover:text-white">
-                Pricing
-              </a>
-            </li>
-            {/* <li>
-              <a href="process" className="hover:text-white">
-                Process
-              </a>
-            </li> */}
             <li>
               <a href="blogs" className="hover:text-white">
                 Blog
               </a>
             </li>
+             <li>
+              <a href="feedback" className="hover:text-white">
+                Feedback Form
+              </a>
+            </li>
+            <li>
+              <a href="#courses" className="hover:text-white">
+                Request a Course
+              </a>
+            </li>
+          {/* <li>
+             <a href="pricing" className="hover:text-white">
+                Pricing
+              </a>
+            </li> */}
+            {/* <li>
+              <a href="process" className="hover:text-white">
+                Process
+              </a>
+            </li> */}
+            
           </ul>
         </div>
 
@@ -138,26 +149,17 @@ const Footer = () => {
                 Terms and Condition
               </a>
             </li>
-            <li>
-              <a href="feedback" className="hover:text-white">
-                Feedback Form
-              </a>
-            </li>
-            <li>
-              <a href="#courses" className="hover:text-white">
-                Request a Course
-              </a>
-            </li>
+           
             <li>
               <a href="support" className="hover:text-white">
                 Support
               </a>
             </li>
-            <li>
+            {/* <li>
               <a href="contact-us" className="hover:text-white">
                 Contact Us
               </a>
-            </li>
+            </li> */}
             <li>
               <a href="refund-policy" className="hover:text-white">
                 Refund Policy

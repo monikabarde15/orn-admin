@@ -11,6 +11,7 @@ import IconMail from "../../components/Icon/IconMail";
 import IconLockDots from "../../components/Icon/IconLockDots";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
+import SocialLogin from "../Authentication/SocialSuccess";
 
 const LoginBoxed = () => {
   const dispatch = useDispatch();
@@ -126,7 +127,7 @@ const LoginBoxed = () => {
     setResetLoading(true);
     try {
       const response = await axios.post( 
-        " https://backend.onrequestlab.com/api/v1/users/password/reset/",
+        "https://backend.onrequestlab.com/api/v1/users/password/reset/",
         { email: resetEmail },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -217,7 +218,7 @@ const LoginBoxed = () => {
                   >
                     {loading ? "Signing in..." : "Sign in"}
                   </button>
-
+<SocialLogin />
                   <p
                     className="text-primary text-center mt-3 cursor-pointer hover:underline"
                     onClick={() => setShowForgotModal(true)}

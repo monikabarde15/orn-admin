@@ -25,10 +25,10 @@ export default function RefundPolicyPage() {
           <section className="refundp-root">
             <div className="refundp-headerbar">
               <h1 className="refundp-title">Refund Policy</h1>
-              <div className="refundp-actions">
+              {/* <div className="refundp-actions">
                 <button className="refundp-btn"><Download size={16}/> Download PDF</button>
                 <button className="refundp-btn"><Printer size={16}/> Print Policy</button>
-              </div>
+              </div> */}
             </div>
             <div className="refundp-cards">
               {[

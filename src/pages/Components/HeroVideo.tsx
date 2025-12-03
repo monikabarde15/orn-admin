@@ -69,7 +69,7 @@ const HeroVideo = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#130f20] flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-[300px] md:min-h-[700px] lg:min-h-[900px] bg-[#130f20] flex items-center justify-center relative overflow-hidden">
       {/* Ambient background glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#8358ff]/20 rounded-full blur-[120px] animate-pulse"></div>
@@ -78,7 +78,7 @@ const HeroVideo = () => {
 
       <div 
         ref={containerRef} 
-        className="h-screen flex items-center justify-center w-full"
+        className="h-[250px] md:h-[380px] lg:h-[480px] flex items-center justify-center w-full"
         style={{ perspective: '2000px' }}
       >
         <motion.div

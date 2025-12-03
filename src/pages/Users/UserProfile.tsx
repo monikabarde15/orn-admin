@@ -2,148 +2,254 @@ import { useDispatch } from "react-redux";
 import { setPageTitle } from "../../store/themeConfigSlice";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import IconCoffee from "../../components/Icon/IconCoffee";
-import IconCalendar from "../../components/Icon/IconCalendar";
-import IconMapPin from "../../components/Icon/IconMapPin";
-import IconMail from "../../components/Icon/IconMail";
-import IconPhone from "../../components/Icon/IconPhone";
-import IconTwitter from "../../components/Icon/IconTwitter";
-import IconDribbble from "../../components/Icon/IconDribbble";
-import IconGithub from "../../components/Icon/IconGithub";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
+import { Mail, Calendar, Clock, Shield } from "lucide-react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const UserProfile = () => {
   const dispatch = useDispatch();
-   const getCookie = (name) => {
+
+  // Helper to get cookies
+  const getCookie = (name) => {
     if (typeof document === "undefined") return "";
     const v = `; ${document.cookie}`;
     const parts = v.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop().split(";").shift();
     return "";
   };
-  
-  const userNew = {
-    name: getCookie("username"),
-    email: getCookie("email"),
-    first_name:getCookie("first_name"),
-    date_joined:getCookie("date_joined"),
-  };
+
   const [user, setUser] = useState({
-    name: userNew.name,//"User Name",
-    email: userNew.email,
-    first_name: userNew.first_name,
-    date_joined:userNew.date_joined,
-    // dob: "Jan 01, 1990",
-    // location: "Unknown",
-    // phone: "+1 (000) 000-0000",
+    username: "",
+    email: "",
+    first_name: "",
+    last_name: "",
+    date_joined: "",
+    last_active: "",
+    is_active: false,
+    is_staff: false,
+    is_superuser: false,
     avatar: "/assets/images/profile-34.jpeg",
   });
 
- 
+  const [editMode, setEditMode] = useState(false);
+  const [formData, setFormData] = useState({
+    username: "",
+    first_name: "",
+    last_name: "",
+  });
+
   useEffect(() => {
     dispatch(setPageTitle("Profile"));
 
     const fetchUser = async () => {
       try {
-        let rawToken =
-          getCookie("access") ||
-          getCookie("jwt-auth") 
-          "";
-
+        let rawToken = getCookie("access") || getCookie("jwt-auth") || "";
         rawToken = rawToken.replace("Bearer ", "").trim();
 
         const res = await axios.get(
-          "https://backend.onrequestlab.com/api/v1/users/auth/user/",
+          "https://backend.onrequestlab.com/api/v1/users/profile/",
           {
-            headers: {
-              Authorization: `Bearer ${rawToken}`,
-            },
+            headers: { Authorization: `Bearer ${rawToken}` },
           }
         );
 
         const data = res.data;
-        console.log('data=',data);
-        setUser((prev) => ({
-          ...prev,
-          name: data.username || '',
-        }));
+
+        setUser({
+          username: data.username || "",
+          email: data.email || "",
+          first_name: data.first_name || "",
+          last_name: data.last_name || "",
+          date_joined: data.date_joined || "",
+          last_active: data.last_active || "",
+          is_active: data.is_active || false,
+          is_staff: data.is_staff || false,
+          is_superuser: data.is_superuser || false,
+          avatar: data.avatar || "/assets/images/profile-34.jpeg",
+        });
+
+        setFormData({
+          username: data.username || "",
+          first_name: data.first_name || "",
+          last_name: data.last_name || "",
+        });
       } catch (err) {
         console.error("Error fetching user:", err);
+        toast.error("Failed to fetch profile.");
       }
     };
 
     fetchUser();
   }, [dispatch]);
-  console.log('user=',user);
+
+  const formatDate = (isoString) => {
+    if (!isoString) return "";
+    return new Date(isoString).toLocaleString();
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSave = async () => {
+    try {
+      let rawToken = getCookie("access") || getCookie("jwt-auth") || "";
+      rawToken = rawToken.replace("Bearer ", "").trim();
+      const csrftoken = getCookie("csrftoken"); // if required
+
+      const payload = {
+        username: formData.username,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+      };
+
+      await axios.post(
+        "https://backend.onrequestlab.com/api/v1/users/profile/",
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${rawToken}`,
+            "Content-Type": "application/json",
+            ...(csrftoken && { "X-CSRFTOKEN": csrftoken }),
+          },
+        }
+      );
+
+      setUser((prev) => ({ ...prev, ...payload }));
+      setEditMode(false);
+      toast.success("Profile updated successfully!");
+    } catch (err) {
+      console.error("Error updating profile:", err.response || err);
+      toast.error("Failed to update profile.");
+    }
+  };
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen bg-slate-900">
       <Navbar />
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-16 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 md:p-12 shadow-2xl">
-            <div className="flex flex-col items-center">
+      <div className="flex-1 py-16 px-4 flex items-center">
+        <div className="max-w-4xl mx-auto w-full">
+          <div className="bg-white/5 backdrop-blur-md border border-white/20 rounded-3xl p-8 md:p-12 shadow-xl flex flex-col md:flex-row gap-8">
+            
+            {/* Avatar and Edit Fields */}
+            <div className="flex-shrink-0 flex flex-col items-center w-full md:w-auto">
               <img
                 src={user.avatar}
-                className="w-32 h-32 rounded-full object-cover shadow-lg border-4 border-primary mb-4"
-                alt="profile"
+                alt="Avatar"
+                className="w-40 h-40 rounded-full border-4 border-primary shadow-lg object-cover mb-4"
               />
+              
+              {editMode ? (
+                <input
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  className="text-center rounded px-2 py-1 text-black mb-2 w-48"
+                  placeholder="Username"
+                />
+              ) : (
+                <h2 className="text-2xl font-bold text-white">{user.username}</h2>
+              )}
 
-             <h3 className="text-2xl font-bold text-white mb-2">
-  {decodeURIComponent(userNew.name)}
-</h3>
+              {editMode ? (
+                <div className="flex gap-2 mt-2">
+                  <input
+                    type="text"
+                    name="first_name"
+                    value={formData.first_name}
+                    onChange={handleChange}
+                    className="rounded px-2 py-1 text-black w-24"
+                    placeholder="First Name"
+                  />
+                  <input
+                    type="text"
+                    name="last_name"
+                    value={formData.last_name}
+                    onChange={handleChange}
+                    className="rounded px-2 py-1 text-black w-24"
+                    placeholder="Last Name"
+                  />
+                </div>
+              ) : (
+                <p className="text-white/70 mt-2">
+                  {user.first_name} {user.last_name}
+                </p>
+              )}
 
-<p className="text-white/70 mb-6">
-  {decodeURIComponent(user.email)}
-</p>
-
-<p className="text-white/70 mb-6">
-  {decodeURIComponent(user.first_name)}
-</p>
-
-<p className="text-white/70 mb-6">
-  {decodeURIComponent(user.date_joined)}
-</p>
-
-              {/* <ul className="mt-4 space-y-4 text-white font-medium text-lg text-center">
-                <li className="flex items-center gap-3 justify-center">
-                  <IconCoffee /> {user.first_name}
-                </li>
-                <li className="flex items-center gap-3 justify-center">
-                  <IconCalendar /> {user.date_joined}
-                </li>
-                {/* <li className="flex items-center gap-3 justify-center">
-                  <IconMapPin /> {user.location}
-                </li>
-                <li className="flex items-center gap-3 justify-center">
-                  <IconMail className="w-5 h-5" />{" "}
-                  <span className="text-primary">{user.email}</span>
-                </li>
-                <li className="flex items-center gap-3 justify-center">
-                  <IconPhone /> {user.phone}
-                </li> 
-              </ul> */}
-
-              {/* <div className="flex items-center justify-center gap-4 mt-6">
-                <button className="btn btn-info rounded-full w-10 h-10 p-0 hover:scale-110 transition">
-                  <IconTwitter />
-                </button>
-                <button className="btn btn-danger rounded-full w-10 h-10 p-0 hover:scale-110 transition">
-                  <IconDribbble />
-                </button>
-                <button className="btn btn-dark rounded-full w-10 h-10 p-0 hover:scale-110 transition">
-                  <IconGithub />
-                </button>
-              </div> */}
+              <button
+                onClick={() => (editMode ? handleSave() : setEditMode(true))}
+                className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary/80 transition"
+              >
+                {editMode ? "Save" : "Edit Profile"}
+              </button>
             </div>
+
+            {/* Info Panel */}
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 text-white">
+              <div className="flex items-center gap-3 bg-white/10 p-4 rounded-xl shadow-md hover:bg-white/20 transition">
+                <Mail className="w-5 h-5 text-primary" />
+                <div>
+                  <p className="text-sm text-white/60">Email</p>
+                  <p className="font-medium">{user.email}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 bg-white/10 p-4 rounded-xl shadow-md hover:bg-white/20 transition">
+                <Calendar className="w-5 h-5 text-primary" />
+                <div>
+                  <p className="text-sm text-white/60">Joined</p>
+                  <p className="font-medium">{formatDate(user.date_joined)}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 bg-white/10 p-4 rounded-xl shadow-md hover:bg-white/20 transition">
+                <Clock className="w-5 h-5 text-primary" />
+                <div>
+                  <p className="text-sm text-white/60">Last Active</p>
+                  <p className="font-medium">{formatDate(user.last_active)}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 bg-white/10 p-4 rounded-xl shadow-md hover:bg-white/20 transition">
+                <Shield className="w-5 h-5 text-primary" />
+                <div className="flex flex-col">
+                  <p className="text-sm text-white/60">Status</p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {user.is_active && (
+                      <span className="px-2 py-1 text-xs bg-green-500 rounded-full">
+                        Active
+                      </span>
+                    )}
+                    {!user.is_active && (
+                      <span className="px-2 py-1 text-xs bg-red-500 rounded-full">
+                        Inactive
+                      </span>
+                    )}
+                    {user.is_staff && (
+                      <span className="px-2 py-1 text-xs bg-blue-500 rounded-full">
+                        Staff
+                      </span>
+                    )}
+                    {user.is_superuser && (
+                      <span className="px-2 py-1 text-xs bg-yellow-500 text-black rounded-full">
+                        Superuser
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
 
       <Footer />
-    </>
+    </div>
   );
 };
 

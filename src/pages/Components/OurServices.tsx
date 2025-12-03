@@ -12,6 +12,8 @@ import {
   Award,
   RefreshCw
 } from 'lucide-react';
+import Navbar from '../../pages/Components/Navbar';
+import Footer from '../Components/Footer';
 
 const OurServices = () => {
   const services = [
@@ -122,7 +124,9 @@ const OurServices = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-16 px-4">
+    <>
+     <Navbar />
+         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-16 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -276,6 +280,10 @@ const OurServices = () => {
         </motion.div>
       </div>
     </div>
+     <Footer />
+    </>
+
+
   );
 };
 

@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import heroTeam from "/assets/hero-team.jpg";
+import { HomeMetaTags } from "../Pages/HomeMetaTags";
 
 const HeroSection = () => {
   const stats = [
@@ -13,6 +14,7 @@ const HeroSection = () => {
       id="home"
       className="relative min-h-screen flex items-center pt-1 overflow-hidden bg-[#130f20]"
     >
+      <HomeMetaTags/>
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-15 py-20 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* ================= Left Content ================= */}
@@ -32,7 +34,7 @@ const HeroSection = () => {
               </span></a>
             </motion.div>*/}
 
-            <motion.h1
+            {/* <motion.h1
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 1 }}
@@ -41,6 +43,17 @@ const HeroSection = () => {
               Interactive Learning
              Experience at Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#8358ff] to-[#39c6fa]">
                 Fingertip
+              </span>
+            </motion.h1> */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 1 }}
+              className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight"
+            >
+              Hands-On Free
+             Kubernetes Lab and  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#8358ff] to-[#39c6fa]">
+                DevOps Learning Platform
               </span>
             </motion.h1>
 

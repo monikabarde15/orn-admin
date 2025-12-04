@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Send, Star, User, Mail, MessageSquare } from 'lucide-react';
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
-
+import { FeedbackMetatage } from '../Pages/FeedbackMetatage';
 const FeedbackForm = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -104,6 +104,7 @@ const payload = {
 
   return (
     <>
+    <FeedbackMetatage />
     <Navbar />
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-16 px-4">
       <div className="max-w-4xl mx-auto">
@@ -117,7 +118,7 @@ const payload = {
         >
           <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-4">
             <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-violet-400 bg-clip-text text-transparent">
-              We Value Your Feedback
+              Share Your Experience with OnRequestLab
             </span>
           </h1>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">

@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client'
+import { HelmetProvider } from "react-helmet-async";
 
 // Perfect Scrollbar
 import 'react-perfect-scrollbar/dist/css/styles.css';
@@ -21,6 +22,8 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+      <HelmetProvider>
+
       <GoogleOAuthProvider clientId="125951477842-2tfiag4qd8fjinfoqcfiss78kjg1m24b.apps.googleusercontent.com">
 
     <React.StrictMode>
@@ -31,6 +34,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
         </Suspense>
     </React.StrictMode>
       </GoogleOAuthProvider>
+      </HelmetProvider>
 
 );
 

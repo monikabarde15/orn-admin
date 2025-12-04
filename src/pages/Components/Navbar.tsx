@@ -197,7 +197,7 @@ setTimeout(() => (window.location.href = "/"), 800);
             </div>
           ) : (
             <button className="navbar-btn mobile-login-btn">
-              <a href="/login">Login</a> / <a href="/auth/boxed-signup">Signup</a>
+              <a href="/login">Login</a> / <a href="/register">Signup</a>
             </button>
           )}
         </div>
@@ -278,7 +278,7 @@ setTimeout(() => (window.location.href = "/"), 800);
             </div>
           ) : (
             <button className="navbar-btn">
-              <a href="/login">Login</a> / <a href="/auth/boxed-signup">Signup</a>
+              <a href="/login">Login</a> / <a href="/register">Signup</a>
             </button>
           )}
         </div>

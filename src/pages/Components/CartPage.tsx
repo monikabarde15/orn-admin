@@ -313,7 +313,7 @@ const CartPage = () => {
       setProcessing(false);
     }
   };
-    console.log('cartItems=',cartItems);
+// console.log("cartItems =", cartItems[0] || {});
 
   const handleCheckout = async () => {
     if (!requireLogin()) return;

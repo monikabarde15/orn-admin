@@ -39,9 +39,9 @@ const LoginBoxed = () => {
       { code: "ae", name: "Arabic" },
     ];
 
-  useEffect(() => {
-    dispatch(setPageTitle("Login Boxed"));
-  }, [dispatch]);
+  // useEffect(() => {
+  //   dispatch(setPageTitle("Login Boxed"));
+  // }, [dispatch]);
 
   // 🌍 Change Language
   const setLocale = (flag: string) => {

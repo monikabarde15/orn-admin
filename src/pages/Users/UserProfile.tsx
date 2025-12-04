@@ -11,7 +11,9 @@ import "react-toastify/dist/ReactToastify.css";
 const UserProfile = () => {
   const dispatch = useDispatch();
 
-  // Helper to get cookies
+  // ---------------------
+  // Cookies Helper
+  // ---------------------
   const getCookie = (name) => {
     if (typeof document === "undefined") return "";
     const v = `; ${document.cookie}`;
@@ -20,6 +22,36 @@ const UserProfile = () => {
     return "";
   };
 
+  const defaultAvatar =
+    "https://t4.ftcdn.net/jpg/01/24/65/69/240_F_124656969_x3y8YVzvrqFZyv3YLWNo6PJaC88SYxqM.jpg";
+
+  // ---------------------
+  // Fetch avatar blob from backend
+  // ---------------------
+  const fetchAvatarImage = async (avatarId) => {
+    if (!avatarId) return null;
+
+    // Already a full URL → return as is
+    if (avatarId.startsWith("http")) return avatarId;
+
+    try {
+      const response = await axios.get(
+        `https://backend.onrequestlab.com/media/${avatarId}`,
+        {
+          responseType: "blob",
+        }
+      );
+
+      return URL.createObjectURL(response.data);
+    } catch (err) {
+      console.error("Failed to load avatar:", err);
+      return null;
+    }
+  };
+
+  // ---------------------
+  // STATES
+  // ---------------------
   const [user, setUser] = useState({
     username: "",
     email: "",
@@ -30,7 +62,7 @@ const UserProfile = () => {
     is_active: false,
     is_staff: false,
     is_superuser: false,
-    avatar: "/assets/images/profile-34.jpeg",
+    avatar: defaultAvatar,
   });
 
   const [editMode, setEditMode] = useState(false);
@@ -40,88 +72,123 @@ const UserProfile = () => {
     last_name: "",
   });
 
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [previewImage, setPreviewImage] = useState("");
+
+  // ---------------------
+  // FETCH PROFILE
+  // ---------------------
   useEffect(() => {
     dispatch(setPageTitle("Profile"));
 
     const fetchUser = async () => {
       try {
-        let rawToken = getCookie("access") || getCookie("jwt-auth") || "";
-        rawToken = rawToken.replace("Bearer ", "").trim();
+        let token = getCookie("access") || getCookie("jwt-auth") || "";
+        token = token.replace("Bearer ", "").trim();
 
         const res = await axios.get(
           "https://backend.onrequestlab.com/api/v1/users/profile/",
           {
-            headers: { Authorization: `Bearer ${rawToken}` },
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
 
         const data = res.data;
 
+        // Fetch avatar using GET /media/<id>
+        const avatarUrl = await fetchAvatarImage(data.avatar);
+
         setUser({
-          username: data.username || "",
-          email: data.email || "",
-          first_name: data.first_name || "",
-          last_name: data.last_name || "",
-          date_joined: data.date_joined || "",
-          last_active: data.last_active || "",
-          is_active: data.is_active || false,
-          is_staff: data.is_staff || false,
-          is_superuser: data.is_superuser || false,
-          avatar: data.avatar || "/assets/images/profile-34.jpeg",
+          username: data.username,
+          email: data.email,
+          first_name: data.first_name,
+          last_name: data.last_name,
+          date_joined: data.date_joined,
+          last_active: data.last_active,
+          is_active: data.is_active,
+          is_staff: data.is_staff,
+          is_superuser: data.is_superuser,
+          avatar: avatarUrl || defaultAvatar,
         });
 
         setFormData({
-          username: data.username || "",
-          first_name: data.first_name || "",
-          last_name: data.last_name || "",
+          username: data.username,
+          first_name: data.first_name,
+          last_name: data.last_name,
         });
       } catch (err) {
-        console.error("Error fetching user:", err);
-        toast.error("Failed to fetch profile.");
+        console.error("Error fetching profile:", err);
+        toast.error("Failed to load profile.");
       }
     };
 
     fetchUser();
   }, [dispatch]);
 
+  // Format date
   const formatDate = (isoString) => {
     if (!isoString) return "";
     return new Date(isoString).toLocaleString();
   };
 
-  const handleChange = (e) => {
+  // Handle inputs
+  const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  // ---------------------
+  // LOCAL IMAGE PREVIEW
+  // ---------------------
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      setPreviewImage(URL.createObjectURL(file));
+    }
   };
 
+  // ---------------------
+  // SAVE PROFILE + UPLOAD AVATAR
+  // ---------------------
   const handleSave = async () => {
     try {
-      let rawToken = getCookie("access") || getCookie("jwt-auth") || "";
-      rawToken = rawToken.replace("Bearer ", "").trim();
-      const csrftoken = getCookie("csrftoken"); // if required
+      let token = getCookie("access") || getCookie("jwt-auth") || "";
+      token = token.replace("Bearer ", "").trim();
 
-      const payload = {
-        username: formData.username,
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-      };
+      const form = new FormData();
+      form.append("username", formData.username);
+      form.append("first_name", formData.first_name);
+      form.append("last_name", formData.last_name);
 
-      await axios.post(
+      if (selectedImage) {
+        form.append("avatar", selectedImage);
+      }
+
+      const res = await axios.post(
         "https://backend.onrequestlab.com/api/v1/users/profile/",
-        payload,
+        form,
         {
           headers: {
-            Authorization: `Bearer ${rawToken}`,
-            "Content-Type": "application/json",
-            ...(csrftoken && { "X-CSRFTOKEN": csrftoken }),
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
           },
         }
       );
 
-      setUser((prev) => ({ ...prev, ...payload }));
+      // New avatar returned by backend
+      let newAvatar = res.data?.avatar
+        ? await fetchAvatarImage(res.data.avatar)
+        : user.avatar;
+
+      setUser((prev) => ({
+        ...prev,
+        ...formData,
+        avatar: previewImage || newAvatar,
+      }));
+
       setEditMode(false);
       toast.success("Profile updated successfully!");
     } catch (err) {
-      console.error("Error updating profile:", err.response || err);
+      console.error("Update failed:", err.response || err);
       toast.error("Failed to update profile.");
     }
   };
@@ -133,15 +200,23 @@ const UserProfile = () => {
       <div className="flex-1 py-16 px-4 flex items-center">
         <div className="max-w-4xl mx-auto w-full">
           <div className="bg-white/5 backdrop-blur-md border border-white/20 rounded-3xl p-8 md:p-12 shadow-xl flex flex-col md:flex-row gap-8">
-            
-            {/* Avatar and Edit Fields */}
+
+            {/* Avatar Section */}
             <div className="flex-shrink-0 flex flex-col items-center w-full md:w-auto">
-              <img
-                src={user.avatar}
-                alt="Avatar"
-                className="w-40 h-40 rounded-full border-4 border-primary shadow-lg object-cover mb-4"
-              />
-              
+              <label className="cursor-pointer relative">
+                <img
+                  src={previewImage || user.avatar}
+                  alt="Avatar"
+                  className="w-40 h-40 rounded-full border-4 border-primary shadow-lg object-cover mb-4"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageSelect}
+                />
+              </label>
+
               {editMode ? (
                 <input
                   type="text"
@@ -149,10 +224,11 @@ const UserProfile = () => {
                   value={formData.username}
                   onChange={handleChange}
                   className="text-center rounded px-2 py-1 text-black mb-2 w-48"
-                  placeholder="Username"
                 />
               ) : (
-                <h2 className="text-2xl font-bold text-white">{user.username}</h2>
+                <h2 className="text-2xl font-bold text-white">
+                  {user.username}
+                </h2>
               )}
 
               {editMode ? (
@@ -190,7 +266,7 @@ const UserProfile = () => {
 
             {/* Info Panel */}
             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 text-white">
-              <div className="flex items-center gap-3 bg-white/10 p-4 rounded-xl shadow-md hover:bg-white/20 transition">
+              <div className="flex items-center gap-3 bg-white/10 p-4 rounded-xl shadow-md">
                 <Mail className="w-5 h-5 text-primary" />
                 <div>
                   <p className="text-sm text-white/60">Email</p>
@@ -198,7 +274,7 @@ const UserProfile = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 bg-white/10 p-4 rounded-xl shadow-md hover:bg-white/20 transition">
+              <div className="flex items-center gap-3 bg-white/10 p-4 rounded-xl">
                 <Calendar className="w-5 h-5 text-primary" />
                 <div>
                   <p className="text-sm text-white/60">Joined</p>
@@ -206,7 +282,7 @@ const UserProfile = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 bg-white/10 p-4 rounded-xl shadow-md hover:bg-white/20 transition">
+              <div className="flex items-center gap-3 bg-white/10 p-4 rounded-xl">
                 <Clock className="w-5 h-5 text-primary" />
                 <div>
                   <p className="text-sm text-white/60">Last Active</p>
@@ -214,9 +290,9 @@ const UserProfile = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 bg-white/10 p-4 rounded-xl shadow-md hover:bg-white/20 transition">
+              <div className="flex items-center gap-3 bg-white/10 p-4 rounded-xl">
                 <Shield className="w-5 h-5 text-primary" />
-                <div className="flex flex-col">
+                <div>
                   <p className="text-sm text-white/60">Status</p>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {user.is_active && (

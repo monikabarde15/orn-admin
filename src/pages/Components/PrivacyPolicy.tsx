@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
 import "../Components/PrivacyPolicy.css";
-
+import { PrivacyMetatage } from "../Pages/PrivacyMetatage";
 export default function PrivacyPolicy() {
   const cardVariants = {
     hidden: { opacity: 0, y: 30 },
@@ -17,6 +17,7 @@ export default function PrivacyPolicy() {
 
   return (
     <>
+    <PrivacyMetatage />
       <Navbar />
 
       {/* Animated background container */}
@@ -25,7 +26,7 @@ export default function PrivacyPolicy() {
 
         <div className="refundp-root">
           <div className="refundp-headerbar">
-            <h1 className="refundp-title">Privacy Policy</h1>
+            <h1 className="refundp-title">Customer Privacy and Information Protection Policy</h1>
            
           </div>
 

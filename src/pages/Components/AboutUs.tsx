@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Target, Users, Award, Rocket, Server, CheckCircle } from 'lucide-react';
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
+import { AboutMetaTags } from "../../pages/Pages/AboutMetaTags";
 
 
 const AboutUs = () => {
@@ -92,6 +93,7 @@ const AboutUs = () => {
 
   return (
     <>
+    <AboutMetaTags />
      <Navbar />
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-16 px-4">
       <div className="max-w-7xl mx-auto">
@@ -107,9 +109,15 @@ const AboutUs = () => {
               About Us
             </span>
           </div>
-          <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-6">
+          
+          {/* <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-6">
             <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-violet-400 bg-clip-text text-transparent">
               OnRequestLab
+            </span>
+          </h1> */}
+           <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-6">
+            <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-violet-400 bg-clip-text text-transparent">
+              About Our DevOps Learning Labs and Hands-On Linux Training
             </span>
           </h1>
           <p className="text-2xl md:text-3xl text-gray-300 font-semibold mb-4">

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
 import "../Components/PrivacyPolicy.css";
+import { RefundMetatage } from "../Pages/RefundMetatage";
 
 export default function RefundPolicyPage() {
   const cardVariants = {
@@ -17,6 +18,7 @@ export default function RefundPolicyPage() {
 
   return (
     <>
+    <RefundMetatage />
       <Navbar />
       <section className="refundp-bg-section">
 
@@ -24,7 +26,7 @@ export default function RefundPolicyPage() {
         <div className="refundp-root">
           <section className="refundp-root">
             <div className="refundp-headerbar">
-              <h1 className="refundp-title">Refund Policy</h1>
+              <h1 className="refundp-title">OnRequestLab Refund Policy</h1>
               {/* <div className="refundp-actions">
                 <button className="refundp-btn"><Download size={16}/> Download PDF</button>
                 <button className="refundp-btn"><Printer size={16}/> Print Policy</button>

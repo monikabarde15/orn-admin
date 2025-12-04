@@ -6,7 +6,7 @@ import i18next from "i18next";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import { SingupMetaTags } from "../Pages/SingupMetaTags";
 import IconUser from "../../components/Icon/IconUser";
 import IconMail from "../../components/Icon/IconMail";
 import IconLockDots from "../../components/Icon/IconLockDots";
@@ -18,9 +18,9 @@ const RegisterBoxed = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    dispatch(setPageTitle("Register Boxed"));
-  }, [dispatch]);
+  // useEffect(() => {
+  //   dispatch(setPageTitle("Register Boxed"));
+  // }, [dispatch]);
 
   // -------------------------------
   // Country Options
@@ -158,12 +158,13 @@ localStorage.setItem("email", formData.email);
 
   return (
     <>
+    <SingupMetaTags/>
      <Navbar />
       <div className="relative flex min-h-screen items-center justify-center bg-[url(/assets/images/auth/map.png)] bg-cover bg-center px-6 py-10 dark:bg-[#060818] sm:px-16">
 
       <div className="w-full max-w-[480px] rounded-lg bg-white/80 dark:bg-black/60 backdrop-blur-md p-8 shadow-lg">
         <h1 className="text-3xl font-extrabold text-primary mb-6 uppercase text-center">
-          {i18next.t("Sign Up")}
+          {i18next.t("Join RedHat Training and Register for DevOps Labs")}
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-3">

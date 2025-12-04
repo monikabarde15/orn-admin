@@ -9,8 +9,11 @@ import ContactUs from '../Components/ContactUs';
 import OfferService from "../Components/OfferService";
 import ClusterLabCard from '../Components/ClusterLabCard';
 import Footer from '../Components/Footer';
+import { ContactMetaTags } from "../../pages/Pages/ContactMetaTags";
+
 const ContactPage = () => (
   <div style={{ minHeight: '100vh', background: '#140f1c' }}>
+    <ContactMetaTags />
     <Navbar />
     <ContactUs />
     <Footer />

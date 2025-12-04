@@ -7,6 +7,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
+import { a } from "framer-motion/dist/types.d-BJcRxCew";
 
 const API_BASE = "https://backend.onrequestlab.com/api/v1";
 const notify = (msg, type = "info") => {
@@ -292,16 +293,28 @@ const LabPricing = () => {
                           </button>
                         )}
                         {inst.status === "Launched" && (
-                          <button
-                            className="px-3 py-1 bg-gradient-to-r from-purple-500 to-blue-500 rounded text-white text-sm"
-                            onClick={() =>
-                              window.open(`/lab?user=${inst.userId}`, "_blank")
-                            }
-                          >
-                            WebSSH
-                          </button>
+                          <a href={`/lab?user=${inst.userId}`} className="px-3 py-1 bg-gradient-to-r from-purple-500 to-blue-500 rounded text-white text-sm" target="_blank">WebSSH </a>
+                         
                         )}
-                        <button
+                        {inst.status === "Launched" && (
+                            <>
+                              <button
+                                className="px-3 py-1 bg-yellow-600 rounded text-white text-sm"
+                                onClick={() => rebootInstance(inst.user_instance_id)}
+                              >
+                                Reboot
+                              </button>
+
+                              <button
+                                className="px-3 py-1 bg-red-700 rounded text-white text-sm"
+                                onClick={() => destroyInstance(inst)}
+                              >
+                                Destroy
+                              </button>
+                            </>
+                          )}
+
+                        {/* <button
                           className="px-3 py-1 bg-yellow-600 rounded text-white text-sm"
                           onClick={() => rebootInstance(inst.user_instance_id)}
                         >
@@ -312,7 +325,7 @@ const LabPricing = () => {
                           onClick={() => destroyInstance(inst)}
                         >
                           Destroy
-                        </button>
+                        </button> */}
                       </div>
                     </li>
                   ))}

@@ -5,6 +5,7 @@ import { debounce } from "lodash";
 import { motion } from "framer-motion"; // 🪄 for smooth hover animations
 import Footer from "../pages/Components/Footer";
 import Navbar from "../pages/Components/Navbar";
+import { BlogsMetatags } from "../pages/Pages/BlogsMetatags";
 
 export default function BlogList() {
   const navigate = useNavigate();
@@ -112,6 +113,7 @@ export default function BlogList() {
 
   return (
     <>
+    <BlogsMetatags />
       <Navbar />
       <div className="min-h-screen bg-[#0f0b16] text-gray-100 py-12 px-6 md:px-12">
         <div className="max-w-6xl mx-auto">
@@ -120,15 +122,15 @@ export default function BlogList() {
             <div>
               <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">
                 <span className="block">
-                  Our{" "}
+                  RedHat Cluster Labs for Beginners –
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7b4dff] to-[#3cb3ff]">
-                    Blogs
+                    Latest Blogs and Tutorials
                   </span>
                 </span>
               </h1>
-              <p className="text-gray-400 mt-2">
+              {/* <p className="text-gray-400 mt-2">
                 Latest tutorials, labs and tips from our experts.
-              </p>
+              </p> */}
             </div>
 
             <div className="w-full md:w-1/3">

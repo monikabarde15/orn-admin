@@ -28,7 +28,7 @@ const LoginBoxed = () => {
   const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
-    dispatch(setPageTitle("Login Boxed"));
+    dispatch(setPageTitle("Login"));
   }, [dispatch]);
 
   // ✅ LOGIN HANDLER
@@ -60,9 +60,14 @@ const LoginBoxed = () => {
         document.cookie = `email=${encodeURIComponent(data.user.email)}; path=/; max-age=86400`;
         document.cookie = `is_staff=${data.user.is_staff}; path=/; max-age=86400`;
         document.cookie = `access=${data.access}; path=/; max-age=86400`;
+        document.cookie = `refresh=${data.refresh}; path=/; max-age=86400`;
 
         // Save localStorage
         localStorage.setItem("jwt-auth", data.access);
+        localStorage.setItem("refresh", data.refresh);
+        localStorage.setItem("access", data.access);
+
+
         localStorage.setItem("userId", data.user.id);
         localStorage.setItem("email", data.user.email);
         localStorage.setItem("username", data.user.username);
@@ -262,7 +267,7 @@ const LoginBoxed = () => {
             <div className="text-center mt-6 dark:text-white">
               {i18next.t("Don't have an account?")}{" "}
               <Link
-                to="/auth/boxed-signup"
+                to="/register"
                 className="uppercase text-primary underline transition hover:text-black dark:hover:text-white"
               >
                 {i18next.t("Register here")}

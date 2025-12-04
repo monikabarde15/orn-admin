@@ -286,7 +286,9 @@ const getCurrentFeatures = (lab) =>
             pollRef.current = null;
             setLaunchingLabId(null);
             setLaunching(false);
-            navigate(`/lab?user=${userId}&lab=${lab}`);
+            // navigate(`/lab?user=${userId}&lab=${lab}`);
+            window.open(`/lab?user=${userId}&lab=${lab}`, "_blank");
+
             notify(
               `Instance launched: ${
                 newlyLaunched.instance_ip ||

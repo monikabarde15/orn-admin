@@ -9,8 +9,11 @@ import ContactUs from '../Components/ContactUs';
 import OfferService from "../Components/OfferService";
 import LabPricing from '../Components/LabPricing';
 import Footer from '../Components/Footer';
+import { LabMetatag } from "../../pages/Pages/LabMetaTags";
+
 const Pricing = () => (
   <div style={{ minHeight: '100vh', background: '#140f1c' }}>
+    <LabMetatag />
     <Navbar />
     <LabPricing />
     <Footer />

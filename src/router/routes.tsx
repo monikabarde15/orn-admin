@@ -110,7 +110,7 @@ const UserProfile = lazy(() => import('../pages/Users/UserProfile'));
 // const ContactUsBoxed = lazy(() => import('../pages/Pages/ContactUsBoxed'));
 // const ContactUsCover = lazy(() => import('../pages/Pages/ContactUsCover'));
 // const Faq = lazy(() => import('../pages/Pages/Faq'));
-const ComingSoonBoxed = lazy(() => import('../pages/Pages/ComingSoonBoxed'));
+// const ComingSoonBoxed = lazy(() => import('../pages/Pages/ComingSoonBoxed'));
 const ComingSoonCover = lazy(() => import('../pages/Pages/ComingSoonCover'));
 
 const ERROR404 = lazy(() => import('../pages/Pages/Error404'));
@@ -607,11 +607,11 @@ const routes = [
     //     path: '/pages/faq',
     //     element: <Faq />,
     // },
-    {
-        path: '/pages/coming-soon-boxed',
-        element: <ComingSoonBoxed />,
-        layout: 'blank',
-    },
+    // {
+    //     path: '/pages/coming-soon-boxed',
+    //     element: <ComingSoonBoxed />,
+    //     layout: 'blank',
+    // },
     {
         path: '/pages/coming-soon-cover',
         element: <ComingSoonCover />,
@@ -644,7 +644,7 @@ const routes = [
         layout: 'web',
     },
     {
-        path: '/auth/boxed-signup',
+        path: '/register',
         element: <RegisterBoxed />,
         layout: 'blank',
     },

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Navbar from '../../pages/Components/Navbar';
 import Footer from '../Components/Footer';
+import { ServiceMetatags } from "../../pages/Pages/ServiceMetatags";
 
 const OurServices = () => {
   const services = [
@@ -125,6 +126,7 @@ const OurServices = () => {
 
   return (
     <>
+    <ServiceMetatags />
      <Navbar />
          <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-16 px-4">
       <div className="max-w-7xl mx-auto">
@@ -142,7 +144,7 @@ const OurServices = () => {
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-6">
             <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-violet-400 bg-clip-text text-transparent">
-              Our Services
+              Online Pacemaker Corosync Cluster Training
             </span>
           </h1>
           <p className="text-gray-400 text-lg max-w-3xl mx-auto">

@@ -45,7 +45,7 @@ const LoginBoxed = () => {
     try {
       const response = await axios.post(
         "https://dev.backend.onrequestlab.com/api/v1/users/login/",
-        { username, password },
+        { "login":username, password },
         { headers: { "Content-Type": "application/json" }, withCredentials: true }
       );
 

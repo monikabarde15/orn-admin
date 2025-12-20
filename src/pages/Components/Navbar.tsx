@@ -24,7 +24,19 @@ const Navbar = () => {
     setIsLoggedIn(!!token);
     if (token) fetchWalletBalance(token);
   }, []);
+  const getCookie = (name) => {
+    if (typeof document === "undefined") return "";
+    const v = `; ${document.cookie}`;
+    const parts = v.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return "";
+  };
 
+const user = {
+    name: getCookie("username"),
+    email: getCookie("email"),
+  };
+  console.log('user=',user.name);
   const fetchWalletBalance = async (token) => {
     setLoadingWallet(true);
     try {
@@ -84,8 +96,8 @@ setTimeout(() => (window.location.href = "/"), 800);
   const navigateTo = (path) => (window.location.href = path);
 
   const links = isLoggedIn
-    ? ["/", "/about-us", "/labs", "/process", "/blogs","/contact-us"]
-    : ["/", "/about-us", "/labs", "/process", "/blogs", "/contact-us"];
+    ? ["/", "/about-us", "/labs", "/blogs","/contact-us"]
+    : ["/", "/about-us", "/labs", "/blogs", "/contact-us"];
 
   return (
     <>
@@ -156,6 +168,11 @@ setTimeout(() => (window.location.href = "/"), 800);
           {/* Mobile Profile */}
           {isLoggedIn ? (
             <div className="mobile-profile">
+            <div className="blue-btn">
+              <p>{(user?.name || "").slice(0, 5) + (user?.name?.length > 2 ? "..." : "")}</p>
+            </div>
+
+                  
               <p className="wallet-line">
                 <Wallet size={16} /> {loadingWallet ? "Loading..." : `₹${walletBalance}`}
               </p>
@@ -220,8 +237,14 @@ setTimeout(() => (window.location.href = "/"), 800);
               {profileMenu && (
                 <div className="profile-dropdown clean-card">
                   <div className="dropdown-wallet">
+                    {/* <p>{user.name||''}</p> */}
+                     <p onClick={() => navigateTo("/users/user-profile")} >{(user?.name || "").slice(0, 5) + (user?.name?.length > 4 ? "..." : "")}</p>
+                  </div>
+                  
+                  <div className="dropdown-wallet">
                     <Wallet size={16} /> <span>{loadingWallet ? "Loading..." : `₹${walletBalance}`}</span>
                   </div>
+                 
                   <div className="dropdown-item" onClick={() => navigateTo("/wallet-history")}>
                     <Wallet size={16} /> <span>Wallet History</span>
                   </div>

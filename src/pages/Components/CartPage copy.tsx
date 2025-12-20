@@ -53,12 +53,17 @@ const CartPage = () => {
 
   useEffect(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem("orl_cart") || "[]");
-      setCartItems(stored);
+      const saved = JSON.parse(localStorage.getItem("orl_cart") || "[]");
+      setCartItems(saved || []);
     } catch {
       setCartItems([]);
     }
   }, []);
+
+  const totalAmount = cartItems.reduce(
+    (sum, i) => sum + Number(i.price || 0),
+    0
+  );
 
   useEffect(() => {
     return () => {
@@ -66,31 +71,15 @@ const CartPage = () => {
     };
   }, []);
 
-  // 🔥 HOURS UPDATE — main logic
-  const updateHours = (index, hours) => {
-    const updated = [...cartItems];
-    const h = Math.max(1, Number(hours));
-    console.log('h=',h,'pric=',updated[index].basePrice,'cartItems=',cartItems);
-    updated[index].hours = h;
-    updated[index].price = updated[index].basePrice * h;
-
-    setCartItems(updated);
-    localStorage.setItem("orl_cart", JSON.stringify(updated));
-  };
-
-  const totalAmount = cartItems.reduce(
-    (sum, i) => sum + Number(i.price || 0),
-    0
-  );
-
   const removeItem = (index) => {
     setProcessing(true);
     const updated = [...cartItems];
     updated.splice(index, 1);
     setCartItems(updated);
     localStorage.setItem("orl_cart", JSON.stringify(updated));
-    notify("Item removed", "info");
-    setProcessing(false);
+    toast.dismiss();
+    notify("Item removed from cart", "info");
+    setTimeout(() => setProcessing(false), 300);
   };
 
   const checkWallet = async () => {
@@ -122,7 +111,6 @@ const CartPage = () => {
         const balance = data.balance || 0;
         const required = data.required || price;
         const remaining = required - balance;
-
         notify(
           `Wallet insufficient. Paying ₹${remaining} via Razorpay`,
           "warning"
@@ -145,13 +133,9 @@ const CartPage = () => {
     try {
       if (!lab.subscription) {
         const createdSub = await createSubscriptionOnBackend(lab.planId);
-
         if (createdSub) {
           lab.subscription = createdSub;
-          notify(
-            `Subscription for ${lab.name} created automatically!`,
-            "success"
-          );
+          notify(`Subscription for ${lab.name} created automatically!`, "success");
         } else {
           notify(`Failed to create subscription for ${lab.name}`, "error");
           return;
@@ -191,15 +175,13 @@ const CartPage = () => {
         });
 
         const instances = res.data || [];
-
         const launched = instances.find((i) => {
-          if (i.status !== "Launched") return false;
+          const isLaunched = i.status === "Launched";
+          if (!isLaunched) return false;
 
           if (!paymentId) return true;
-
           if (paymentId === "free")
             return i.is_free || !i.payment_id || i.payment_id === "free";
-
           return i.payment_id === paymentId;
         });
 
@@ -211,19 +193,10 @@ const CartPage = () => {
           localStorage.removeItem("orl_cart");
 
           const url =
-            launched?.web_ssh_url ||
-            launched?.webssh_url ||
-            launched?.web_ssh ||
-            launched?.web_ssh_link ||
-            launched?.webssh ||
-            launched?.console_url ||
-            launched?.public_url ||
-            launched?.ssh_url ||
-            launched?.instance_url ||
-            launched?.connect_url ||
-            launched?.user_instance_link;
-
-          if (url) window.open(url, "_blank");
+            launched.web_ssh_url ||
+            launched.webssh_url ||
+            launched.user_instance_link;
+          if (url) try { window.open(url, "_blank"); } catch (err) {}
 
           window.location.href = `/lab?user=${userId}`;
         }
@@ -255,7 +228,6 @@ const CartPage = () => {
         { amount },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       const order = orderRes.data;
 
       const options = {
@@ -265,7 +237,6 @@ const CartPage = () => {
         name: "OnRequestLab",
         description: "Lab Instance Payment",
         order_id: order.order_id,
-
         handler: async function (response) {
           try {
             const verify = await axios.post(
@@ -294,12 +265,13 @@ const CartPage = () => {
             notify("Payment verification failed", "error");
           }
         },
-
         modal: { ondismiss: () => notify("Payment cancelled", "info") },
+        theme: { color: "#3399cc" },
       };
 
       new window.Razorpay(options).open();
     } catch (err) {
+      console.error("Razorpay Error:", err);
       notify("Payment Failed!", "error");
     } finally {
       setProcessing(false);
@@ -353,10 +325,12 @@ const CartPage = () => {
       const res = await axios.post(
         `${API_BASE}/users/update_active/${userId}/`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       return res.data;
-    } catch {
+    } catch (err) {
       notify("Failed to update active status", "error");
       return null;
     }
@@ -373,14 +347,15 @@ const CartPage = () => {
     setIsLaunching(true);
 
     try {
+      // 1️⃣ Update active first
       const updated = await updateActiveStatus(item);
       if (!updated) {
         notify("Update active failed", "error");
         return;
       }
-
       notify("Plan activated successfully!", "success");
 
+      // 2️⃣ Upgrade flow
       const wallet = await checkWallet();
       const remaining = Math.max(0, item.price - wallet);
 
@@ -398,7 +373,7 @@ const CartPage = () => {
       setUpgradeInProgress(false);
     }
   };
-
+console.log('cartItems=',cartItems);
   return (
     <>
       <Navbar />
@@ -412,102 +387,112 @@ const CartPage = () => {
       )}
 
       <div className="min-h-screen bg-[#070B19] text-white px-4 py-10">
-        <h1 className="text-4xl font-bold mb-10">Booking Details</h1>
+        <h1 className="text-4xl font-bold text-center mb-12 text-purple-300">
+          🛒 Your Cart
+        </h1>
 
-        <div className="flex flex-col lg:flex-row gap-10">
-          {/* LEFT SECTION */}
-          <div className="w-full lg:w-2/3 space-y-6">
+        {!cartItems.length ? (
+          <p className="text-center text-xl text-gray-400">Your cart is empty.</p>
+        ) : (
+          <div className="max-w-3xl mx-auto space-y-6">
             {cartItems.map((item, idx) => (
               <div
                 key={idx}
-                className="border p-5 rounded-xl flex items-center justify-between shadow-sm"
+                className="bg-[#10172A] border border-white/10 p-6 rounded-2xl flex justify-between items-center"
               >
-                <div className="flex items-center space-x-5">
-                  <div className="w-32 h-20 bg-gray-200 rounded-lg" />
-
-                  <div>
-                    <h2 className="text-xl font-semibold">{item.name}</h2>
-
-                    <p className="text-sm text-gray-400 mt-1">
-                      {item.newdescription}
-                    </p>
-
-                    <p className="text-sm text-gray-400 mt-1">
-                      Billing: <span className="font-bold">{item.billingType}</span>
-                    </p>
-
-                    {/* HOURS INPUT */}
-                    <div className="mt-3">
-                      <label className="text-sm text-gray-400">Hours:</label>
-
-                      <input
-                        type="number"
-                        min="1"
-                        value={item.hours || 1}
-                        onChange={(e) => updateHours(idx, e.target.value)}
-                        className="ml-2 px-2 py-1 w-20 bg-gray-800 text-white rounded border border-gray-600"
-                      />
-
-                      <p className="text-sm mt-1 text-purple-300">
-                        ₹{item.basePrice} / hour
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={() => removeItem(idx)}
-                      disabled={
-                        processing || loading || upgradeInProgress || isLaunching
-                      }
-                      className="text-purple-600 font-semibold mt-2 hover:underline disabled:opacity-50"
-                    >
-                      Remove
-                    </button>
-                  </div>
+                <div>
+                  <h2 className="text-2xl font-semibold text-purple-300">
+                    {item.name}
+                  </h2>
+                  <p className="text-gray-300 mt-1">
+                    Billing:
+                    <span className="text-purple-400 ml-2 font-bold">
+                      {item.billingType.toUpperCase()}
+                    </span>
+                  </p>
+                  <p className="text-3xl font-bold text-green-400 mt-3">₹ {item.price}</p>
                 </div>
 
-                <div className="text-2xl font-bold">₹{item.price}</div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => removeItem(idx)}
+                    disabled={processing || loading || upgradeInProgress || isLaunching}
+                    className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl font-bold text-white disabled:bg-gray-600 disabled:cursor-not-allowed"
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             ))}
 
-            {!cartItems.length && (
-              <p className="text-gray-500 text-xl">Your cart is empty.</p>
-            )}
+            <div className="text-4xl font-bold text-right mt-6 text-green-400">
+              Total: ₹{totalAmount}
+            </div>
+
+            {/* {cartItems.map((item, idx) => (
+              <div key={idx} className="flex space-x-3 mt-4">
+                <button
+                  onClick={() => handleUpgrade(item)}
+                  disabled={!item.subscription}
+                  className={`px-4 py-2 rounded-xl font-bold text-white bg-gradient-to-r from-purple-500 to-blue-500 hover:scale-105 ${
+                    item.subscription
+                      ? "bg-blue-600 hover:bg-blue-700"
+                      : "bg-gray-600 cursor-not-allowed"
+                  }`}
+                >
+                  Upgrade
+                </button>
+
+                <button
+                  onClick={() => handleCheckout(item)}
+                  disabled={item.subscription}
+                  className={`px-4 py-2 rounded-xl font-bold text-white ${
+                    !item.subscription
+                      ? "bg-purple-600 hover:bg-purple-700"
+                      : "bg-gray-700 cursor-not-allowed"
+                  }`}
+                >
+                  Checkout
+                </button>
+              </div>
+            ))} */}
+         {cartItems.map((item, idx) => (
+  <div
+    key={idx}
+    className="flex justify-between items-center mt-4 w-full max-w-md mx-auto"
+  >
+    {/* Upgrade Button - Left */}
+    <button
+      onClick={() => handleUpgrade(item)}
+      disabled={!item.subscription}
+      className={`px-6 py-7 rounded-2xl font-bold text-white shadow-lg transition-all duration-300 transform w-[48%] ${
+        item.subscription
+          ? "bg-gradient-to-r from-purple-600 via-purple-500 to-blue-500 hover:scale-105 hover:shadow-2xl"
+          : "bg-gray-600 cursor-not-allowed opacity-70"
+      }`}
+    >
+      Upgrade
+    </button>
+
+    {/* Checkout Button - Right */}
+    <button
+      onClick={() => handleCheckout(item)}
+      disabled={item.subscription}
+      className={`px-6 py-7 rounded-2xl font-bold text-white shadow-lg transition-all duration-300 transform w-[48%] ${
+        !item.subscription
+          ? "bg-gradient-to-r from-pink-500 via-purple-500 to-purple-600 hover:scale-105 hover:shadow-2xl"
+          : "bg-gray-700 cursor-not-allowed opacity-70"
+      }`}
+    >
+      Checkout
+    </button>
+  </div>
+))}
+
+
           </div>
-
-          {/* RIGHT SECTION */}
-          <div className="w-full lg:w-1/3 border p-6 rounded-2xl shadow-md h-fit">
-            <h3 className="text-xl font-bold mb-5">Total:</h3>
-            <p className="text-4xl font-bold mb-5">₹{totalAmount}</p>
-
-            {/* UPGRADE BTN */}
-            <button
-              onClick={() => handleUpgrade(cartItems[0])}
-              disabled={!cartItems[0]?.subscription}
-              className={`w-full mb-4 px-4 py-3 rounded-xl font-bold text-white ${
-                cartItems[0]?.subscription
-                  ? "bg-gradient-to-r from-purple-600 to-blue-500 hover:scale-105"
-                  : "bg-gray-700 opacity-60 cursor-not-allowed"
-              }`}
-            >
-              Upgrade
-            </button>
-
-            {/* CHECKOUT BTN */}
-            <button
-              onClick={handleCheckout}
-              disabled={cartItems[0]?.subscription}
-              className={`w-full px-4 py-3 rounded-xl font-bold text-white ${
-                !cartItems[0]?.subscription
-                  ? "bg-gradient-to-r from-pink-500 to-purple-600 hover:scale-105"
-                  : "bg-gray-700 opacity-60 cursor-not-allowed"
-              }`}
-            >
-              Checkout
-            </button>
-          </div>
-        </div>
+        )}
       </div>
-
       <Footer />
     </>
   );

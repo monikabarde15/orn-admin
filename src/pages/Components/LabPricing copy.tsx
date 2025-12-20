@@ -125,7 +125,6 @@ const LabPricing = () => {
             paidFeatures: ["Full Access", "SSH", "Support"],
             subscription: pkg.subscription || null,
             planId: null,
-            newdescription:pkg.description,
           };
         }
 
@@ -324,116 +323,64 @@ const LabPricing = () => {
     if (!lab) return;
 
     if (!token) {
-          console.log('ad=',lab)
-
       await addToCart(lab, billingType);
       return;
     }
 
-    // if (billingType === "hourly") {
-    //   await launchFreeInstance(lab);
-    //   return;
-    // }
+    if (billingType === "hourly") {
+      await launchFreeInstance(lab);
+      return;
+    }
 
     await addToCart(lab, billingType);
   };
 
-  // const addToCart = (lab, billingType) => {
-  //   if (!lab) return;
-
-  //   const savedCart = JSON.parse(
-  //     localStorage.getItem("orl_cart") || "[]"
-  //   );
-  //   console.log('savedCart=',savedCart.length);
-  //   if(savedCart.length>0){
-  //     toast.info("You can select only one plan at a time", { autoClose: 2000 });
-  //     return;
-  //   }
-  //   const subscription =
-  //     lab.subscription != null ? lab.subscription : "";
-
-  //   const price =
-  //     billingType === "monthly"
-  //       ? lab.monthlyPrice
-  //       : billingType === "yearly"
-  //       ? lab.yearlyPrice ?? lab.monthlyPrice
-  //       : 0;
-
-  //   const exists = savedCart.find(
-  //     (item) =>
-  //       item.planId === lab.planId &&
-  //       item.billingType === billingType
-  //   );
-
-  //   if (exists) {
-  //     toast.info("Already in cart", { autoClose: 2000 });
-  //     return;
-  //   }
-  //   console.log('lab=',lab);
-  //   savedCart.push({
-  //     planId: lab.planId,
-  //     name: lab.name,
-  //     billingType,
-  //     price,
-  //     subscription,
-  //   });
-
-  //   localStorage.setItem("orl_cart", JSON.stringify(savedCart));
-  //   setCartItems(savedCart);
-
-  //   toast.success("Added to cart", { autoClose: 2000 });
-  //   // setTimeout(() => window.location.reload(), 2500);
-  // };
-
-  
   const addToCart = (lab, billingType) => {
-  if (!lab) return;
+    if (!lab) return;
 
-  const savedCart = JSON.parse(
-    localStorage.getItem("orl_cart") || "[]"
-  );
+    const savedCart = JSON.parse(
+      localStorage.getItem("orl_cart") || "[]"
+    );
+    console.log('savedCart=',savedCart.length);
+    if(savedCart.length>0){
+      toast.info("You can select only one plan at a time", { autoClose: 2000 });
+      return;
+    }
+    const subscription =
+      lab.subscription != null ? lab.subscription : "";
 
-  if(savedCart.length>0){
-    toast.info("You can select only one plan at a time", { autoClose: 2000 });
-    return;
-  }
-console.log('lab=',lab);
-  const subscription =
-    lab.subscription != null ? lab.subscription : "";
+    const price =
+      billingType === "monthly"
+        ? lab.monthlyPrice
+        : billingType === "yearly"
+        ? lab.yearlyPrice ?? lab.monthlyPrice
+        : 0;
 
-  const price =
-    billingType === "monthly"
-      ? lab.monthlyPrice
-      : billingType === "yearly"
-      ? lab.yearlyPrice ?? lab.monthlyPrice
-      : 0;
+    const exists = savedCart.find(
+      (item) =>
+        item.planId === lab.planId &&
+        item.billingType === billingType
+    );
 
-  const exists = savedCart.find(
-    (item) =>
-      item.planId === lab.planId &&
-      item.billingType === billingType
-  );
+    if (exists) {
+      toast.info("Already in cart", { autoClose: 2000 });
+      return;
+    }
 
-  if (exists) {
-    toast.info("Already in cart", { autoClose: 2000 });
-    return;
-  }
+    savedCart.push({
+      planId: lab.planId,
+      name: lab.name,
+      billingType,
+      price,
+      subscription,
+    });
 
-  // ⭐⭐⭐⭐⭐ SAVE FULL LAB OBJECT ⭐⭐⭐⭐⭐
-  savedCart.push({
-    ...lab,                // पूरा lab object
-    billingType,           // चुना हुआ billing type
-    price,                 // selected price
-    subscription,          // existing sub
-  });
+    localStorage.setItem("orl_cart", JSON.stringify(savedCart));
+    setCartItems(savedCart);
 
-  localStorage.setItem("orl_cart", JSON.stringify(savedCart));
-  setCartItems(savedCart);
-
-  toast.success("Added to cart", { autoClose: 2000 });
-      setTimeout(() => window.location.reload(), 2500);
-
-};
+    toast.success("Added to cart", { autoClose: 2000 });
+    setTimeout(() => window.location.reload(), 2500);
+  };
 
   useEffect(() => {
     try {
@@ -530,7 +477,7 @@ console.log('lab=',lab);
                       {lab.name}
                     </h3>
                     <p className="text-purple-300 text-sm font-medium">
-                      {lab.newdescription}
+                      {lab.description}
                     </p>
                   </div>
 

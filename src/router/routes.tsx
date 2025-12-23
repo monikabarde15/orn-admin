@@ -145,6 +145,8 @@ const Otp = lazy(() => import('../pages/Authentication/Otp'));
 
 const Home = lazy(() => import('../pages/websites/Home'));
 const Pricing = lazy(() => import('../pages/Components/Pricing'));
+const Courses = lazy(() => import('../pages/Components/Courses'));
+
 const PrivacyPolicy = lazy(() => import('../pages/Components/PrivacyPolicy'));
 const ContactPage = lazy(() => import('../pages/Components/ContactPage'));
 const TermsCondition = lazy(() => import('../pages/Components/TermsCondition'));
@@ -161,6 +163,16 @@ const WalletHistory = lazy(() => import('../pages/Components/WalletHistory'));
 
 const UserInstances = lazy(() => import('../pages/Components/UserInstances'));
 
+const CourseEnrollment = lazy(() => import('../pages/Components/CourseEnrollment'));
+const CreateCourseForm = lazy(() =>
+  import('../pages/Components/CreateCourse').then((module) => ({
+    default: module.CreateCourseForm,
+  }))
+)
+const CoursesListPage = lazy(() => import('../pages/Components/CoursesListPage'));
+const VideoPlayer = lazy(() => import('../pages/Components/VideoPlayer'));
+
+const EditCoursePage = lazy(() => import('../pages/Components/EditCoursePage'));
 
 
 const routes = [
@@ -170,16 +182,46 @@ const routes = [
         element: <Home />,
         layout:'web',
     },
+    {
+        path: '/course-preview/:id',
+        element: <CourseEnrollment />,
+        layout: 'web',
+    },
      {
         path: '/wallet-history',
         element: <WalletHistory />,
         layout:'web',
     },
     {
-        path: '/your-instances',
-        element: <UserInstances />,
+        path: '/courses-list',
+        element: <Courses />,
         layout:'web',
     },
+    {
+        path: '/course/:id',
+        element: <VideoPlayer />,
+        layout: 'web',
+    },
+    {
+        path: '/create-course',
+        element: <CreateCourseForm />,
+        // layout: 'web',
+    },
+     {
+        path: '/create-course',
+        element: <CreateCourseForm />,
+        // layout: 'web',
+    },
+     {
+        path: '/courses/edit/:id',
+        element: <EditCoursePage />,
+        // layout: 'web',
+    },
+    {
+        path: '/courses',
+        element: <CoursesListPage />,
+    },
+    
      {
         path: '/change-password',
         element: <ChangePasswordPortal />,

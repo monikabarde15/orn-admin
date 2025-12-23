@@ -1,175 +1,92 @@
-import { motion } from "framer-motion";
-import heroTeam from "/assets/hero-team.jpg";
+import heroImg from "/assets/onerequest/1.png";
+import Group from "/assets/onerequest/Group 37335.png";
 
-const HeroSection = () => {
-  const stats = [
-    { value: "93%", label: "Client Retention" },
-    { value: "250+", label: "Projects Completed" },
-    { value: "40M+", label: "Audience Reached" },
-  ];
 
+
+export default function HeroSection() {
   return (
-    <section 
-      id="home"
-      className="relative min-h-screen flex items-center pt-1 overflow-hidden bg-[#130f20]"
-    >
-      <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-15 py-20 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* ================= Left Content ================= */}
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1 }}
-            viewport={{ once: false, amount: 0.3 }}
-            className="space-y-8 text-white"
-          >
-           {/* <motion.div
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 200 }}
-            >
-             <a href="#pricing"> <span className="px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-semibold">
-                Red Hat Cluster Lab
-              </span></a>
-            </motion.div>*/}
+    <section className="relative overflow-hidden bg-[#1b1533]">
+      
+      {/* GRID BACKGROUND */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 1 }}
-              className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight"
-            >
-              Interactive Learning
-             Experience at Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#8358ff] to-[#39c6fa]">
-                Fingertip
-              </span>
-            </motion.h1>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-20 lg:py-28">
+        <div className="grid lg:grid-cols-2 gap-14 lg:gap-20 items-center">
 
-            <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 1 }}
-              className="text-xl text-[#bfc0c4] max-w-xl"
-            >
-              Stimulating your learning experience with self-practice labs, low-cost modules, and technical blogs by experts.
-            </motion.p>
+          {/* ================= IMAGE ================= */}
+          <div className="relative flex justify-center lg:justify-start order-2 lg:order-1">
+            <div className="relative w-full max-w-[340px] sm:max-w-[420px]">
 
-            <motion.div
-              className="flex flex-wrap gap-4"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ delay: 0.4, duration: 1 }}
-            >
-            <a href="#contact">
-              <motion.button
-                whileHover={{ scale: 1.05, backgroundColor: "#632aff" }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center px-8 py-3 bg-[#944DFF] text-white font-bold rounded-xl shadow-lg transition-all group text-lg"
-              >
-                Book Your Lab Now
-                <span className="ml-2 group-hover:translate-x-1 transition-transform text-xl">
-                  →
-                </span>
-              </motion.button>
-            </a>
-             {/* <a href="#Portfilo"> <motion.button
-                whileHover={{
-                  scale: 1.05,
-                  backgroundColor: "rgba(131,88,255,0.2)",
+              {/* MAIN IMAGE */}
+              <img
+                src={heroImg}
+                alt="Hero"
+                className="w-full h-auto rounded-2xl lg:rounded-[28px] shadow-2xl"
+                style={{
+                  clipPath:
+                    "polygon(0 0, 80% 0, 100% 18%, 100% 100%, 20% 100%, 0 82%)",
                 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center px-8 py-3 bg-transparent border-2 border-[#8358ff] text-white font-bold rounded-xl shadow-lg transition-all text-lg"
-              >
-                View Our Work
-              </motion.button>
-              </a> */}
-            </motion.div>
+              />Group
 
-            {/* Stats */}
-            {/* <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 1 }}
-              className="grid grid-cols-3 gap-6 pt-8"
-            >
-              {stats.map((stat, index) => (
-                <motion.div
-                  key={index}
-                  whileHover={{ scale: 1.1 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="text-center"
-                >
-                  <div className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6c63ff] to-[#a5f3fc]">
-                    {stat.value}
+              {/* FLOATING ELEMENTS (DESKTOP ONLY) */}
+              <div className="hidden lg:block pointer-events-none">
+
+                <div className="absolute -top-6 left-16">
+                  <img
+                src={Group}
+                alt="Hero"
+                className="w-full h-auto rounded-2xl lg:rounded-[28px] shadow-2xl"
+                style={{
+                  clipPath:
+                    "polygon(0 0, 80% 0, 100% 18%, 100% 100%, 20% 100%, 0 82%)",
+                }}
+              />
+                  {/* <span className="px-4 py-2 bg-[#8b5cf6] text-white rounded-full text-sm shadow-lg">
+                    ✨ Easy for Beginners
+                  </span> */}
+                </div>
+
+                <div className="absolute -left-24 top-1/2 -translate-y-1/2">
+                  <div className="bg-white text-black px-4 py-3 rounded-xl shadow-xl text-sm w-[230px]">
+                    📘 Practice-Based Online Learning System
                   </div>
-                  <div className="text-base text-[#bfc0c4]">{stat.label}</div>
-                </motion.div>
-              ))}
-            </motion.div> */}
-          </motion.div>
+                </div>
 
-          {/* ================= Right Image & Floating Cards ================= */}
-          <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1 }}
-            viewport={{ once: false, amount: 0.3 }}
-            className="relative"
-          >
-            <motion.img
-              whileHover={{ scale: 1.03 }}
-              transition={{ type: "spring", stiffness: 150 }}
-              src={heroTeam}
-              alt="Creative marketing team collaborating"
-              className="rounded-2xl shadow-2xl shadow-primary/20 w-full"
-            />
+                <div className="absolute -right-14 bottom-10">
+                  <div className="bg-white text-black px-4 py-3 rounded-xl shadow-xl text-sm">
+                    💻 Free Hands-on Learning
+                  </div>
+                </div>
 
-            {/* Floating Stats Cards */}
-            <motion.div
-              animate={{
-                y: [0, -10, 0],
-              }}
-              transition={{
-                repeat: Infinity,
-                duration: 3,
-                ease: "easeInOut",
-              }}
-              className="absolute top-8 -left-4 p-4 bg-[#2e254d] bg-opacity-90 backdrop-blur-lg border border-primary/20 rounded-lg shadow-xl"
-            >
-            
-              {/*<div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#8358ff] to-[#39c6fa]">
-                5x ROI
-              </div>*/}
-              <div className="text-sm text-[#bfc0c4]"><a href="#pricing"> <span className="px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-white text-sm font-semibold">
-                Red Hat Cluster Lab
-              </span></a></div>
-            </motion.div>
-
-            <motion.div
-              animate={{
-                y: [0, 10, 0],
-              }}
-              transition={{
-                repeat: Infinity,
-                duration: 3,
-                ease: "easeInOut",
-                delay: 1,
-              }}
-              className="absolute bottom-8 -right-4 p-4 bg-[#2e254d] bg-opacity-90 backdrop-blur-lg border border-secondary/20 rounded-lg shadow-xl"
-            >
-              <div className="flex gap-1 mb-1">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-[#39c6fa] text-lg">
-                    ★
-                  </span>
-                ))}
               </div>
-              <div className="text-sm text-[#bfc0c4]">Rating</div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
+
+          {/* ================= TEXT ================= */}
+          <div className="order-1 lg:order-2 text-white text-center lg:text-left">
+            
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
+              Hands-on Free Kubernetes Labs <br />
+              and{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#8358ff] to-[#39c6fa]">
+                DevOps Learning Platform
+              </span>
+            </h1>
+
+            <p className="mt-6 text-base sm:text-lg text-[#bfc0c4] max-w-xl mx-auto lg:mx-0">
+              Stimulating your learning experience with self-practice labs,
+              low-cost modules, and technical blogs by industry experts.
+            </p>
+
+            <div className="mt-8 flex justify-center lg:justify-start">
+              <button className="px-8 py-3 bg-[#8b5cf6] rounded-xl font-semibold hover:bg-[#7c3aed] transition-all duration-300">
+                Book Your Lab Now →
+              </button>
+            </div>
+
+          </div>
         </div>
       </div>
     </section>
   );
-};
-
-export default HeroSection;
+}

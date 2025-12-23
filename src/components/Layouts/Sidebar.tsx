@@ -151,6 +151,7 @@ const menuItems: MenuItem[] = [
   },
   
 ];
+
 if (userID < 2) {
   menuItems.push({
     sectionLabel: "Blog Management",
@@ -158,7 +159,16 @@ if (userID < 2) {
       { path: "/blogs", label: "Blogs", icon: IconMenuContacts, permission: "blogs" },
     ],
   });
-} 
+}
+
+if (userID < 2) {
+  menuItems.push({
+    sectionLabel: "Courses Management",
+    items: [
+      { path: "/courses", label: "Courses", icon: IconMenuContacts, permission: "courses" },
+    ],
+  });
+}
 
 // Conditional support section
 if (userID < 2) {

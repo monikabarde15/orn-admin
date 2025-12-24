@@ -66,13 +66,13 @@ const LoginBoxed = () => {
 
         toast.success("Login successful!", { position: "top-center" });
 
-        // setTimeout(() => {
-        //   if (data.user.id < 2) {
-        //     window.location.href = "/index";
-        //   } else {
-        //     window.location.href = "/";
-        //   }
-        // }, 1200);
+        setTimeout(() => {
+          if (data.user.is_superuser === true) {
+            window.location.href = "/index";
+          } else {
+            window.location.href = "/";
+          }
+        }, 1200);
       }
     } catch (err: any) {
       let msg = "Invalid username or password.";

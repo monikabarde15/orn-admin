@@ -172,8 +172,11 @@ const CreateCourseForm = lazy(() =>
 const CoursesListPage = lazy(() => import('../pages/Components/CoursesListPage'));
 const VideoPlayer = lazy(() => import('../pages/Components/VideoPlayer'));
 
-const EditCoursePage = lazy(() => import('../pages/Components/EditCoursePage'));
-
+const EditCoursePage = lazy(() =>
+  import('../pages/Components/EditCoursePage').then((module) => ({
+    default: module.EditCoursePage,
+  }))
+)
 
 const routes = [
     // dashboard
@@ -182,6 +185,11 @@ const routes = [
         element: <Home />,
         layout:'web',
     },
+    {
+            path: '/your-instances',
+            element: <UserInstances />,
+            layout:'web',
+        },
     {
         path: '/course-preview/:id',
         element: <CourseEnrollment />,

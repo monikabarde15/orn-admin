@@ -65,9 +65,9 @@ export default function HeroSection() {
           {/* ================= TEXT ================= */}
           <div className="order-1 lg:order-2 text-white text-center lg:text-left">
             
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
-              Hands-on Free Kubernetes Labs <br />
-              and{" "}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+              Hands-on Free Kubernetes Labs and
+              {" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#8358ff] to-[#39c6fa]">
                 DevOps Learning Platform
               </span>

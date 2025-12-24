@@ -139,12 +139,64 @@ const CartPage = () => {
 
   const formatAction = (name) => name.split(" ")[0].toLowerCase();
 
-  const launchSingle = async (lab, paymentId) => {
-    setProcessing(true);
-    setIsLaunching(true);
-    try {
-      if (!lab.subscription) {
-        const createdSub = await createSubscriptionOnBackend(lab.planId);
+  // const launchSingle = async (lab, paymentId) => {
+  //   setProcessing(true);
+  //   setIsLaunching(true);
+  //   try {
+  //     if (!lab.subscription) {
+  //       const createdSub = await createSubscriptionOnBackend(lab.planId);
+
+  //       if (createdSub) {
+  //         lab.subscription = createdSub;
+  //         notify(
+  //           `Subscription for ${lab.name} created automatically!`,
+  //           "success"
+  //         );
+  //       } else {
+  //         notify(`Failed to create subscription for ${lab.name}`, "error");
+  //         return;
+  //       }
+  //     }
+ 
+  //    const actionnew = formatAction(lab.name);
+  //       let action = "";
+
+  //       if (actionnew === "terraform") {
+  //         action = "iscsi";
+  //       } else {
+  //         action = actionnew;
+  //       }
+
+  //     const endpoint =
+  //       paymentId === "free"
+  //         ? `${API_BASE}/users/deploy-free/${action}/`
+  //         : `${API_BASE}/users/deploy/${action}/`;
+
+  //     const body =
+  //       paymentId === "free"
+  //         ? { user_id: userId, action }
+  //         : { user_id: userId, action, payment_id: paymentId };
+
+  //     await axios.post(endpoint, body, {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     });
+
+  //     notify(`Instance ${lab.name} launched successfully!`, "success");
+  //   } catch (err) {
+  //     notify(err?.response?.data?.message || "Instance launch failed", "error");
+  //   } finally {
+  //     setProcessing(false);
+  //   }
+  // };
+
+  const launchSingle = async (lab, paymentId, retry = false) => {
+  setProcessing(true);
+  setIsLaunching(true);
+
+  try {
+    // If subscription missing — create automatically
+    if (!lab.subscription) {
+      const createdSub = await createSubscriptionOnBackend(lab.planId);
 
         if (createdSub) {
           lab.subscription = createdSub;
@@ -157,29 +209,55 @@ const CartPage = () => {
           return;
         }
       }
+ 
+     const actionnew = formatAction(lab.name);
+        let action = "";
 
-      const action = formatAction(lab.name);
+        if (actionnew === "terraform") {
+          action = "iscsi";
+        } else {
+          action = actionnew;
+        }
+
       const endpoint =
         paymentId === "free"
           ? `${API_BASE}/users/deploy-free/${action}/`
           : `${API_BASE}/users/deploy/${action}/`;
 
-      const body =
-        paymentId === "free"
-          ? { user_id: userId, action }
-          : { user_id: userId, action, payment_id: paymentId };
+    const body =
+      paymentId === "free"
+        ? { user_id: userId, action }
+        : { user_id: userId, action, payment_id: paymentId };
 
-      await axios.post(endpoint, body, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    await axios.post(endpoint, body, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      notify(`Instance ${lab.name} launched successfully!`, "success");
-    } catch (err) {
-      notify(err?.response?.data?.message || "Instance launch failed", "error");
-    } finally {
-      setProcessing(false);
+    notify(`Instance ${lab.name} launched successfully!`, "success");
+  } catch (err) {
+    const msg = err?.response?.data?.error;
+
+    // ⭐ If subscription error → auto create → retry launch
+    if (
+      msg?.includes("does not allow") &&
+      msg?.includes("subscription") &&
+      !retry
+    ) {
+      notify("Subscription missing. Creating automatically...", "warning");
+
+      const sub = await createSubscriptionOnBackend(lab.planId);
+
+      if (sub) {
+        lab.subscription = sub;
+        return launchSingle(lab, paymentId, true); // ⭐ retry launch
+      }
     }
-  };
+
+    notify(msg || "Instance launch failed", "error");
+  } finally {
+    setProcessing(false);
+  }
+};
 
   const pollForLaunchedInstances = (paymentId = null) => {
     if (pollRef.current) clearInterval(pollRef.current);

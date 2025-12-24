@@ -1,4 +1,8 @@
+<<<<<<<< HEAD:dist/assets/circle-check-big-f110cb99.js
 import{c}from"./createLucideIcon-2b12ea03.js";/**
+========
+import{c}from"./createLucideIcon-39978821.js";/**
+>>>>>>>> 69b283151e25ef801803546c0415ef9ddfa062a5:build/assets/circle-check-big-0f65966e.js
  * @license lucide-react v0.545.0 - ISC
  *
  * This source code is licensed under the ISC license.

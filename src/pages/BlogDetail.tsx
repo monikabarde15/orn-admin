@@ -2,10 +2,10 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import Footer from '../pages/Components/Footer';
-import Navbar from '../pages/Components/Navbar';
+import Footer from "../pages/Components/Footer";
+import Navbar from "../pages/Components/Navbar";
 
-const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
+const API_BASE = "https://backend.onrequestlab.com/api/v1";
 
 export default function BlogDetail() {
   const { id } = useParams();
@@ -36,7 +36,7 @@ export default function BlogDetail() {
         <p className="text-lg mb-3">⚠️ Blog not found or server error.</p>
         <Link
           to="/blogs"
-          className="px-5 py-2 rounded-lg bg-gradient-to-r from-[#7c4dff] to-[#3f95ff] hover:from-[#9063ff] hover:to-[#66b9ff] transition-all duration-300 transform hover:scale-105 shadow-lg"
+          className="px-5 py-2 rounded-lg bg-gradient-to-r from-[#7c4dff] to-[#3f95ff]"
         >
           ← Back to Blogs
         </Link>
@@ -69,7 +69,7 @@ export default function BlogDetail() {
             transition={{ duration: 0.6 }}
             src={
               blog.image
-                ? `https://dev.backend.onrequestlab.com${blog.image}`
+                ? `https://backend.onrequestlab.com${blog.image}`
                 : "https://via.placeholder.com/800x400"
             }
             alt={blog.title}
@@ -78,44 +78,46 @@ export default function BlogDetail() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#0b0718]/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         </div>
 
-        {/* Title */}
-        <motion.h1
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-4xl md:text-5xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-[#7c4dff] to-[#3f95ff]"
-        >
-          {blog.title}
-        </motion.h1>
-
-        {/* Description */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <p className="text-gray-300 leading-relaxed text-lg">
-            {blog.description}
-          </p>
-        </motion.div>
-
-        {/* Back Button */}
-        <motion.div
-          className="mt-10"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Link
-            to="/blogs"
-            className="inline-block px-6 py-3 rounded-full bg-gradient-to-r from-[#7c4dff] to-[#3f95ff] hover:from-[#9b6aff] hover:to-[#5fb8ff] transition-all duration-300 transform hover:scale-110 shadow-[0_0_20px_#7b4dff40] font-medium text-black"
+          {/* Title */}
+          <motion.h1
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-4xl md:text-5xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-[#7c4dff] to-[#3f95ff]"
           >
-            ← Back to Blogs
-          </Link>
+            {blog.title}
+          </motion.h1>
+
+          {/* ✅ Description (EDITOR HTML RENDERED HERE) */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div
+              className="prose prose-invert max-w-none text-gray-300 text-lg leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: blog.description }}
+            />
+          </motion.div>
+
+          {/* Back Button */}
+          <motion.div
+            className="mt-10"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Link
+              to="/blogs"
+              className="inline-block px-6 py-3 rounded-full bg-gradient-to-r from-[#7c4dff] to-[#3f95ff] text-black font-medium"
+            >
+              ← Back to Blogs
+            </Link>
+          </motion.div>
         </motion.div>
-      </motion.div>
-    </div>
-     <Footer />
-  </>
+      </div>
+
+      <Footer />
+    </>
   );
 }

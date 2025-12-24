@@ -2,15 +2,16 @@ import React, { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { debounce } from "lodash";
-import { motion } from "framer-motion"; // 🪄 for smooth hover animations
+import { motion } from "framer-motion";
 import Footer from "../pages/Components/Footer";
 import Navbar from "../pages/Components/Navbar";
+import { BlogsMetatags } from "../pages/Pages/BlogsMetatags";
 
 export default function BlogList() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
+  const API_BASE = "https://backend.onrequestlab.com/api/v1";
   const getToken = () => localStorage.getItem("token") || "";
 
   const api = axios.create({
@@ -24,14 +25,18 @@ export default function BlogList() {
     return config;
   });
 
-  // ✅ Helper: Full image URL fix
+  /* ================= Image Helper ================= */
   const getFullImageUrl = (path) => {
-    if (!path) return "/assets/default-blog.jpg";
+    if (!path) return DUMMY_IMAGE;
     if (path.startsWith("http")) return path;
-    return `https://dev.backend.onrequestlab.com${path}`;
+    return `https://backend.onrequestlab.com${path}`;
   };
 
-  const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const params = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  );
+
   const initialPage = parseInt(params.get("page") || "1", 10);
   const initialQuery = params.get("q") || "";
 
@@ -65,8 +70,8 @@ export default function BlogList() {
 
   useEffect(() => {
     updateURL(page, q);
-    setError("");
     setLoading(true);
+    setError("");
     debouncedFetch(q, page);
   }, [q, page]); // eslint-disable-line
 
@@ -99,6 +104,7 @@ export default function BlogList() {
   }
 
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
+
   const gotoPage = (p) => {
     if (p < 1 || p > totalPages) return;
     setPage(p);
@@ -112,7 +118,9 @@ export default function BlogList() {
 
   return (
     <>
+    <BlogsMetatags />
       <Navbar />
+
       <div className="min-h-screen bg-[#0f0b16] text-gray-100 py-12 px-6 md:px-12">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
@@ -120,15 +128,15 @@ export default function BlogList() {
             <div>
               <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">
                 <span className="block">
-                  Our{" "}
+                  RedHat Cluster Labs for Beginners –
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7b4dff] to-[#3cb3ff]">
-                    Blogs
+                    Latest Blogs and Tutorials
                   </span>
                 </span>
               </h1>
-              <p className="text-gray-400 mt-2">
+              {/* <p className="text-gray-400 mt-2">
                 Latest tutorials, labs and tips from our experts.
-              </p>
+              </p> */}
             </div>
 
             <div className="w-full md:w-1/3">
@@ -136,44 +144,55 @@ export default function BlogList() {
                 value={q}
                 onChange={handleSearchChange}
                 placeholder="Search blogs..."
-                className="w-full rounded-xl px-4 py-2 bg-[#120917] border border-[#2b2136] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7b4dff] transition-all duration-200"
+                className="w-full rounded-xl px-4 py-2 bg-[#120917] border border-[#2b2136] focus:ring-2 focus:ring-[#7b4dff]"
               />
             </div>
           </div>
 
           {/* Loading / Error */}
-          {loading && <div className="py-8 text-center text-gray-300">Loading...</div>}
-          {error && <div className="py-4 text-center text-red-400">{error}</div>}
+          {loading && (
+            <div className="py-8 text-center text-gray-300">Loading...</div>
+          )}
+          {error && (
+            <div className="py-4 text-center text-red-400">{error}</div>
+          )}
 
           {/* Blog Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {blogs.map((b) => (
               <motion.article
-                key={b.id}
+                key={b.blogId || b.id}
                 whileHover={{ scale: 1.04, y: -5 }}
                 transition={{ type: "spring", stiffness: 250 }}
-                className="bg-[#110717] rounded-2xl p-5 shadow-lg border border-[#2b2136] hover:shadow-[0_0_20px_#7b4dff30] transition-all duration-300"
+                className="bg-[#110717] rounded-2xl p-5 border border-[#2b2136] shadow-lg"
               >
+                {/* Image */}
                 <div className="h-44 rounded-lg overflow-hidden mb-4 relative group">
                   <img
                     src={getFullImageUrl(
                       b.thumbnail || b.image || b.imageUrl || b.image_path
                     )}
-                    alt={b.title}
+                    alt={b.title || "Blog image"}
+                    loading="lazy"
                     className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+                    onError={(e) => {
+                      e.currentTarget.src = DUMMY_IMAGE;
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0f0b16]/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
 
-                <h3 className="text-xl font-semibold mb-1 group-hover:text-[#8f5bff] transition-colors">
+                <h3 className="text-xl font-semibold mb-1">
                   {b.title}
                 </h3>
 
                 <p className="text-sm text-gray-400 mb-4 line-clamp-3">
                   {b.excerpt ??
                     b.short_description ??
-                    (b.content
-                      ? b.content.replace(/(<([^>]+)>)/gi, "").slice(0, 120) + "..."
+                    (b.description
+                      ? b.description
+                          .replace(/(<([^>]+)>)/gi, "")
+                          .slice(0, 120) + "..."
                       : "")}
                 </p>
 
@@ -186,7 +205,7 @@ export default function BlogList() {
 
                   <Link
                     to={`/blog-detail/${b.blogId}`}
-                    className="inline-block bg-gradient-to-r from-[#8f5bff] to-[#5ec2ff] text-black px-4 py-2 rounded-full text-sm font-medium hover:from-[#a070ff] hover:to-[#74d1ff] transition-all duration-300 shadow-md"
+                    className="bg-gradient-to-r from-[#8f5bff] to-[#5ec2ff] text-black px-4 py-2 rounded-full text-sm font-medium"
                   >
                     Read →
                   </Link>
@@ -196,58 +215,30 @@ export default function BlogList() {
           </div>
 
           {/* Pagination */}
-          <div className="mt-10 flex items-center justify-center space-x-3">
+          <div className="mt-10 flex items-center justify-center gap-3">
             <button
               onClick={() => gotoPage(page - 1)}
               disabled={page <= 1}
-              className="px-4 py-2 rounded-lg bg-[#1b1522] disabled:opacity-40 border border-[#2b2136] hover:bg-[#2b2136] transition-all duration-200"
+              className="px-4 py-2 rounded bg-[#1b1522] disabled:opacity-40"
             >
               Prev
             </button>
 
-            <div className="flex items-center gap-2">
-              {Array.from({ length: totalPages }).map((_, i) => {
-                const pNum = i + 1;
-                if (
-                  pNum === 1 ||
-                  pNum === totalPages ||
-                  (pNum >= page - 1 && pNum <= page + 1)
-                ) {
-                  return (
-                    <button
-                      key={pNum}
-                      onClick={() => gotoPage(pNum)}
-                      className={`px-3 py-1 rounded-md transition-all duration-200 ${
-                        pNum === page
-                          ? "bg-gradient-to-r from-[#7b4dff] to-[#3cb3ff] text-black shadow-md"
-                          : "bg-[#160d18] text-gray-300 border border-[#2b2136] hover:bg-[#231829]"
-                      }`}
-                    >
-                      {pNum}
-                    </button>
-                  );
-                }
-                if (pNum === 2 && page > 4) return <span key={pNum}>…</span>;
-                if (pNum === totalPages - 1 && page < totalPages - 3)
-                  return <span key={pNum}>…</span>;
-                return null;
-              })}
-            </div>
+            <span className="text-gray-400">
+              Page {page} of {totalPages}
+            </span>
 
             <button
               onClick={() => gotoPage(page + 1)}
               disabled={page >= totalPages}
-              className="px-4 py-2 rounded-lg bg-[#1b1522] disabled:opacity-40 border border-[#2b2136] hover:bg-[#2b2136] transition-all duration-200"
+              className="px-4 py-2 rounded bg-[#1b1522] disabled:opacity-40"
             >
               Next
             </button>
           </div>
-
-          <div className="mt-6 text-center text-gray-500">
-            Showing page {page} of {totalPages} — {count} posts
-          </div>
         </div>
       </div>
+
       <Footer />
     </>
   );

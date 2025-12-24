@@ -1,8 +1,33 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 const API_BASE = "https://dev.backend.onrequestlab.com/api/v1/admin/blog/";
 const IMAGE_BASE = "https://dev.backend.onrequestlab.com";
+
+/* ================= Quill Config ================= */
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ["bold", "italic", "underline", "strike"],
+    [{ list: "ordered" }, { list: "bullet" }],
+    ["link", "image"],
+    ["clean"],
+  ],
+};
+
+const quillFormats = [
+  "header",
+  "bold",
+  "italic",
+  "underline",
+  "strike",
+  "list",
+  "bullet",
+  "link",
+  "image",
+];
 
 const AdminBlogPanel = () => {
   const [blogs, setBlogs] = useState([]);
@@ -16,20 +41,22 @@ const AdminBlogPanel = () => {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
+  /* ================= Auth ================= */
   const getCookie = (name) => {
-    const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+    const match = document.cookie.match(
+      new RegExp("(^| )" + name + "=([^;]+)")
+    );
     return match ? match[2] : null;
   };
   const accessToken = getCookie("access");
 
-  // ✅ Helper: Full Image Path
   const getFullImageUrl = (path) => {
     if (!path) return "";
     if (path.startsWith("http")) return path;
     return `${IMAGE_BASE}${path}`;
   };
 
-  /* ----------------------------- Load Blogs ----------------------------- */
+  /* ================= Load Blogs ================= */
   const loadBlogs = async () => {
     setLoadingBlogs(true);
     setError("");
@@ -39,30 +66,23 @@ const AdminBlogPanel = () => {
       });
       setBlogs(res.data.results || res.data || []);
     } catch (err) {
-      console.error("Error loading blogs:", err);
-      if (err.response?.status === 403) {
-        setError("You do not have permission to view blogs. Admin access required.");
-      } else {
-        setError("Failed to load blogs.");
-      }
+      setError("Failed to load blogs");
     } finally {
       setLoadingBlogs(false);
     }
   };
 
-  /* ----------------------------- Select Blog ----------------------------- */
+  /* ================= Select Blog ================= */
   const openBlog = (blog) => {
     setSelectedBlog(blog);
     setTitle(blog.title || "");
     setDescription(blog.description || "");
-    // ✅ priority: imageUrl > image
-    if (blog.imageUrl) setImageUrl(blog.imageUrl);
-    else setImageUrl(blog.image || "");
+    setImageUrl(blog.imageUrl || blog.image || "");
     setImageFile(null);
     setError("");
   };
 
-  /* ----------------------------- Save Blog ----------------------------- */
+  /* ================= Save Blog ================= */
   const saveBlog = async () => {
     if (!title.trim()) {
       alert("Title is required");
@@ -82,150 +102,132 @@ const AdminBlogPanel = () => {
 
       const config = {
         headers: {
-          "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "multipart/form-data",
         },
       };
 
       if (selectedBlog) {
-        await axios.put(`${API_BASE}${selectedBlog.blogId}/`, formData, config);
+        await axios.put(
+          `${API_BASE}${selectedBlog.blogId}/`,
+          formData,
+          config
+        );
       } else {
         await axios.post(API_BASE, formData, config);
       }
 
-      setTitle("");
-      setDescription("");
-      setImageUrl("");
-      setImageFile(null);
-      setSelectedBlog(null);
+      resetForm();
       loadBlogs();
     } catch (err) {
-      console.error(err);
-      if (err.response?.status === 403) {
-        setError("You do not have permission to save blogs. Admin access required.");
-      } else {
-        setError("Failed to save blog.");
-      }
+      setError("Failed to save blog");
     } finally {
       setSaving(false);
     }
   };
 
-  /* ----------------------------- Delete Blog ----------------------------- */
+  /* ================= Delete Blog ================= */
   const deleteBlog = async () => {
     if (!selectedBlog) return;
-    if (!window.confirm("Are you sure you want to delete this blog?")) return;
+    if (!window.confirm("Delete this blog?")) return;
+
     setDeleting(true);
-    setError("");
     try {
       await axios.delete(`${API_BASE}${selectedBlog.blogId}/`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      setSelectedBlog(null);
-      setTitle("");
-      setDescription("");
-      setImageUrl("");
-      setImageFile(null);
+      resetForm();
       loadBlogs();
     } catch (err) {
-      console.error(err);
-      if (err.response?.status === 403) {
-        setError("You do not have permission to delete blogs. Admin access required.");
-      } else {
-        setError("Failed to delete blog.");
-      }
+      setError("Failed to delete blog");
     } finally {
       setDeleting(false);
     }
+  };
+
+  const resetForm = () => {
+    setSelectedBlog(null);
+    setTitle("");
+    setDescription("");
+    setImageUrl("");
+    setImageFile(null);
   };
 
   useEffect(() => {
     loadBlogs();
   }, []);
 
-  /* ----------------------------- JSX ----------------------------- */
+  /* ================= JSX ================= */
   return (
-    <div className="flex flex-col md:flex-row h-[85vh] bg-gray-100 rounded-lg shadow-md overflow-hidden">
-      {/* Sidebar */}
-      <div className="w-full md:w-1/3 border-r border-gray-200 bg-white flex flex-col">
-        <div className="p-4 font-semibold text-lg border-b bg-blue-50 text-blue-700">
+    <div className="flex flex-col md:flex-row h-[85vh] bg-gray-100 rounded-lg shadow overflow-hidden">
+      {/* ================= Sidebar ================= */}
+      <div className="w-full md:w-1/3 bg-white border-r flex flex-col">
+        <div className="p-4 font-semibold text-lg bg-blue-50 text-blue-700">
           📝 Blog Management
         </div>
 
         {loadingBlogs ? (
-          <div className="p-4 text-center text-gray-500">Loading blogs...</div>
-        ) : error ? (
-          <div className="p-4 text-center text-red-500 font-medium">{error}</div>
+          <div className="p-4 text-center">Loading...</div>
         ) : blogs.length === 0 ? (
           <div className="p-4 text-center text-gray-400">No blogs found</div>
         ) : (
           <div className="flex-1 overflow-y-auto">
-            {blogs.map((blog) => {
-              // ✅ Show imageUrl if present else image
-              const imgSrc =getFullImageUrl(blog.image)
-                ? getFullImageUrl(blog.image) 
-                : getFullImageUrl(blog.imageUrl);
-
-              return (
-                <div
-                  key={blog.blogId}
-                  className={`p-3 cursor-pointer border-b hover:bg-blue-50 transition flex items-center gap-3 ${
-                    selectedBlog?.blogId === blog.blogId ? "bg-blue-100" : ""
-                  }`}
-                  onClick={() => openBlog(blog)}
-                >
-                  <div className="w-14 h-14 flex-shrink-0 rounded overflow-hidden bg-gray-100 border">
-                    {imgSrc ? (
-                      <img
-                        src={imgSrc}
-                        alt={blog.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => (e.target.style.display = "none")}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                        No Image
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-800">{blog.title}</div>
-                    <div className="text-sm text-gray-500 truncate">
-                      {blog.description?.replace(/<[^>]*>?/gm, "").substring(0, 50)}...
+            {blogs.map((blog) => (
+              <div
+                key={blog.blogId}
+                onClick={() => openBlog(blog)}
+                className={`p-3 cursor-pointer border-b flex gap-3 ${
+                  selectedBlog?.blogId === blog.blogId
+                    ? "bg-blue-100"
+                    : "hover:bg-blue-50"
+                }`}
+              >
+                <div className="w-14 h-14 bg-gray-100 border rounded overflow-hidden">
+                  {blog.image || blog.imageUrl ? (
+                    <img
+                      src={getFullImageUrl(blog.image || blog.imageUrl)}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="text-xs text-gray-400 flex items-center justify-center h-full">
+                      No Image
                     </div>
+                  )}
+                </div>
+                <div>
+                  <div className="font-medium">{blog.title}</div>
+                  <div className="text-xs text-gray-500">
+                    {blog.description
+                      ?.replace(/<[^>]*>?/gm, "")
+                      .slice(0, 50)}
+                    ...
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
 
         <button
-          onClick={() => {
-            setSelectedBlog(null);
-            setTitle("");
-            setDescription("");
-            setImageUrl("");
-            setImageFile(null);
-          }}
-          className="m-4 bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg"
+          onClick={resetForm}
+          className="m-4 bg-green-500 text-white py-2 rounded"
         >
           + Add New Blog
         </button>
       </div>
 
-      {/* Editor */}
+      {/* ================= Editor ================= */}
       <div className="flex-1 flex flex-col bg-gray-50">
-        <div className="p-4 border-b bg-white flex justify-between items-center">
-          <div className="font-semibold text-gray-800">
+        <div className="p-4 bg-white border-b flex justify-between">
+          <div className="font-semibold">
             {selectedBlog ? "Edit Blog" : "New Blog"}
           </div>
           {selectedBlog && (
             <button
               onClick={deleteBlog}
+              className="text-red-500 text-sm"
               disabled={deleting}
-              className="text-sm text-red-500 hover:underline"
             >
               {deleting ? "Deleting..." : "Delete"}
             </button>
@@ -233,43 +235,43 @@ const AdminBlogPanel = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
-          {error && <div className="mb-4 text-red-500 font-medium">{error}</div>}
+          {error && <div className="text-red-500 mb-3">{error}</div>}
 
           {/* Title */}
           <div className="mb-4">
-            <label className="block mb-1 font-medium text-gray-700">Title</label>
+            <label className="font-medium">Title</label>
             <input
-              type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border rounded px-3 py-2 mt-1"
             />
           </div>
 
-          {/* Description */}
+          {/* Description Editor */}
           <div className="mb-4">
-            <label className="block mb-1 font-medium text-gray-700">Description</label>
-            <textarea
+            <label className="font-medium">Description</label>
+            <ReactQuill
+              theme="snow"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={8}
-              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              onChange={setDescription}
+              modules={quillModules}
+              formats={quillFormats}
+              className="bg-white mt-1"
             />
           </div>
 
-          {/* Image File */}
+          {/* Image Upload */}
           <div className="mb-4">
-            <label className="block mb-1 font-medium text-gray-700">Image Upload</label>
+            <label className="font-medium">Image Upload</label>
             <input
               type="file"
               accept="image/*"
               onChange={(e) => setImageFile(e.target.files[0])}
-              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border rounded px-3 py-2 mt-1"
             />
             {imageFile && (
               <img
                 src={URL.createObjectURL(imageFile)}
-                alt="Preview"
                 className="mt-2 w-32 h-20 object-cover rounded"
               />
             )}
@@ -277,27 +279,24 @@ const AdminBlogPanel = () => {
 
           {/* Image URL */}
           <div className="mb-4">
-            <label className="block mb-1 font-medium text-gray-700">Or Image URL</label>
+            <label className="font-medium">Or Image URL</label>
             <input
-              type="text"
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border rounded px-3 py-2 mt-1"
             />
             {!imageFile && imageUrl && (
               <img
                 src={getFullImageUrl(imageUrl)}
-                alt="Blog"
                 className="mt-2 w-32 h-20 object-cover rounded"
               />
             )}
           </div>
 
-          {/* Save Button */}
           <button
             onClick={saveBlog}
-            disabled={saving || !title.trim()}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            disabled={saving}
+            className="bg-blue-600 text-white px-4 py-2 rounded"
           >
             {saving ? "Saving..." : selectedBlog ? "Update Blog" : "Add Blog"}
           </button>

@@ -8,7 +8,7 @@ import { Wallet, User, LogOut, Laptop, ShoppingCart, Lock, DollarSign } from "lu
 import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
-    const navigate = useNavigate();
+          const navigate = useNavigate();
   
   const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -34,12 +34,16 @@ const Navbar = () => {
     if (parts.length === 2) return parts.pop().split(";").shift();
     return "";
   };
-const is_superuser = getCookie("is_superuser") === "true";
 
-if (is_superuser) {
-  navigate("/index");
-}
-
+const user = {
+    name: getCookie("username"),
+    email: getCookie("email"),
+  };
+  console.log('user=',user.name);
+  //   const is_superuser = getCookie("is_superuser") === "true";
+  // if (is_superuser) {
+  //   navigate("/index");
+  // }
   const fetchWalletBalance = async (token) => {
     setLoadingWallet(true);
     try {
@@ -89,8 +93,6 @@ localStorage.removeItem("user_id");
 
 // Remove cookies
 document.cookie = "access=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-document.cookie = "is_superuser=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-
 document.cookie = "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
 

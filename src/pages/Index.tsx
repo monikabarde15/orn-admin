@@ -45,12 +45,8 @@ const Index: React.FC<DashboardProps> = ({ userId }) => {
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop()?.split(";").shift();
   };
-  const user = JSON.parse(localStorage.getItem("userId") || "{}");
-const is_superuser = getCookie("is_superuser") === "true";
-if (is_superuser) {
-  navigate("/index");
-}
-  console.log("user=",user);
+ const user = JSON.parse(localStorage.getItem("userId") || "{}");
+
   const accessToken = getCookie("access");
 
   const colors = [

@@ -76,7 +76,7 @@ const LoginBoxed = () => {
         console.log('use====', data.user.is_superuser);
 
           setTimeout(() => {
-            if (data.user.is_superuser == "true") {
+            if (data.user.is_superuser === true) {
               window.location.href = "/index";
             } else {
               window.location.href = "/";

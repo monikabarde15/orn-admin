@@ -44,6 +44,14 @@ const user = {
   // if (is_superuser) {
   //   navigate("/index");
   // }
+  const is_superuser = getCookie("is_superuser") === "true";
+
+  useEffect(() => {
+    if (is_superuser) {
+      navigate("/index", { replace: true });
+    }
+  }, [is_superuser, navigate]);
+
   const fetchWalletBalance = async (token) => {
     setLoadingWallet(true);
     try {

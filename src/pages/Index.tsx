@@ -21,6 +21,7 @@ import IconBolt from '../components/Icon/IconBolt';
 import IconCaretDown from '../components/Icon/IconCaretDown';
 import IconPlus from '../components/Icon/IconPlus';
 import IconMultipleForwardRight from '../components/Icon/IconMultipleForwardRight';
+import { useNavigate } from "react-router-dom";
 
 
 interface DashboardProps {
@@ -28,6 +29,8 @@ interface DashboardProps {
 }
 
 const Index: React.FC<DashboardProps> = ({ userId }) => {
+        const navigate = useNavigate();
+    
   const [loading, setLoading] = useState(true);
   const [counts, setCounts] = useState<number[]>([0, 0]);
   const [revenueChart, setRevenueChart] = useState<any>({
@@ -43,7 +46,10 @@ const Index: React.FC<DashboardProps> = ({ userId }) => {
     if (parts.length === 2) return parts.pop()?.split(";").shift();
   };
   const user = JSON.parse(localStorage.getItem("userId") || "{}");
-
+const is_superuser = getCookie("is_superuser") === "true";
+if (is_superuser) {
+  navigate("/index");
+}
   console.log("user=",user);
   const accessToken = getCookie("access");
 

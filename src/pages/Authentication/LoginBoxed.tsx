@@ -55,7 +55,7 @@ const LoginBoxed = () => {
         document.cookie = `username=${encodeURIComponent(data.user.username)}; path=/; max-age=86400`;
         document.cookie = `user_id=${encodeURIComponent(data.user.id)}; path=/; max-age=86400`;
         document.cookie = `email=${encodeURIComponent(data.user.email)}; path=/; max-age=86400`;
-        document.cookie = `is_staff=${data.user.is_staff}; path=/; max-age=86400`;
+        document.cookie = `is_superuser=${data.user.is_superuser}; path=/; max-age=86400`;
         document.cookie = `access=${data.access}; path=/; max-age=86400`;
 
         // Save localStorage

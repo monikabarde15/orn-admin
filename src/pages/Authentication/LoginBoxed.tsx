@@ -67,12 +67,23 @@ const LoginBoxed = () => {
         toast.success("Login successful!", { position: "top-center" });
         console.log('use====',data.user.is_superuser);
         // setTimeout(() => {
-        //   if (data.user.is_superuser === true) {
+        //   if (data.user.is_superuser == true) {
         //     window.location.href = "/index";
         //   } else {
         //     window.location.href = "/";
         //   }
         // }, 1200);
+        console.log('use====', data.user.is_superuser);
+
+          setTimeout(() => {
+            if (data.user.is_superuser == true) {
+              window.location.href = "/index";
+            } else {
+              window.location.href = "/";
+            }
+          }, 1200);
+
+
       }
     } catch (err: any) {
       let msg = "Invalid username or password.";
@@ -155,7 +166,7 @@ const LoginBoxed = () => {
             <div className="mx-auto w-full max-w-[440px]">
               <div className="mb-10 text-center">
                 <h1 className="text-3xl font-extrabold uppercase text-primary md:text-4xl">
-                  {i18next.t("Sign in")} 1
+                  {i18next.t("Sign in")} 12
                 </h1>
                 <p className="text-base font-bold text-white-dark">
                   {i18next.t("Enter your credentials to log in")}

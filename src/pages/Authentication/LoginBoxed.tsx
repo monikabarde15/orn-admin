@@ -166,7 +166,7 @@ const LoginBoxed = () => {
             <div className="mx-auto w-full max-w-[440px]">
               <div className="mb-10 text-center">
                 <h1 className="text-3xl font-extrabold uppercase text-primary md:text-4xl">
-                  {i18next.t("Sign in")} 12
+                  {i18next.t("Sign in")} 
                 </h1>
                 <p className="text-base font-bold text-white-dark">
                   {i18next.t("Enter your credentials to log in")}

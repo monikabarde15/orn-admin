@@ -26,7 +26,7 @@ export default function HeroSection() {
                   clipPath:
                     "polygon(0 0, 80% 0, 100% 18%, 100% 100%, 20% 100%, 0 82%)",
                 }}
-              />Group
+              />
 
               {/* FLOATING ELEMENTS (DESKTOP ONLY) */}
               <div className="hidden lg:block pointer-events-none">

@@ -9,6 +9,9 @@ import "react-toastify/dist/ReactToastify.css";
 const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
 
 const CartPage = () => {
+  const [loaderSeconds, setLoaderSeconds] = useState(0);
+const loaderTimerRef = useRef(null);
+
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -65,6 +68,32 @@ const CartPage = () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
   }, []);
+
+
+  useEffect(() => {
+  const isLoaderActive =
+    loading || processing || upgradeInProgress || isLaunching;
+
+  if (isLoaderActive) {
+    setLoaderSeconds(0);
+    loaderTimerRef.current = setInterval(() => {
+      setLoaderSeconds((prev) => prev + 1);
+    }, 1000);
+  } else {
+    if (loaderTimerRef.current) {
+      clearInterval(loaderTimerRef.current);
+      loaderTimerRef.current = null;
+    }
+    setLoaderSeconds(0);
+  }
+
+  return () => {
+    if (loaderTimerRef.current) {
+      clearInterval(loaderTimerRef.current);
+      loaderTimerRef.current = null;
+    }
+  };
+}, [loading, processing, upgradeInProgress, isLaunching]);
 
   // 🔥 HOURS UPDATE — main logic
   const updateHours = (index, hours) => {
@@ -139,62 +168,12 @@ const CartPage = () => {
 
   const formatAction = (name) => name.split(" ")[0].toLowerCase();
 
-  // const launchSingle = async (lab, paymentId) => {
-  //   setProcessing(true);
-  //   setIsLaunching(true);
-  //   try {
-  //     if (!lab.subscription) {
-  //       const createdSub = await createSubscriptionOnBackend(lab.planId);
-
-  //       if (createdSub) {
-  //         lab.subscription = createdSub;
-  //         notify(
-  //           `Subscription for ${lab.name} created automatically!`,
-  //           "success"
-  //         );
-  //       } else {
-  //         notify(`Failed to create subscription for ${lab.name}`, "error");
-  //         return;
-  //       }
-  //     }
- 
-  //    const actionnew = formatAction(lab.name);
-  //       let action = "";
-
-  //       if (actionnew === "terraform") {
-  //         action = "iscsi";
-  //       } else {
-  //         action = actionnew;
-  //       }
-
-  //     const endpoint =
-  //       paymentId === "free"
-  //         ? `${API_BASE}/users/deploy-free/${action}/`
-  //         : `${API_BASE}/users/deploy/${action}/`;
-
-  //     const body =
-  //       paymentId === "free"
-  //         ? { user_id: userId, action }
-  //         : { user_id: userId, action, payment_id: paymentId };
-
-  //     await axios.post(endpoint, body, {
-  //       headers: { Authorization: `Bearer ${token}` },
-  //     });
-
-  //     notify(`Instance ${lab.name} launched successfully!`, "success");
-  //   } catch (err) {
-  //     notify(err?.response?.data?.message || "Instance launch failed", "error");
-  //   } finally {
-  //     setProcessing(false);
-  //   }
-  // };
-
+  
   const launchSingle = async (lab, paymentId, retry = false) => {
   setProcessing(true);
   setIsLaunching(true);
 
   try {
-    // If subscription missing — create automatically
     if (!lab.subscription) {
       const createdSub = await createSubscriptionOnBackend(lab.planId);
 
@@ -485,7 +464,11 @@ const CartPage = () => {
       {(loading || processing || upgradeInProgress || isLaunching) && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center z-[9999]">
           <div className="w-16 h-16 border-4 border-t-transparent border-purple-400 rounded-full animate-spin"></div>
-          <p className="text-white mt-4 text-xl font-semibold">Please wait...</p>
+          {/* <p className="text-white mt-4 text-xl font-semibold">Please wait...</p> */}
+        <p className="text-purple-300 mt-2 text-sm">
+          Processing time: {loaderSeconds}s
+        </p>
+
         </div>
       )}
 

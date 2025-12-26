@@ -1,69 +1,214 @@
 "use client"
 
-import React, { useState, useRef } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router-dom"
-
+import axios from "axios"
 import {
-  Plus,
-  X,
-  Clock,
-  BookOpen,
-  Video,
-  ImageIcon,
-  FileText,
-  ChevronRight,
-  ChevronDown,
-  Check,
-  Edit,
-  Trash2,
-  Upload,
-  GripVertical,
+  Plus, X, Clock, BookOpen, Video, ImageIcon, FileText,
+  ChevronRight, ChevronDown, Check, Edit, Trash2, Upload, GripVertical
 } from "lucide-react"
-import axios from "axios";
+
+/* ================= HELPERS ================= */
+
 const getCookie = (name: string) => {
-  if (typeof document === "undefined") return "";
-  const v = `; ${document.cookie}`;
-  const parts = v.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(";").shift();
-  return "";
-};
+  if (typeof document === "undefined") return ""
+  const v = `; ${document.cookie}`
+  const parts = v.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop()?.split(";").shift()
+  return ""
+}
 
-const token =
-  (getCookie("access") ||
-    localStorage.getItem("access") ||
-    localStorage.getItem("jwt-auth"))?.trim();
-      const userId = getCookie("user_id");
+const userId = getCookie("user_id")
 
+/* ================= AXIOS ================= */
 
 const api = axios.create({
   baseURL: "https://dev.backend.onrequestlab.com",
   withCredentials: true,
-  headers: {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  },
-});
+})
+const mockApi = {
+  // =========================
+  // CREATE COURSE
+  // =========================
+  createCourse: async (data: CourseFormData): Promise<{ id: string; success: boolean }> => {
+    const res = await api.post(
+      "/course/courses/",
+      {
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        difficulty: data.difficulty,
+        duration: data.duration,
+        instructor: data.instructor,
+        price: Number(data.price || 0),
+        learningOutcomes: data.learningOutcomes.join("\n"),
+        prerequisites: data.prerequisites.join("\n"),
+        isPublished: false,
+        user: userId,
+      }
+    )
 
-// ✅ AUTO ATTACH TOKEN + CSRF TO EVERY REQUEST
+    return { id: String(res.data.id), success: true }
+  },
+
+  // =========================
+  // ADD MODULE
+  // =========================
+  addModule: async (
+    courseId: string,
+    module: Omit<Module, "id">
+  ): Promise<{ id: string; success: boolean }> => {
+    const res = await api.post(
+      "/course/modules/",
+      {
+        title: module.title,
+        description: module.description,
+        order: Math.floor(Math.random() * 1000),
+        course: courseId,
+        user: userId,
+      },
+      
+    )
+
+    return { id: String(res.data.id), success: true }
+  },
+
+  // =========================
+  // UPDATE MODULE
+  // =========================
+  updateModule: async (_moduleId: string, data: Partial<Module>): Promise<{ success: boolean }> => {
+    await api.patch(
+      `/course/modules/${_moduleId}/`,
+      data,
+      
+    )
+
+    return { success: true }
+  },
+
+  // =========================
+  // DELETE MODULE
+  // =========================
+  deleteModule: async (_moduleId: string): Promise<{ success: boolean }> => {
+    await api.delete(`/course/modules/${_moduleId}/`, {
+    
+    })
+
+    return { success: true }
+  },
+
+  // =========================
+  // ADD LESSON
+  // =========================
+  addLesson: async (
+  moduleId: string,
+  lesson: Omit<Lesson, "id">
+): Promise<{ id: string; success: boolean }> => {
+  const formData = new FormData()
+
+  formData.append("title", lesson.title)
+  formData.append("duration", lesson.duration)
+  formData.append("description", lesson.content)
+  formData.append("module", moduleId)
+  formData.append("user", userId)
+
+  if (lesson.videoFile) {
+    formData.append("video_file", lesson.videoFile)
+  }
+
+  if (lesson.attachmentFile) {
+    formData.append("attachment_file", lesson.attachmentFile)
+  }
+
+  const res = await api.post("/course/chapter/", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  })
+
+  return { id: String(res.data.id), success: true }
+},
+
+
+  // =========================
+  // UPDATE LESSON
+  // =========================
+ updateLesson: async (
+  lessonId: string,
+  data: Partial<Lesson>
+): Promise<{ success: boolean }> => {
+  const formData = new FormData()
+
+  if (data.title) formData.append("title", data.title)
+  if (data.duration) formData.append("duration", data.duration)
+  if (data.content) formData.append("description", data.content)
+  if (data.videoFile) formData.append("video_file", data.videoFile)
+  if (data.attachmentFile) formData.append("attachment_file", data.attachmentFile)
+
+  await api.patch(`/course/chapter/${lessonId}/`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  })
+
+  return { success: true }
+}
+,
+
+  // =========================
+  // DELETE LESSON
+  // =========================
+  deleteLesson: async (_lessonId: string): Promise<{ success: boolean }> => {
+    await api.delete(`/course/chapter/${_lessonId}/`, {
+      
+    })
+
+    return { success: true }
+  },
+
+  // =========================
+  // UPLOAD THUMBNAIL
+  // =========================
+  uploadThumbnail: async (file: File): Promise<{ url: string; success: boolean }> => {
+    const imageUrl = URL.createObjectURL(file)
+
+    await api.post(
+      "/course/thumbnail/",
+      {
+        image_url: imageUrl,
+        course: 0, // already handled outside
+        user: userId,
+      },
+      
+    )
+
+    return { url: imageUrl, success: true }
+  },
+
+  // =========================
+  // PUBLISH COURSE
+  // =========================
+  publishCourse: async (_courseId: string): Promise<{ success: boolean }> => {
+    await api.patch(
+      `/course/courses/${_courseId}/`,
+      { isPublished: true },
+      
+    )
+
+    return { success: true }
+  },
+}
 api.interceptors.request.use((config) => {
-  const accessToken =
+  const token =
     getCookie("access") ||
     localStorage.getItem("access") ||
-    localStorage.getItem("jwt-auth");
+    localStorage.getItem("jwt-auth")
 
-  if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`
 
-  const csrf = getCookie("csrftoken");
-  if (csrf) {
-    config.headers["X-CSRFTOKEN"] = csrf;
-  }
+  const csrf = getCookie("csrftoken")
+  if (csrf) config.headers["X-CSRFTOKEN"] = csrf
 
-  return config;
-});
-const { id } = useParams<{ id: string }>()   // 🔥 course id from URL
+  return config
+})
 
+/* ================= TYPES ================= */
 
 interface CourseFormData {
   title: string
@@ -77,301 +222,23 @@ interface CourseFormData {
   prerequisites: string[]
 }
 
-interface Module {
-  id: string
-  title: string
-  description: string
-  lessons: Lesson[]
-}
-
 interface Lesson {
   id: string
   title: string
   type: "video" | "text" | "quiz"
   duration: string
   content: string
-}
-
-// ============================================
-// MOCK API - Bypasses all real API calls
-// ============================================
-// const mockApi = {
-//   // =========================
-//   // CREATE COURSE
-//   // =========================
-//   createCourse: async (data: CourseFormData): Promise<{ id: string; success: boolean }> => {
-//     const res = await api.post(
-//       "/course/courses/",
-//       {
-//         title: data.title,
-//         description: data.description,
-//         category: data.category,
-//         difficulty: data.difficulty,
-//         duration: data.duration,
-//         instructor: data.instructor,
-//         price: Number(data.price || 0),
-//         learningOutcomes: data.learningOutcomes.join("\n"),
-//         prerequisites: data.prerequisites.join("\n"),
-//         isPublished: false,
-//         user: userId,
-//       }
-//     )
-
-//     return { id: String(res.data.id), success: true }
-//   },
-
-//   // =========================
-//   // ADD MODULE
-//   // =========================
-//   addModule: async (
-//     courseId: string,
-//     module: Omit<Module, "id">
-//   ): Promise<{ id: string; success: boolean }> => {
-//     const res = await api.post(
-//       "/course/modules/",
-//       {
-//         title: module.title,
-//         description: module.description,
-//         order: Math.floor(Math.random() * 1000),
-//         course: courseId,
-//         user: userId,
-//       },
-      
-//     )
-
-//     return { id: String(res.data.id), success: true }
-//   },
-
-//   // =========================
-//   // UPDATE MODULE
-//   // =========================
-//   updateModule: async (_moduleId: string, data: Partial<Module>): Promise<{ success: boolean }> => {
-//     await api.patch(
-//       `/course/modules/${_moduleId}/`,
-//       data,
-      
-//     )
-
-//     return { success: true }
-//   },
-
-//   // =========================
-//   // DELETE MODULE
-//   // =========================
-//   deleteModule: async (_moduleId: string): Promise<{ success: boolean }> => {
-//     await api.delete(`/course/modules/${_moduleId}/`, {
-    
-//     })
-
-//     return { success: true }
-//   },
-
-//   // =========================
-//   // ADD LESSON
-//   // =========================
-//   addLesson: async (
-//     _moduleId: string,
-//     lesson: Omit<Lesson, "id">
-//   ): Promise<{ id: string; success: boolean }> => {
-//     const res = await api.post(
-//       "/course/lessons/",
-//       {
-//         title: lesson.title,
-//         type: lesson.type,
-//         duration: lesson.duration,
-//         content: lesson.content,
-//         module: _moduleId,
-//         user: userId,
-//       },
-     
-//     )
-
-//     return { id: String(res.data.id), success: true }
-//   },
-
-//   // =========================
-//   // UPDATE LESSON
-//   // =========================
-//   updateLesson: async (_lessonId: string, data: Partial<Lesson>): Promise<{ success: boolean }> => {
-//     await api.patch(
-//       `/course/lessons/${_lessonId}/`,
-//       data,
-     
-//     )
-
-//     return { success: true }
-//   },
-
-//   // =========================
-//   // DELETE LESSON
-//   // =========================
-//   deleteLesson: async (_lessonId: string): Promise<{ success: boolean }> => {
-//     await api.delete(`/course/lessons/${_lessonId}/`, {
-      
-//     })
-
-//     return { success: true }
-//   },
-
-//   // =========================
-//   // UPLOAD THUMBNAIL
-//   // =========================
-//   uploadThumbnail: async (file: File): Promise<{ url: string; success: boolean }> => {
-//     const imageUrl = URL.createObjectURL(file)
-
-//     await api.post(
-//       "/course/thumbnail/",
-//       {
-//         image_url: imageUrl,
-//         course: 0, // already handled outside
-//         user: userId,
-//       },
-      
-//     )
-
-//     return { url: imageUrl, success: true }
-//   },
-
-//   // =========================
-//   // PUBLISH COURSE
-//   // =========================
-//   publishCourse: async (_courseId: string): Promise<{ success: boolean }> => {
-//     await api.patch(
-//       `/course/courses/${_courseId}/`,
-//       { isPublished: true },
-      
-//     )
-
-//     return { success: true }
-//   },
-// }
-
-const newuserId = getCookie("user_id");
-
-export const mockApi = {
-  /* =========================
-     COURSE
-  ========================= */
-
-  // ✅ CREATE COURSE
-  createCourse: async (data: CourseFormData) => {
-    const res = await api.post("/course/courses/", {
-      ...data,
-      price: Number(data.price || 0),
-      learningOutcomes: data.learningOutcomes.join("\n"),
-      prerequisites: data.prerequisites.join("\n"),
-      isPublished: false,
-      user: newuserId,
-    })
-    return res.data
-  },
-
-  // ✅ GET COURSE BY ID
-  getCourseById: async (courseId: string) => {
-    return (await api.get(`/course/courses/${courseId}/`)).data
-  },
-
-  // ✅ UPDATE COURSE
-  updateCourse: async (courseId: string, data: CourseFormData) => {
-    const res = await api.put(`/course/courses/${courseId}/`, {
-      ...data,
-      price: Number(data.price || 0),
-      learningOutcomes: data.learningOutcomes.join("\n"),
-      prerequisites: data.prerequisites.join("\n"),
-      user: userId,
-    })
-    return res.data
-  },
-
-  // ✅ PUBLISH COURSE
-  publishCourse: async (courseId: string) => {
-    await api.patch(`/course/courses/${courseId}/`, {
-      isPublished: true,
-      user: userId,
-    })
-  },
-
-  /* =========================
-     MODULES
-  ========================= */
-
-  // ✅ GET MODULES BY COURSE ID
-  getModulesByCourse: async (courseId: string) => {
-    return (await api.get(`/course/modules/?course=${courseId}`)).data
-  },
-
-  // ✅ ADD MODULE
-  addModule: async (courseId: string, data: { title: string; description: string }) => {
-    const res = await api.post("/course/modules/", {
-      ...data,
-      course: courseId,
-      user: userId,
-    })
-    return res.data
-  },
-
-  // ✅ UPDATE MODULE
-  updateModule: async (moduleId: string, courseId: string, data: Partial<Module>) => {
-    await api.put(`/course/modules/${moduleId}/`, {
-      ...data,
-      course: courseId,
-      user: userId,
-    })
-  },
-
-  // ✅ DELETE MODULE
-  deleteModule: async (moduleId: string) => {
-    await api.delete(`/course/modules/${moduleId}/`)
-  },
-
-  /* =========================
-     LESSONS
-  ========================= */
-
-  // ✅ GET LESSONS BY MODULE ID
-  getLessonsByModule: async (moduleId: string) => {
-    return (await api.get(`/course/lessons/?module=${moduleId}`)).data
-  },
-
-  // ✅ ADD LESSON
-  addLesson: async (moduleId: string, lesson: Omit<Lesson, "id">) => {
-    const res = await api.post("/course/lessons/", {
-      ...lesson,
-      module: moduleId,
-      user: userId,
-    })
-    return res.data
-  },
-
-  // ✅ UPDATE LESSON
-  updateLesson: async (lessonId: string, data: Partial<Lesson>) => {
-    await api.patch(`/course/lessons/${lessonId}/`, data)
-  },
-
-  // ✅ DELETE LESSON
-  deleteLesson: async (lessonId: string) => {
-    await api.delete(`/course/lessons/${lessonId}/`)
-  },
-
-  /* =========================
-     THUMBNAIL
-  ========================= */
-
-  // ✅ UPLOAD / UPDATE THUMBNAIL
-  uploadThumbnail: async (courseId: string, file: File) => {
-    const formData = new FormData()
-    formData.append("image_url", file)
-    formData.append("course", courseId)
-    formData.append("user", userId)
-
-    await api.put(`/course/thumbnail/${courseId}/`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    })
-  },
+  videoFile?: File | null
+  attachmentFile?: File | null
 }
 
 
-
+interface Module {
+  id: string
+  title: string
+  description: string
+  lessons: Lesson[]
+}
 function Button({
   children,
   onClick,
@@ -815,7 +682,7 @@ function ModuleEditor({
   isLoading,
 }: {
   modules: Module[]
-  onAddModule: (module: Omit<Module, "id" | "lessons">) => void
+  onAddModule: (module: Omit<Module, "id" | "chapter">) => void
   onUpdateModule: (moduleId: string, data: Partial<Module>) => void
   onDeleteModule: (moduleId: string) => void
   onAddLesson: (moduleId: string, lesson: Omit<Lesson, "id">) => void
@@ -831,11 +698,13 @@ function ModuleEditor({
   const [editingLesson, setEditingLesson] = useState<{ moduleId: string; lesson: Lesson } | null>(null)
   const [moduleForm, setModuleForm] = useState({ title: "", description: "" })
   const [lessonForm, setLessonForm] = useState<Omit<Lesson, "id">>({
-    title: "",
-    type: "video",
-    duration: "",
-    content: "",
-  })
+  title: "",
+  type: "video",
+  duration: "",
+  content: "",
+  videoFile: null,
+  attachmentFile: null,
+})
 
   const handleAddModule = () => {
     if (moduleForm.title) {
@@ -980,7 +849,7 @@ function ModuleEditor({
             <CardContent className="pt-0">
               {/* Lessons List */}
               <div className="space-y-2 mb-4">
-                {module.lessons.map((lesson, lessonIndex) => (
+{(module.lessons || []).map((lesson, lessonIndex) => (
                   <div
                     key={lesson.id}
                     className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100"
@@ -1049,6 +918,29 @@ function ModuleEditor({
                           ]}
                         />
                       </div>
+                      {lessonForm.type === "video" && (
+                          <div>
+                            <Label>Video File *</Label>
+                            <input
+                              type="file"
+                              accept="video/*"
+                              onChange={(e) =>
+                                setLessonForm({ ...lessonForm, videoFile: e.target.files?.[0] || null })
+                              }
+                            />
+                          </div>
+                        )}
+
+                        <div>
+                          <Label>Attachment (PDF / ZIP)</Label>
+                          <input
+                            type="file"
+                            onChange={(e) =>
+                              setLessonForm({ ...lessonForm, attachmentFile: e.target.files?.[0] || null })
+                            }
+                          />
+                        </div>
+
                       <div>
                         <Label htmlFor="lessonDuration">Duration</Label>
                         <Input
@@ -1282,75 +1174,107 @@ function SuccessView({ courseTitle, onCreateAnother }: { courseTitle: string; on
     </div>
   )
 }
+/* ========================================================= */
+/* ====================== MAIN EDIT PAGE =================== */
+/* ========================================================= */
 
-// ============================================
-// MAIN COMPONENT
-// ============================================
-export function EditCoursePage() {
+export default function EditCoursePage() {
+  const { id } = useParams<{ id: string }>() // ✅ COURSE ID FROM URL
+
   const [currentStep, setCurrentStep] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
+
   const [courseId, setCourseId] = useState<string | null>(null)
   const [courseData, setCourseData] = useState<CourseFormData | null>(null)
   const [modules, setModules] = useState<Module[]>([])
   const [thumbnail, setThumbnail] = useState<string | null>(null)
-  const [isPublished, setIsPublished] = useState(false)
+  const [published, setPublished] = useState(false)
 
-  const steps = ["Course Details", "Modules & Lessons", "Thumbnail & Publish"]
+  const steps = ["Course Details", "Modules & Chapter", "Thumbnail & Publish"]
 
-  // Step 1: Save course details
-  const handleCourseSubmit = async (data: CourseFormData) => {
-    setIsLoading(true)
-    const result = await mockApi.createCourse(data)
-    if (result.success) {
-      setCourseId(result.id)
-      setCourseData(data)
-      setCurrentStep(1)
-    }
-    setIsLoading(false)
-  }
+  /* ================= FETCH COURSE (EDIT MODE) ================= */
 
-  // Step 2: Module handlers
-  const handleAddModule = async (module: Omit<Module, "id" | "lessons">) => {
+  useEffect(() => {
+  if (!id) return
+
+  api.get(`/course/courses/${id}/`).then((res) => {
+    const d = res.data
+
+    setCourseId(String(d.id))
+    setCourseData({
+      title: d.title,
+      description: d.description,
+      category: d.category,
+      difficulty: d.difficulty,
+      duration: d.duration,
+      instructor: d.instructor,
+      price: String(d.price),
+      learningOutcomes: d.learningOutcomes?.split("\n") || [""],
+      prerequisites: d.prerequisites?.split("\n") || [""],
+    })
+
+    setModules(
+      (d.modules || []).map((m: any) => ({
+        ...m,
+        lessons: Array.isArray(m.lessons) ? m.lessons : [],
+      }))
+    )
+
+    setThumbnail(d.thumbnail || null)
+  })
+}, [id])
+
+
+  /* ================= UPDATE COURSE ================= */
+
+  const handleCourseUpdate = async (data: CourseFormData) => {
     if (!courseId) return
-    setIsLoading(true)
+
+    setLoading(true)
+
+    await api.patch(`/course/courses/${courseId}/`, {
+      ...data,
+      price: Number(data.price || 0),
+      learningOutcomes: data.learningOutcomes.join("\n"),
+      prerequisites: data.prerequisites.join("\n"),
+    })
+
+    setCourseData(data)
+    setCurrentStep(1)
+    setLoading(false)
+  }
+ const handleAddModule = async (module: Omit<Module, "id" | "chapter">) => {
+    if (!courseId) return
     const result = await mockApi.addModule(courseId, { ...module, lessons: [] })
     if (result.success) {
       setModules([...modules, { ...module, id: result.id, lessons: [] }])
     }
-    setIsLoading(false)
   }
 
   const handleUpdateModule = async (moduleId: string, data: Partial<Module>) => {
-    setIsLoading(true)
     const result = await mockApi.updateModule(moduleId, data)
     if (result.success) {
       setModules(modules.map((m) => (m.id === moduleId ? { ...m, ...data } : m)))
     }
-    setIsLoading(false)
   }
 
   const handleDeleteModule = async (moduleId: string) => {
-    setIsLoading(true)
     const result = await mockApi.deleteModule(moduleId)
     if (result.success) {
       setModules(modules.filter((m) => m.id !== moduleId))
     }
-    setIsLoading(false)
   }
 
   const handleAddLesson = async (moduleId: string, lesson: Omit<Lesson, "id">) => {
-    setIsLoading(true)
     const result = await mockApi.addLesson(moduleId, lesson)
     if (result.success) {
       setModules(
         modules.map((m) => (m.id === moduleId ? { ...m, lessons: [...m.lessons, { ...lesson, id: result.id }] } : m)),
       )
     }
-    setIsLoading(false)
   }
 
   const handleUpdateLesson = async (moduleId: string, lessonId: string, data: Partial<Lesson>) => {
-    setIsLoading(true)
     const result = await mockApi.updateLesson(lessonId, data)
     if (result.success) {
       setModules(
@@ -1359,125 +1283,89 @@ export function EditCoursePage() {
         ),
       )
     }
-    setIsLoading(false)
   }
 
   const handleDeleteLesson = async (moduleId: string, lessonId: string) => {
-    setIsLoading(true)
     const result = await mockApi.deleteLesson(lessonId)
     if (result.success) {
       setModules(
         modules.map((m) => (m.id === moduleId ? { ...m, lessons: m.lessons.filter((l) => l.id !== lessonId) } : m)),
       )
     }
-    setIsLoading(false)
+  }
+  /* ================= THUMBNAIL ================= */
+
+  const handleThumbnailUpload = async (file: File) => {
+    if (!courseId) return
+
+    setLoading(true)
+
+    const formData = new FormData()
+    formData.append("image_url", file)
+    formData.append("course", courseId)
+    formData.append("user", userId)
+
+    await api.post(`/course/thumbnail/`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+
+    setThumbnail(URL.createObjectURL(file))
+    setLoading(false)
   }
 
-  // Step 3: Thumbnail upload
-  // const handleThumbnailUpload = async (file: File) => {
-  //   setIsLoading(true)
-  //   const result = await mockApi.uploadThumbnail(file)
-  //   if (result.success) {
-  //     setThumbnail(result.url)
-  //   }
-  //   setIsLoading(false)
-  // }
-  const getCookie = (name: string) => {
-  if (typeof document === "undefined") return "";
-  const v = `; ${document.cookie}`;
-  const parts = v.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(";").shift();
-  return "";
-};
+  /* ================= PUBLISH ================= */
 
-
-      const userId = getCookie("user_id");
-
-const handleThumbnailUpload = async (file: File) => {
-  if (!courseId) return
-
-  setIsLoading(true)
-
-  const formData = new FormData()
-  formData.append("image_url", file)          // ✅ FILE
-  formData.append("course", String(courseId)) // ✅ REAL COURSE ID
-  formData.append("user", userId)
-
-  await api.post(
-    "/course/thumbnail/",
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  )
-
-  setThumbnail(URL.createObjectURL(file))
-  setIsLoading(false)
-}
-
-  // Publish course
   const handlePublish = async () => {
     if (!courseId) return
-    setIsLoading(true)
-    const result = await mockApi.publishCourse(courseId)
-    if (result.success) {
-      setIsPublished(true)
-    }
-    setIsLoading(false)
+    setLoading(true)
+
+    await api.patch(`/course/courses/${courseId}/`, { isPublished: true })
+    setPublished(true)
+
+    setLoading(false)
   }
 
-  // Reset and create another
-  const handleCreateAnother = () => {
-    setCurrentStep(0)
-    setCourseId(null)
-    setCourseData(null)
-    setModules([])
-    setThumbnail(null)
-    setIsPublished(false)
-  }
-
-  if (isPublished && courseData) {
+  if (published && courseData) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <Card>
-          <CardContent className="pt-6">
-            <SuccessView courseTitle={courseData.title} onCreateAnother={handleCreateAnother} />
-          </CardContent>
-        </Card>
+      <div className="max-w-4xl mx-auto p-6 text-center">
+        <Check className="mx-auto h-16 w-16 text-green-500" />
+        <h2 className="text-2xl font-bold mt-4">
+          Course "{courseData.title}" Published 🎉
+        </h2>
       </div>
     )
   }
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Create New Course</h1>
-        <p className="text-gray-500">Build and publish your course in a few simple steps</p>
-      </div>
+      <h1 className="text-2xl font-bold mb-2">Update Course</h1>
+      <p className="text-gray-500 mb-6">Update your course content</p>
 
       <StepIndicator currentStep={currentStep} steps={steps} />
 
       <Card>
         <CardContent className="pt-6">
-          {currentStep === 0 && (
-            <CourseForm onSubmit={handleCourseSubmit} initialData={courseData || undefined} isLoading={isLoading} />
+          {currentStep === 0 && courseData && (
+            <CourseForm
+              initialData={courseData}
+              onSubmit={handleCourseUpdate}
+              isLoading={loading}
+            />
           )}
 
           {currentStep === 1 && (
-            <ModuleEditor
-              modules={modules}
-              onAddModule={handleAddModule}
-              onUpdateModule={handleUpdateModule}
-              onDeleteModule={handleDeleteModule}
-              onAddLesson={handleAddLesson}
-              onUpdateLesson={handleUpdateLesson}
-              onDeleteLesson={handleDeleteLesson}
-              onContinue={() => setCurrentStep(2)}
-              onBack={() => setCurrentStep(0)}
-              isLoading={isLoading}
-            />
+             <ModuleEditor
+    modules={modules}
+    onAddModule={handleAddModule}
+    onUpdateModule={handleUpdateModule}
+    onDeleteModule={handleDeleteModule}
+    onAddLesson={handleAddLesson}
+    onUpdateLesson={handleUpdateLesson}
+    onDeleteLesson={handleDeleteLesson}
+    onBack={() => setCurrentStep(0)}
+    onContinue={() => setCurrentStep(2)}
+    isLoading={loading}
+  />
           )}
 
           {currentStep === 2 && (
@@ -1486,7 +1374,7 @@ const handleThumbnailUpload = async (file: File) => {
               onUpload={handleThumbnailUpload}
               onPublish={handlePublish}
               onBack={() => setCurrentStep(1)}
-              isLoading={isLoading}
+              isLoading={loading}
             />
           )}
         </CardContent>

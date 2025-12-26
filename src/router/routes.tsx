@@ -173,11 +173,8 @@ const CoursesListPage = lazy(() => import('../pages/Components/CoursesListPage')
 const VideoPlayer = lazy(() => import('../pages/Components/VideoPlayer'));
 
 const EditCoursePage = lazy(() =>
-  import('../pages/Components/EditCoursePage').then((module) => ({
-    default: module.EditCoursePage,
-  }))
+  import("../pages/Components/EditCoursePage")
 )
-
 const routes = [
     // dashboard
      {

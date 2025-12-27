@@ -10,6 +10,9 @@ import {
   Download,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
+import Navbar from "../../pages/Components/Navbar";
+import Footer from "../../pages/Components/Footer";
+
 
 /* ================= AXIOS INSTANCE ================= */
 
@@ -155,6 +158,8 @@ const { id } = useParams<{ id: string }>();
   /* ================= UI ================= */
 
   return (
+    <>
+    <Navbar />
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       <div className="max-w-7xl mx-auto px-4 py-10 grid lg:grid-cols-3 gap-8">
 
@@ -340,6 +345,9 @@ const { id } = useParams<{ id: string }>();
         </div>
       )}
     </div>
+    <Footer />
+    </>
+    
   );
 };
 

@@ -177,7 +177,7 @@ if (userID < 2) {
     items: [
       { path: "/apps/contacts", label: "contacts", icon: IconMenuContacts, permission: "contacts" },
       { path: "/apps/FeedbackList", label: "Feedback List", icon: IconMenuContacts, permission: "FeedbackListNew" },
-      { path: "/change-password", label: "Change Password", icon: IconMenuContacts, permission: "contacts" },
+      { path: "/admin-change-password", label: "Change Password", icon: IconMenuContacts, permission: "contacts" },
       { path: "/AdminMessages", label: "Support", icon: IconMenuContacts, permission: "contacts" },
     ],
   });
@@ -186,7 +186,7 @@ if (userID < 2) {
     sectionLabel: "Customer support",
     items: [
       //{ path: "/Messages", label: "Customer Support", icon: IconMenuContacts, permission: "contacts" },
-      { path: "/change-password", label: "Change Password", icon: IconMenuContacts, permission: "contacts" },
+      { path: "/admin-change-password", label: "Change Password", icon: IconMenuContacts, permission: "contacts" },
     ],
   });
 }

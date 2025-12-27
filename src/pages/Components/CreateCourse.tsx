@@ -163,53 +163,71 @@ const mockApi = {
     return { success: true }
   },
 
+
   // =========================
   // ADD LESSON
   // =========================
   addLesson: async (
-    _moduleId: string,
-    lesson: Omit<Lesson, "id">
-  ): Promise<{ id: string; success: boolean }> => {
-    const res = await api.post(
-      "/course/lessons/",
-      {
-        title: lesson.title,
-        type: lesson.type,
-        duration: lesson.duration,
-        content: lesson.content,
-        module: _moduleId,
-        user: userId,
-      },
-     
-    )
+  moduleId: string,
+  lesson: Omit<Lesson, "id">
+): Promise<{ id: string; success: boolean }> => {
+  const formData = new FormData()
 
-    return { id: String(res.data.id), success: true }
-  },
+  formData.append("title", lesson.title)
+  formData.append("duration", lesson.duration)
+  formData.append("description", lesson.content)
+  formData.append("module", moduleId)
+  formData.append("user", userId)
+
+  if (lesson.videoFile) {
+    formData.append("video_file", lesson.videoFile)
+  }
+
+  if (lesson.attachmentFile) {
+    formData.append("attachment_file", lesson.attachmentFile)
+  }
+
+  const res = await api.post("/course/chapter/", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  })
+
+  return { id: String(res.data.id), success: true }
+},
+
 
   // =========================
   // UPDATE LESSON
   // =========================
-  updateLesson: async (_lessonId: string, data: Partial<Lesson>): Promise<{ success: boolean }> => {
-    await api.patch(
-      `/course/lessons/${_lessonId}/`,
-      data,
-     
-    )
+ updateLesson: async (
+  lessonId: string,
+  data: Partial<Lesson>
+): Promise<{ success: boolean }> => {
+  const formData = new FormData()
 
-    return { success: true }
-  },
+  if (data.title) formData.append("title", data.title)
+  if (data.duration) formData.append("duration", data.duration)
+  if (data.content) formData.append("description", data.content)
+  if (data.videoFile) formData.append("video_file", data.videoFile)
+  if (data.attachmentFile) formData.append("attachment_file", data.attachmentFile)
+
+  await api.patch(`/course/chapter/${lessonId}/`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  })
+
+  return { success: true }
+}
+,
 
   // =========================
   // DELETE LESSON
   // =========================
   deleteLesson: async (_lessonId: string): Promise<{ success: boolean }> => {
-    await api.delete(`/course/lessons/${_lessonId}/`, {
+    await api.delete(`/course/chapter/${_lessonId}/`, {
       
     })
 
     return { success: true }
   },
-
   // =========================
   // UPLOAD THUMBNAIL
   // =========================
@@ -896,7 +914,7 @@ function ModuleEditor({
 
               {/* Lesson Form */}
               {(showLessonForm === module.id || (editingLesson && editingLesson.moduleId === module.id)) && (
-                <Card className="mb-4 border-blue-200 bg-blue-50/30">
+                 <Card className="mb-4 border-blue-200 bg-blue-50/30">
                   <CardContent className="pt-4 space-y-4">
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
@@ -921,6 +939,29 @@ function ModuleEditor({
                           ]}
                         />
                       </div>
+                      {lessonForm.type === "video" && (
+                          <div>
+                            <Label>Video File *</Label>
+                            <input
+                              type="file"
+                              accept="video/*"
+                              onChange={(e) =>
+                                setLessonForm({ ...lessonForm, videoFile: e.target.files?.[0] || null })
+                              }
+                            />
+                          </div>
+                        )}
+
+                        <div>
+                          <Label>Attachment (PDF / ZIP)</Label>
+                          <input
+                            type="file"
+                            onChange={(e) =>
+                              setLessonForm({ ...lessonForm, attachmentFile: e.target.files?.[0] || null })
+                            }
+                          />
+                        </div>
+
                       <div>
                         <Label htmlFor="lessonDuration">Duration</Label>
                         <Input

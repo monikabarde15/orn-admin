@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { BookOpen, Clock, GraduationCap, Tag } from "lucide-react";
-import { useNavigate } from "react-router-dom"; // ✅ ADD THIS
+import { Clock, GraduationCap, Tag } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+/* ================= AXIOS ================= */
 
 const api = axios.create({
   baseURL: "https://dev.backend.onrequestlab.com",
@@ -19,25 +21,26 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+/* ================= COMPONENT ================= */
+
 export default function CoursesList() {
-  const navigate = useNavigate(); // ✅ ADD THIS
+  const navigate = useNavigate();
 
-  const [courses, setCourses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
+  const [allCourses, setAllCourses] = useState<any[]>([]);
   const [page, setPage] = useState(1);
-  const [count, setCount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  const PAGE_SIZE = 6;
+  /* 🔥 FRONTEND PAGINATION CONFIG */
+  const PAGE_SIZE = 3;       // items per page
+  const PAGE_GROUP_SIZE = 3; // page numbers group
+
+  /* ================= FETCH ALL COURSES ================= */
 
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/course/courses/", {
-        params: { page, search },
-      });
-      setCourses(res.data.results || []);
-      setCount(res.data.count || 0);
+      const res = await api.get("/course/courses/");
+      setAllCourses(res.data.results || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -47,121 +50,132 @@ export default function CoursesList() {
 
   useEffect(() => {
     fetchCourses();
-  }, [page, search]);
+  }, []);
 
-  const totalPages = Math.ceil(count / PAGE_SIZE);
+  /* ================= FRONTEND PAGINATION LOGIC ================= */
+
+  const totalItems = allCourses.length;
+  const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+
+  const startIndex = (page - 1) * PAGE_SIZE;
+  const endIndex = startIndex + PAGE_SIZE;
+
+  const visibleCourses = allCourses.slice(startIndex, endIndex);
+
+  /* 3–3 PAGE GROUP */
+  const currentGroup = Math.ceil(page / PAGE_GROUP_SIZE);
+  const startPage = (currentGroup - 1) * PAGE_GROUP_SIZE + 1;
+  const endPage = Math.min(startPage + PAGE_GROUP_SIZE - 1, totalPages);
+
+  const pages: number[] = [];
+  for (let i = startPage; i <= endPage; i++) {
+    pages.push(i);
+  }
+
+  /* ================= UI ================= */
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0b0617] via-[#120a24] to-[#0b0617] py-24 px-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-[#0b0617] py-20 px-6">
+      <div className="max-w-6xl mx-auto">
 
-        {/* HEADER */}
-        <div className="flex flex-wrap justify-between items-center gap-6 mb-14">
-          <h1 className="text-4xl font-extrabold text-white">
-            Explore Courses
-          </h1>
-
-          <input
-            type="text"
-            placeholder="Search courses..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="w-72 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
-
-        {/* LOADER */}
         {loading && (
-          <p className="text-center text-gray-400">
+          <p className="text-center text-gray-400 mb-6">
             Loading courses...
           </p>
         )}
 
-        {/* COURSE GRID */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {courses.map((course: any) => (
+        {/* COURSES */}
+        <div className="grid md:grid-cols-3 gap-6">
+          {visibleCourses.map((course) => (
             <div
               key={course.id}
-              className="group relative rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/20"
+              className="bg-white/5 border border-white/10 rounded-xl overflow-hidden"
             >
-              <h3 className="text-2xl font-bold text-white mb-2">
-                {course.title}
-              </h3>
+              <img
+                src={
+                  course.thumbnail?.image_url ||
+                  "https://cfvod.kaltura.com/p/1727411/sp/172741100/thumbnail/entry_id/1_dsoakh0b/version/100000/width/412/height/248"
+                }
+                className="h-40 w-full object-cover"
+              />
 
-              <p className="text-gray-400 text-sm mb-6 line-clamp-2">
-                {course.description}
-              </p>
+              <div className="p-4">
+                <h3 className="text-white font-semibold text-lg">
+                  {course.title}
+                </h3>
 
-              <div className="space-y-3 text-sm text-gray-300">
-                <div className="flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-purple-400" />
-                  Category: {course.category}
+                <p className="text-gray-400 text-sm my-2 line-clamp-2">
+                  {course.description}
+                </p>
+
+                <div className="text-gray-300 text-sm space-y-1">
+                  <div className="flex gap-2 items-center">
+                    <Tag size={14} /> {course.category}
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <GraduationCap size={14} /> {course.difficulty}
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <Clock size={14} /> {course.duration}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-blue-400" />
-                  Level: {course.difficulty}
+                <div className="mt-4 flex justify-between items-center">
+                  <span className="text-white font-bold">
+                    ₹{course.price}
+                  </span>
+
+                  <button
+                    onClick={() =>
+                      navigate(`/course-preview/${course.id}`)
+                    }
+                    className="px-3 py-1 bg-purple-600 text-white rounded"
+                  >
+                    View
+                  </button>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-green-400" />
-                  Duration: {course.duration}
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-between items-center">
-                <span className="text-xl font-bold text-white">
-                  ₹{course.price}
-                </span>
-
-                <button
-                  onClick={() => navigate(`/course-preview/${course.id}`)}
-                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white text-sm font-semibold hover:opacity-90"
-                >
-                  View
-                </button>
               </div>
             </div>
           ))}
         </div>
 
-        {/* PAGINATION */}
+        {/* ================= PAGINATION ================= */}
+
         {totalPages > 1 && (
-          <div className="flex justify-center gap-3 mt-16">
+          <div className="flex justify-center gap-2 mt-12">
+
             <button
-              onClick={() => setPage((p) => Math.max(p - 1, 1))}
               disabled={page === 1}
-              className="px-4 py-2 rounded-lg bg-white/10 text-white disabled:opacity-40"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="px-3 py-1 bg-white/10 text-white rounded disabled:opacity-40"
             >
               Prev
             </button>
 
-            {[...Array(totalPages)].map((_, i) => (
+            {pages.map((p) => (
               <button
-                key={i}
-                onClick={() => setPage(i + 1)}
-                className={`px-4 py-2 rounded-lg ${
-                  page === i + 1
+                key={p}
+                onClick={() => setPage(p)}
+                className={`px-3 py-1 rounded ${
+                  page === p
                     ? "bg-purple-500 text-white"
                     : "bg-white/10 text-gray-300"
                 }`}
               >
-                {i + 1}
+                {p}
               </button>
             ))}
 
             <button
-              onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
               disabled={page === totalPages}
-              className="px-4 py-2 rounded-lg bg-white/10 text-white disabled:opacity-40"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="px-3 py-1 bg-white/10 text-white rounded disabled:opacity-40"
             >
               Next
             </button>
           </div>
         )}
+
       </div>
     </div>
   );

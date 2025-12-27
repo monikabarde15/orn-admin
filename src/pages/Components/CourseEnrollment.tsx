@@ -7,7 +7,9 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
+  Download,
 } from "lucide-react";
+import { useParams } from "react-router-dom";
 
 /* ================= AXIOS INSTANCE ================= */
 
@@ -27,24 +29,31 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+/* ================= HELPERS ================= */
+
+const resolveUrl = (url?: string | null) => {
+  if (!url) return "";
+  return url.startsWith("http") ? url : `https://${url}`;
+};
+
 /* ================= TYPES ================= */
 
-interface Lesson {
+interface Chapter {
   id: number;
   title: string;
-  duration: string;
+  description?: string;
+  video?: string | null;
+  file?: string | null;
 }
 
 interface Module {
   id: number;
   title: string;
-  lessons: Lesson[];
+  chapters: Chapter[];
 }
 
 interface Course {
   id: number;
-  created_at: string;
-  updated_at: string;
   title: string;
   description: string;
   category: string;
@@ -55,7 +64,7 @@ interface Course {
   learningOutcomes: string;
   prerequisites: string;
   isPublished: boolean;
-  user: number;
+  updated_at: string;
 }
 
 /* ================= COMPONENT ================= */
@@ -66,35 +75,29 @@ const CourseEnrollment: React.FC = () => {
   const [thumbnail, setThumbnail] = useState("");
   const [expanded, setExpanded] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [showVideoPopup, setShowVideoPopup] = useState(false);
+  const [activeVideo, setActiveVideo] = useState<string | null>(null);
+
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [inCart, setInCart] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
+const { id } = useParams<{ id: string }>();
 
-  /* ================= FETCH ALL DATA ================= */
+  /* ================= FETCH DATA ================= */
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [courseRes, moduleRes, thumbRes] = await Promise.all([
-          api.get("/course/courses/1/"),
-          api.get("/course/modules/1/"),
-          api.get("/course/thumbnail/1/"),
-        ]);
+        const res = await api.get(`/course/courses/${id}/`);
 
-        setCourse(courseRes.data);
-
-        // ✅ SAFE MODULE NORMALIZATION
-        const moduleData = Array.isArray(moduleRes.data)
-          ? moduleRes.data
-          : moduleRes.data?.results ||
-            moduleRes.data?.modules ||
-            [];
-
-        setModules(moduleData);
-
-        setThumbnail(thumbRes.data?.thumbnail || "");
-      } catch (error) {
-        console.error("API fetch failed:", error);
+        // const res = await api.get("/course/courses/1/");
+        setCourse(res.data);
+        setModules(res.data?.modules || []);
+        setThumbnail(res.data?.thumbnail?.image_url || "");
+      } catch (err) {
+        console.error("API error:", err);
       } finally {
         setLoading(false);
       }
@@ -109,6 +112,21 @@ const CourseEnrollment: React.FC = () => {
     setExpanded((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+  };
+
+  const handleAddToCart = async () => {
+    if (!course) return;
+    try {
+      setAddingToCart(true);
+      await api.post("/cart/add/", { course: course.id });
+      setInCart(true);
+      alert("Course added to cart");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add course to cart");
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
   const learningPoints =
@@ -147,19 +165,12 @@ const CourseEnrollment: React.FC = () => {
           <div className="relative rounded-2xl overflow-hidden">
             <img
               src={
-                thumbnail ||
-                "https://images.unsplash.com/photo-1611162617474-5b21e879e113"
+                resolveUrl(thumbnail) ||
+                "https://cfvod.kaltura.com/p/1727411/sp/172741100/thumbnail/entry_id/1_dsoakh0b/version/100000/width/412/height/248"
               }
               className="w-full aspect-video object-cover"
-              alt="Course preview"
+              alt="Course thumbnail"
             />
-            <button
-              onClick={() => setShowVideoPopup(true)}
-              className="absolute bottom-6 left-6 bg-black/70 text-white px-5 py-3 rounded-lg flex items-center gap-2"
-            >
-              <PlayCircle />
-              Preview this course
-            </button>
           </div>
 
           {/* COURSE INFO */}
@@ -176,45 +187,21 @@ const CourseEnrollment: React.FC = () => {
               <span className="bg-purple-600 text-white px-3 py-1 rounded-full">
                 {course.difficulty}
               </span>
-
               <span className="bg-slate-700 text-white px-3 py-1 rounded-full">
-                Category: {course.category}
+                {course.category}
               </span>
-
               <span className="text-gray-300 flex items-center gap-1">
                 <Clock className="w-4 h-4" />
                 {course.duration}
               </span>
             </div>
 
-            <div className="text-gray-400 space-y-1">
-              <p>
-                Instructor:{" "}
-                <span className="text-purple-400">
-                  {course.instructor}
-                </span>
-              </p>
-
-              <p>
-                Last updated:{" "}
-                <span className="text-purple-400">
-                  {new Date(course.updated_at).toLocaleDateString()}
-                </span>
-              </p>
-
-              <p>
-                Status:{" "}
-                <span
-                  className={
-                    course.isPublished
-                      ? "text-green-400"
-                      : "text-red-400"
-                  }
-                >
-                  {course.isPublished ? "Published" : "Draft"}
-                </span>
-              </p>
-            </div>
+            <p className="text-gray-400">
+              Last updated:{" "}
+              <span className="text-purple-400">
+                {new Date(course.updated_at).toLocaleDateString()}
+              </span>
+            </p>
           </div>
 
           {/* WHAT YOU'LL LEARN */}
@@ -224,23 +211,13 @@ const CourseEnrollment: React.FC = () => {
             </h2>
 
             <div className="grid md:grid-cols-2 gap-4">
-              {learningPoints.map((point, index) => (
-                <div key={index} className="flex gap-2 text-gray-300">
-                  <Check className="text-purple-400 shrink-0" />
-                  {point.trim()}
+              {learningPoints.map((p, i) => (
+                <div key={i} className="flex gap-2 text-gray-300">
+                  <Check className="text-purple-400" />
+                  {p.trim()}
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* PREREQUISITES */}
-          <div className="bg-slate-900/50 p-8 rounded-2xl border border-slate-800">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Prerequisites
-            </h2>
-            <p className="text-gray-300">
-              {course.prerequisites || "No prerequisites"}
-            </p>
           </div>
 
           {/* COURSE CONTENT */}
@@ -249,33 +226,52 @@ const CourseEnrollment: React.FC = () => {
               Course content
             </h2>
 
-            {modules.length > 0 ? (
+            {modules.length ? (
               modules.map((mod) => (
-                <div
-                  key={mod.id}
-                  className="border border-slate-700 rounded-xl mb-4"
-                >
+                <div key={mod.id} className="border border-slate-700 rounded-xl mb-4">
                   <button
                     onClick={() => toggleModule(mod.id)}
                     className="w-full flex justify-between items-center p-4 text-white"
                   >
-                    <span>{mod.title}</span>
-                    {expanded.includes(mod.id) ? (
-                      <ChevronUp />
-                    ) : (
-                      <ChevronDown />
-                    )}
+                    {mod.title}
+                    {expanded.includes(mod.id) ? <ChevronUp /> : <ChevronDown />}
                   </button>
 
                   {expanded.includes(mod.id) && (
-                    <div className="px-6 pb-4 space-y-2 text-gray-300">
-                      {mod.lessons?.map((lesson) => (
+                    <div className="px-6 pb-4 space-y-3">
+                      {mod.chapters.map((ch) => (
                         <div
-                          key={lesson.id}
-                          className="flex justify-between border-b border-slate-700 py-2"
+                          key={ch.id}
+                          className="flex justify-between items-center border-b border-slate-700 py-2 text-gray-300"
                         >
-                          <span>{lesson.title}</span>
-                          <span>{lesson.duration}</span>
+                          <span>{ch.title}</span>
+
+                          <div className="flex gap-4">
+                            {ch.video && (
+                              <button
+                                onClick={() => {
+                                  setActiveVideo(resolveUrl(ch.video));
+                                  setShowVideoPopup(true);
+                                }}
+                                className="text-purple-400 flex gap-1"
+                              >
+                                <PlayCircle size={18} />
+                                Play
+                              </button>
+                            )}
+
+                            {ch.file && (
+                              <a
+                                href={resolveUrl(ch.file)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-green-400 flex gap-1"
+                              >
+                                <Download size={18} />
+                                Download
+                              </a>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -290,22 +286,42 @@ const CourseEnrollment: React.FC = () => {
 
         {/* ================= RIGHT ================= */}
         <div className="lg:col-span-1">
-          <div className="sticky top-6 bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-            <button className="w-full bg-purple-600 text-white py-4 rounded-lg mb-3 font-semibold">
+          <div className="sticky top-6 bg-slate-900/50 p-6 rounded-2xl border border-slate-800 space-y-4">
+            <button
+              disabled
+              className="w-full bg-purple-600 text-white py-4 rounded-lg font-semibold cursor-default"
+            >
               {Number(course.price) <= 0
                 ? "Free Course"
                 : `Buy ₹${course.price}`}
             </button>
 
-            <button className="w-full border border-slate-700 py-4 rounded-lg text-white">
-              Add to cart
+            <button
+              onClick={handleAddToCart}
+              disabled={addingToCart || inCart}
+              className={`w-full py-4 rounded-lg font-semibold border transition
+                ${
+                  inCart
+                    ? "border-green-500 text-green-400 cursor-not-allowed"
+                    : "border-slate-700 text-white hover:bg-slate-800"
+                }`}
+            >
+              {inCart
+                ? "Already in Cart"
+                : addingToCart
+                ? "Adding..."
+                : "Add to Cart"}
             </button>
+
+            <p className="text-xs text-gray-400 text-center">
+              Lifetime access • Certificate included
+            </p>
           </div>
         </div>
       </div>
 
-      {/* ================= VIDEO POPUP ================= */}
-      {showVideoPopup && (
+      {/* VIDEO POPUP */}
+      {showVideoPopup && activeVideo && (
         <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
           <button
             onClick={() => setShowVideoPopup(false)}
@@ -316,7 +332,7 @@ const CourseEnrollment: React.FC = () => {
 
           <video
             ref={videoRef}
-            src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+            src={activeVideo}
             className="w-full max-w-5xl rounded-xl"
             controls
             autoPlay

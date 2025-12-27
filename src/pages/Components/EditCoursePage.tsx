@@ -26,6 +26,7 @@ const api = axios.create({
   baseURL: "https://dev.backend.onrequestlab.com",
   withCredentials: true,
 })
+
 const mockApi = {
   // =========================
   // CREATE COURSE
@@ -165,21 +166,32 @@ const mockApi = {
   // =========================
   // UPLOAD THUMBNAIL
   // =========================
-  uploadThumbnail: async (file: File): Promise<{ url: string; success: boolean }> => {
-    const imageUrl = URL.createObjectURL(file)
+ uploadThumbnail: async (
+  file: File,
+  courseId: number
+): Promise<{ url: string; success: boolean }> => {
 
-    await api.post(
-      "/course/thumbnail/",
-      {
-        image_url: imageUrl,
-        course: 0, // already handled outside
-        user: userId,
+  const formData = new FormData()
+  formData.append("image_url", file)   // 🔥 actual FILE
+  formData.append("course", String(courseId))
+  formData.append("user", String(userId))
+
+  const res = await api.post(
+    "/course/thumbnail/",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
       },
-      
-    )
+    }
+  )
 
-    return { url: imageUrl, success: true }
-  },
+  return {
+    url: res.data.image_url, // backend se jo URL aaye
+    success: true,
+  }
+}
+,
 
   // =========================
   // PUBLISH COURSE
@@ -1058,13 +1070,13 @@ function ThumbnailUpload({
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer.files?.[0]) {
       onUpload(e.dataTransfer.files[0])
     }
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files?.[0]) {
       onUpload(e.target.files[0])
     }
   }
@@ -1072,15 +1084,19 @@ function ThumbnailUpload({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900">Course Thumbnail</h3>
+        <h3 className="text-lg font-semibold text-gray-900">
+          Course Thumbnail
+        </h3>
         <p className="text-sm text-gray-500">
-          Upload an attractive thumbnail for your course (recommended: 1280x720px)
+          Upload an attractive thumbnail (recommended: 1280×720px)
         </p>
       </div>
 
       <div
         className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-          dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"
+          dragActive
+            ? "border-blue-500 bg-blue-50"
+            : "border-gray-300 hover:border-gray-400"
         }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -1090,7 +1106,7 @@ function ThumbnailUpload({
         {thumbnail ? (
           <div className="relative">
             <img
-              src={thumbnail || "/placeholder.svg"}
+              src={thumbnail}
               alt="Course thumbnail"
               className="max-h-64 mx-auto rounded-lg shadow-sm"
             />
@@ -1109,30 +1125,57 @@ function ThumbnailUpload({
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <ImageIcon className="h-8 w-8 text-gray-400" />
             </div>
-            <p className="text-gray-600 mb-2">Drag and drop your image here, or</p>
-            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+            <p className="text-gray-600 mb-2">
+              Drag and drop your image here, or
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+            >
               <Upload className="h-4 w-4 mr-2" />
               Browse Files
             </Button>
-            <p className="text-xs text-gray-400 mt-3">PNG, JPG, or GIF up to 5MB</p>
+            <p className="text-xs text-gray-400 mt-3">
+              PNG, JPG, or GIF up to 5MB
+            </p>
           </div>
         )}
-        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+
+        {/* ✅ Hidden input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileSelect}
+        />
       </div>
 
       <div className="flex justify-between pt-4 border-t border-gray-100">
         <Button variant="outline" onClick={onBack}>
           Back
         </Button>
+
         <Button onClick={onPublish} disabled={isLoading}>
           {isLoading ? (
             <>
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <svg
+                className="animate-spin -ml-1 mr-2 h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
                 <path
                   className="opacity-75"
                   fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                 />
               </svg>
               Publishing...
@@ -1189,6 +1232,8 @@ export default function EditCoursePage() {
   const [modules, setModules] = useState<Module[]>([])
   const [thumbnail, setThumbnail] = useState<string | null>(null)
   const [published, setPublished] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
 
   const steps = ["Course Details", "Modules & Chapter", "Thumbnail & Publish"]
 
@@ -1305,7 +1350,7 @@ export default function EditCoursePage() {
     formData.append("course", courseId)
     formData.append("user", userId)
 
-    await api.post(`/course/thumbnail/`, formData, {
+    await api.put(`/course/thumbnail/${courseId}/`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     })
 

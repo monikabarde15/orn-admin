@@ -336,7 +336,7 @@ const routes = [
          element: <AdminMessages />,
     },
      {
-        path: '/blogs',
+        path: '/BlogAdmin',
          element: <BlogAdmin />,
     },
    

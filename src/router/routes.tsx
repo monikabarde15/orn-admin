@@ -8,6 +8,7 @@ const BlogAdmin = lazy(() => import('../pages/BlogAdmin'));
 
 
 const ChangePasswordPortal = lazy(() => import('../pages/ChangePassword'));
+const AdminChangePassword = lazy(() => import('../pages/AdminChangePassword'));
 
 
 const Analytics = lazy(() => import('../pages/Analytics'));
@@ -231,6 +232,11 @@ const routes = [
         path: '/change-password',
         element: <ChangePasswordPortal />,
         layout:'web',
+
+    },
+     {
+        path: '/admin-change-password',
+        element: <AdminChangePassword />,
 
     },
     {

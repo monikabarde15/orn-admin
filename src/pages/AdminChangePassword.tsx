@@ -161,7 +161,6 @@ const AdminChangePassword = () => {
           </div>
         </form>
       </div>
-      <Message />
     </div>
   );
 };

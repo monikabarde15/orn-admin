@@ -191,8 +191,10 @@ setTimeout(() => (window.location.href = "/"), 800);
               <p className="wallet-line">
                 <Wallet size={16} /> {loadingWallet ? "Loading..." : `₹${walletBalance}`}
               </p>
-              <button className="blue-btn" onClick={() => navigateTo("/wallet-history")}>Wallet History</button>
-              <button className="blue-btn" onClick={() => navigateTo("/instances")}>Your Instances</button>
+              {/* <button className="blue-btn" onClick={() => navigateTo("/wallet-history")}>Wallet History</button> */}
+               <button className="blue-btn" onClick={() => navigateTo("/my-subscrption")}>My Subscrption</button>
+              
+              {/* <button className="blue-btn" onClick={() => navigateTo("/instances")}>Your Instances</button> */}
               <button className="red-btn" onClick={handleLogout}>Logout</button>
             </div>
           ) : (
@@ -260,11 +262,14 @@ setTimeout(() => (window.location.href = "/"), 800);
                     <Wallet size={16} /> <span>{loadingWallet ? "Loading..." : `₹${walletBalance}`}</span>
                   </div>
                  
-                  <div className="dropdown-item" onClick={() => navigateTo("/wallet-history")}>
+                  {/* <div className="dropdown-item" onClick={() => navigateTo("/wallet-history")}>
                     <Wallet size={16} /> <span>Wallet History</span>
-                  </div>
-                  <div className="dropdown-item" onClick={() => navigateTo("/your-instances")}>
+                  </div> */}
+                  {/* <div className="dropdown-item" onClick={() => navigateTo("/your-instances")}>
                     <Laptop size={16} /> <span>Your Instances</span>
+                  </div> */}
+                   <div className="dropdown-item" onClick={() => navigateTo("/my-subscrption")}>
+                    <Laptop size={16} /> <span>My Subscrption</span>
                   </div>
                   <div className="dropdown-item" onClick={() => navigateTo("/change-password")}>
                     <Lock size={16} /> <span>Change Password</span>

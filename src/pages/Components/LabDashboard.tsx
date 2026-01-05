@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
@@ -18,18 +18,23 @@ interface Instance {
 
 const LabDashboard: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+
   const [instance, setInstance] = useState<Instance | null>(null);
   const [loading, setLoading] = useState(true);
-  const [leftWidth, setLeftWidth] = useState(70); // %
+  const [leftWidth, setLeftWidth] = useState(70);
   const isResizing = useRef(false);
 
   const query = new URLSearchParams(location.search);
   const userId = query.get("user");
 
   const token =
-    localStorage.getItem("jwt-auth") || localStorage.getItem("access") || "";
+    localStorage.getItem("jwt-auth") ||
+    localStorage.getItem("access") ||
+    "";
 
-  // ✅ Fetch instance only when userId + token exist
+  /* ================= FETCH INSTANCE ================= */
+
   useEffect(() => {
     const fetchInstance = async () => {
       if (!userId || !token) {
@@ -37,12 +42,15 @@ const LabDashboard: React.FC = () => {
         return;
       }
       try {
-        const res = await axios.get(`${API_BASE}/lab/userinst/${userId}/`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `${API_BASE}/lab/userinst/${userId}/`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
         const instances: Instance[] = res.data || [];
         const active =
           instances.find((i) => i.status === "Launched") || instances[0];
+
         setInstance(active || null);
       } catch (err) {
         console.error("Error fetching instance:", err);
@@ -54,7 +62,8 @@ const LabDashboard: React.FC = () => {
     fetchInstance();
   }, [userId, token]);
 
-  // ✅ Resizing logic always runs (hooks order fixed)
+  /* ================= RESIZE LOGIC ================= */
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing.current) return;
@@ -71,6 +80,7 @@ const LabDashboard: React.FC = () => {
 
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", stopResizing);
+
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", stopResizing);
@@ -82,7 +92,8 @@ const LabDashboard: React.FC = () => {
     document.body.style.cursor = "col-resize";
   };
 
-  // ✅ Conditional rendering happens AFTER hooks
+  /* ================= CONDITIONAL RENDER ================= */
+
   if (loading)
     return (
       <div className="flex items-center justify-center h-screen text-gray-300 bg-black">
@@ -97,10 +108,6 @@ const LabDashboard: React.FC = () => {
       </div>
     );
 
-  const ip = instance.instance_ip || "N/A";
-  const username = instance.userName || instance.AccessKeyId || "root";
-  const password =
-    instance.AccessKeyId || instance.SecretAccessKey || "lab123";
   const instanceType = instance.instance_type || "container";
 
   const tutorialSrc =
@@ -110,8 +117,9 @@ const LabDashboard: React.FC = () => {
       ? "https://dev.backend.onrequestlab.com/learn/iscsi/"
       : "https://dev.backend.onrequestlab.com/learn/docker/";
 
-  const sshUrl =
-    instance.web_ssh_url
+  const sshUrl = instance.web_ssh_url || "";
+
+  /* ================= UI ================= */
 
   return (
     <div
@@ -121,9 +129,35 @@ const LabDashboard: React.FC = () => {
         width: "100vw",
         backgroundColor: "#111",
         overflow: "hidden",
+        position: "relative",
       }}
     >
-      {/* ✅ Left Panel - Tutorial */}
+      {/* 🔙 TOP BACK BUTTON */}
+      <div
+        style={{
+          position: "fixed",
+          top: "12px",
+          left: "12px",
+          zIndex: 1000,
+        }}
+      >
+        <button
+          onClick={() => navigate(-1)}
+          style={{
+            background: "#000",
+            color: "#fff",
+            border: "1px solid #444",
+            padding: "8px 14px",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontSize: "14px",
+          }}
+        >
+          ← Back
+        </button>
+      </div>
+
+      {/* LEFT PANEL */}
       <div
         style={{
           width: `${leftWidth}%`,
@@ -132,56 +166,37 @@ const LabDashboard: React.FC = () => {
           overflowY: "auto",
           display: "flex",
           flexDirection: "column",
-          transition: "width 0.1s ease-out",
         }}
       >
         <iframe
           src={tutorialSrc}
           title="Tutorial"
-          style={{
-            flex: 1,
-            width: "100%",
-            height: "100%",
-            border: "none",
-          }}
+          style={{ flex: 1, border: "none" }}
         />
       </div>
 
-      {/* ✅ Draggable Divider */}
+      {/* DRAG BAR */}
       <div
         onMouseDown={startResizing}
         style={{
           width: "6px",
           cursor: "col-resize",
           backgroundColor: "#444",
-          transition: "background 0.2s",
         }}
-        onMouseEnter={(e) =>
-          ((e.target as HTMLDivElement).style.backgroundColor = "#666")
-        }
-        onMouseLeave={(e) =>
-          ((e.target as HTMLDivElement).style.backgroundColor = "#444")
-        }
       ></div>
 
-      {/* ✅ Right Panel - WebSSH */}
+      {/* RIGHT PANEL */}
       <div
         style={{
           width: `${100 - leftWidth}%`,
           backgroundColor: "#1e1e1e",
           display: "flex",
-          flexDirection: "column",
         }}
       >
         <iframe
           src={sshUrl}
-          title="WebSSH Terminal"
-          style={{
-            flex: 1,
-            width: "100%",
-            height: "100%",
-            border: "none",
-          }}
+          title="WebSSH"
+          style={{ flex: 1, border: "none" }}
         />
       </div>
     </div>

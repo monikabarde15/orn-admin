@@ -147,6 +147,9 @@ const Otp = lazy(() => import('../pages/Authentication/Otp'));
 const Home = lazy(() => import('../pages/websites/Home'));
 const Pricing = lazy(() => import('../pages/Components/Pricing'));
 const Courses = lazy(() => import('../pages/Components/Courses'));
+const MySubscription = lazy(() => import('../pages/Components/MySubscription'));
+
+
 
 const PrivacyPolicy = lazy(() => import('../pages/Components/PrivacyPolicy'));
 const ContactPage = lazy(() => import('../pages/Components/ContactPage'));
@@ -186,6 +189,11 @@ const routes = [
     {
             path: '/your-instances',
             element: <UserInstances />,
+            layout:'web',
+        },
+         {
+            path: '/my-subscrption',
+            element: <MySubscription />,
             layout:'web',
         },
     {

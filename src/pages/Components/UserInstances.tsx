@@ -189,57 +189,12 @@ export default function LabPricing() {
 
       <div className="min-h-screen bg-slate-950 px-6 py-20">
         <h1 className="text-4xl font-bold text-white text-center mb-10">
-          My Subscriptions & Labs
+          My Labs
         </h1>
 
-        {/* ===== SUBSCRIPTIONS ===== */}
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-6 mb-14">
-          {subscriptions.map((plan) => {
-            const active = isPlanActive(plan);
-            return (
-              <div
-                key={plan.subscription_id}
-                className={`p-6 rounded-xl border ${
-                  active
-                    ? "border-green-500 bg-green-500/10"
-                    : "border-red-500 bg-red-500/10 opacity-60"
-                }`}
-              >
-                <h3 className="text-xl text-white font-bold">
-                  {plan.name}
-                </h3>
-                <p className="mt-2 text-gray-400">
-                  Expires on:{" "}
-                  {new Date(plan.expires_at).toLocaleDateString()}
-                </p>
-                <button
-                  disabled={!active || launching}
-                  onClick={() => launchInstance(plan)}
-                  className={`mt-4 px-4 py-2 rounded text-white ${
-                    active
-                      ? "bg-blue-600"
-                      : "bg-gray-700 cursor-not-allowed"
-                  }`}
-                >
-                  Launch Lab
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* ===== SHOW MY LABS ===== */}
-        <div className="text-center mb-6">
-          <button
-            onClick={() => setShowInstances((p) => !p)}
-            className="text-blue-400 underline font-semibold text-lg"
-          >
-            {showInstances ? "Hide My Labs" : "Show My Labs"}
-          </button>
-        </div>
+              
 
         {/* ===== INSTANCE LIST ===== */}
-        {showInstances && (
           <div className="max-w-5xl mx-auto bg-white/5 p-6 rounded-xl">
             <input
               className="w-full mb-4 px-3 py-2 rounded bg-white/10 text-white"
@@ -272,7 +227,7 @@ export default function LabPricing() {
                   <button
                     disabled={!isActionAllowed(inst)}
                     onClick={() =>
-                      window.open(inst.web_ssh_url, "_blank")
+                      window.open(`/lab?user=${inst.userId}`, "_blank")
                     }
                     className="px-3 py-1 bg-blue-600 rounded disabled:opacity-40"
                   >
@@ -318,37 +273,9 @@ export default function LabPricing() {
               </div>
             )}
           </div>
-        )}
       </div>
 
-      {/* ===== UPGRADE POPUP ===== */}
-      {showUpgradePopup && currentExpired && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-slate-900 p-6 rounded-xl w-full max-w-md">
-            <h3 className="text-xl text-white font-bold mb-2">
-              Plan Expired
-            </h3>
-            <p className="text-gray-400 mb-4">
-              <b>{currentExpired.name}</b> has expired.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={skipCurrentPlan}
-                className="px-4 py-2 bg-gray-700 text-white rounded"
-              >
-                Skip
-              </button>
-              <button
-                onClick={upgradeAndLaunch}
-                className="px-4 py-2 bg-blue-600 text-white rounded"
-              >
-                Pay & Upgrade
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+     
       <Footer />
     </>
   );

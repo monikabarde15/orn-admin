@@ -120,7 +120,7 @@ const menuItems: MenuItem[] = [
           label: "users",
           icon: IconMenuUsers,
           subMenu: [
-            { path: "/apps/UsersList", label: "Users List", permission: "Users" },
+            { path: "/users-list", label: "Users List", permission: "Users" },
           ],
         },
       ]
@@ -130,7 +130,7 @@ const menuItems: MenuItem[] = [
     sectionLabel: "lab management",
     items: [
       { 
-        path: userID < 2 ? "/apps/LabList" : "/apps/LabListNormal",
+        path: userID < 2 ? "/lab-list" : "/apps/LabListNormal",
         label: "Lab List", 
         icon: IconMenuContacts, 
         permission: "LabList" 
@@ -142,7 +142,7 @@ const menuItems: MenuItem[] = [
     sectionLabel: "Payment management",
     items: [
       { 
-        path: userID < 2 ? "/apps/PaymentList" : "/apps/PaymentListNormal",
+        path: userID < 2 ? "/admin-payment-list" : "/apps/PaymentListNormal",
         label: "PaymentList", 
         icon: IconMenuContacts, 
         permission: "PaymentList" 
@@ -156,7 +156,7 @@ if (userID < 2) {
   menuItems.push({
     sectionLabel: "Blog Management",
     items: [
-      { path: "/BlogAdmin", label: "Blogs", icon: IconMenuContacts, permission: "blogs" },
+      { path: "/admin-blog", label: "Blogs", icon: IconMenuContacts, permission: "blogs" },
     ],
   });
 }
@@ -175,10 +175,10 @@ if (userID < 2) {
   menuItems.push({
     sectionLabel: "user support",
     items: [
-      { path: "/apps/contacts", label: "contacts", icon: IconMenuContacts, permission: "contacts" },
-      { path: "/apps/FeedbackList", label: "Feedback List", icon: IconMenuContacts, permission: "FeedbackListNew" },
+      { path: "/admin-contacts", label: "contacts", icon: IconMenuContacts, permission: "contacts" },
+      { path: "/admin-feedback-list", label: "Feedback List", icon: IconMenuContacts, permission: "FeedbackListNew" },
       { path: "/admin-change-password", label: "Change Password", icon: IconMenuContacts, permission: "contacts" },
-      { path: "/AdminMessages", label: "Support", icon: IconMenuContacts, permission: "contacts" },
+      { path: "/admin-messages", label: "Support", icon: IconMenuContacts, permission: "contacts" },
     ],
   });
 } else {

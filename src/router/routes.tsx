@@ -248,7 +248,7 @@ const routes = [
 
     },
     {
-        path: '/apps/PaymentListNormal',
+        path: '/payment-list',
         element: <PaymentListNormal />,
         layout:'web',
 
@@ -346,11 +346,11 @@ const routes = [
          element: <MessagesList />,
     },
     {
-        path: '/AdminMessages',
+        path: '/admin-messages',
          element: <AdminMessages />,
     },
      {
-        path: '/BlogAdmin',
+        path: '/admin-blog',
          element: <BlogAdmin />,
     },
    
@@ -383,11 +383,11 @@ const routes = [
         element: <Notes />,
     },
     {
-        path: '/apps/FeedbackList',
+        path: '/admin-feedback-list',
         element: <FeedbackListNew />,
     },
     {
-        path: '/apps/LabList',
+        path: '/lab-list',
         element: <LabList />,
     },
     {
@@ -396,16 +396,16 @@ const routes = [
     },
     
      {
-        path: '/apps/PaymentList',
+        path: '/admin-payment-list',
         element: <PaymentList />,
     },
     {
-        path: '/apps/UsersList',
+        path: '/users-list',
         element: <UsersList />,
     },
     
     {
-        path: '/apps/contacts',
+        path: '/admin-contacts',
         element: <Contacts />,
     },
     {

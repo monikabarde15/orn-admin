@@ -296,11 +296,9 @@ const { id } = useParams<{ id: string }>();
               disabled
               className="w-full bg-purple-600 text-white py-4 rounded-lg font-semibold cursor-default"
             >
-              {Number(course.price) <= 0
-                ? "Free Course"
-                : `Buy ₹${course.price}`}
+              Watch
             </button>
-
+            <a href="/your-instances">
             <button
               onClick={handleAddToCart}
               disabled={addingToCart || inCart}
@@ -314,9 +312,10 @@ const { id } = useParams<{ id: string }>();
               {inCart
                 ? "Already in Cart"
                 : addingToCart
-                ? "Adding..."
-                : "Add to Cart"}
+                ? "Lunching..."
+                : "Lunch Lab"}
             </button>
+            </a>
 
             <p className="text-xs text-gray-400 text-center">
               Lifetime access • Certificate included

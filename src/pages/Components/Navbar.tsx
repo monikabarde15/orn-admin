@@ -111,8 +111,8 @@ setTimeout(() => (window.location.href = "/"), 800);
   const navigateTo = (path) => (window.location.href = path);
 
   const links = isLoggedIn
-    ? ["/", "/about-us","/courses-list", "/labs", "/blogs","/contact-us"]
-    : ["/", "/about-us","/courses-list", "/labs", "/blogs", "/contact-us"];
+    ? ["/", "/about-us", "/labs", "/blogs","/contact-us"]
+    : ["/", "/about-us", "/labs", "/blogs", "/contact-us"];
 
   return (
     <>
@@ -274,7 +274,7 @@ setTimeout(() => (window.location.href = "/"), 800);
                   <div className="dropdown-item" onClick={() => navigateTo("/change-password")}>
                     <Lock size={16} /> <span>Change Password</span>
                   </div>
-                  <div className="dropdown-item" onClick={() => navigateTo("/apps/PaymentListNormal")}>
+                  <div className="dropdown-item" onClick={() => navigateTo("/payment-list")}>
                     <DollarSign size={16} /> <span>My Payments</span>
                   </div>
                   <div className="dropdown-item logout" onClick={handleLogout}>

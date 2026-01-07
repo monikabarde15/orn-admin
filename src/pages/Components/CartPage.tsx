@@ -193,7 +193,7 @@ const loaderTimerRef = useRef(null);
         let action = "";
 
         if (actionnew === "terraform") {
-          action = "iscsi";
+          action = actionnew;//"iscsi";
         } else {
           action = actionnew;
         }

@@ -1,188 +1,372 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
-import { Check } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
 
 const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
 
-const notify = (msg, type = "info") => {
+const notify = (msg, type = "info") =>
   toast[type](msg, { position: "top-center", autoClose: 2500 });
-};
 
-const MySubscriptions = () => {
-  const [subscriptions, setSubscriptions] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
+export default function MySubscriptions() {
+  const navigate = useNavigate();
 
-  /* ================= TOKEN ================= */
-
+  /* ================= AUTH ================= */
   const getCookie = (name) => {
-    if (typeof document === "undefined") return "";
     const v = `; ${document.cookie}`;
     const parts = v.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop().split(";").shift();
     return "";
   };
 
-  let token =
+  const token =
     getCookie("access") ||
-    getCookie("jwt-auth") ||
     localStorage.getItem("jwt-auth") ||
     localStorage.getItem("token") ||
     "";
 
-  token = token.replace("Bearer ", "").trim();
+  const userId = getCookie("user_id");
 
-  /* ================= FETCH API ================= */
+  /* ================= STATE ================= */
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [wallet, setWallet] = useState(0);
 
+  const [expiredPlans, setExpiredPlans] = useState([]);
+  const [popupPlan, setPopupPlan] = useState(null);
+  const [showPopup, setShowPopup] = useState(false);
+
+  const [processing, setProcessing] = useState(false);
+
+  /* ================= HELPERS ================= */
+  const isActive = (p) =>
+    p.expires_at && new Date(p.expires_at) > new Date();
+
+  const getAction = (name = "") => {
+  const n = name.toLowerCase();
+
+  if (n.includes("docker")) return "docker";
+  if (n.includes("kubernetes") || n.includes("k8s")) return "kubernetes";
+  if (n.includes("linux")) return "linux";
+  if (n.includes("redhat") || n.includes("rhel")) return "redhat";
+  if (n.includes("terraform")) return "terraform";
+  if (n.includes("iscsi")) return "iscsi";
+  if (n.includes("python")) return "python";
+  if (n.includes("jenkins")) return "jenkins";
+
+  return null; // ❗ IMPORTANT
+};
+
+
+  /* ================= FETCH ================= */
   const fetchSubscriptions = async () => {
-    if (!token) return;
+    const res = await axios.get(
+      `${API_BASE}/users/subscriptions/`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setSubscriptions(res.data || []);
+  };
 
-    setLoading(true);
-    try {
-      const res = await axios.get(
-        `${API_BASE}/users/subscriptions/`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      setSubscriptions(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error(err);
-      notify("Failed to fetch subscriptions", "error");
-    } finally {
-      setLoading(false);
-    }
+  const fetchWallet = async () => {
+    const res = await axios.get(
+      `${API_BASE}/users/wallet/balance/`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setWallet(res.data?.balance || 0);
   };
 
   useEffect(() => {
     fetchSubscriptions();
+    fetchWallet();
   }, []);
 
-  /* ================= SEARCH ================= */
+  /* ================= POPUP ON REFRESH ================= */
+  useEffect(() => {
+    if (!subscriptions.length) return;
 
-  const searchedData = subscriptions.filter((item) =>
-    JSON.stringify(item).toLowerCase().includes(search.toLowerCase())
-  );
+    const expired = subscriptions.filter((p) => !isActive(p));
+    setExpiredPlans(expired);
 
-  /* ================= UI ================= */
+    if (expired.length > 0) {
+      setPopupPlan(expired[0]);
+      setShowPopup(true);
+    }
+  }, [subscriptions]);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-24 px-6">
-      <ToastContainer />
-{/* TOP ACTION BUTTONS */}
-<div className="flex justify-center gap-4 mb-12">
-  <button
-    onClick={() => window.location.href = "/your-instances"}
-    className="px-6 py-2.5 rounded-full text-sm font-semibold
-               bg-gradient-to-r from-indigo-500 to-purple-500
-               text-white shadow-md shadow-purple-500/30
-               hover:scale-105 transition-all duration-200"
-  >
-    My Labs
-  </button>
+  /* ================= RAZORPAY ================= */
+  const loadRazorpay = () =>
+    new Promise((resolve) => {
+      if (window.Razorpay) return resolve(true);
+      const s = document.createElement("script");
+      s.src = "https://checkout.razorpay.com/v1/checkout.js";
+      s.onload = () => resolve(true);
+      s.onerror = () => resolve(false);
+      document.body.appendChild(s);
+    });
 
-  <button
-    onClick={() => window.location.href = "/courses-list"}
-    className="px-6 py-2.5 rounded-full text-sm font-semibold
-               bg-gradient-to-r from-emerald-500 to-teal-500
-               text-white shadow-md shadow-emerald-500/30
-               hover:scale-105 transition-all duration-200"
-  >
-    My Courses
-  </button>
-</div>
+  const openRazorpay = async (amount) => {
+    const loaded = await loadRazorpay();
+    if (!loaded) throw new Error("Razorpay load failed");
 
-      <div className="max-w-7xl mx-auto">
-        {/* TITLE */}
-        
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-extrabold bg-gradient-to-r from-purple-400 to-blue-300 bg-clip-text text-transparent">
-            My Subscriptions
-          </h1>
-          <p className="text-gray-400 mt-4 text-lg">
-            Your active subscription plans
-          </p>
-        </div>
+    const orderRes = await axios.post(
+      `${API_BASE}/users/create-order/`,
+      { amount },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-        {/* SEARCH */}
-        <div className="max-w-xl mx-auto mb-12">
-          <input
-            type="text"
-            placeholder="Search subscription..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-5 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none"
-          />
-        </div>
+    const order = orderRes.data;
 
-        {/* LOADING */}
-        {loading && (
-          <p className="text-center text-gray-400">Loading...</p>
-        )}
+    return new Promise((resolve, reject) => {
+      new window.Razorpay({
+        key: order.key_id,
+        amount: order.amount * 100,
+        currency: "INR",
+        name: "OnRequestLab",
+        order_id: order.order_id,
 
-        {/* EMPTY */}
-        {!loading && searchedData.length === 0 && (
-          <p className="text-center text-gray-400">
-            No subscriptions found
-          </p>
-        )}
+        handler: async (response) => {
+          try {
+            await axios.post(
+              `${API_BASE}/users/verify-payment/`,
+              {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            resolve(true);
+          } catch {
+            reject("Verification failed");
+          }
+        },
 
-        {/* ✅ CARD GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {searchedData.map((sub) => (
-            <div
-              key={sub.subscription_id}
-              className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:border-purple-500/40 transition"
-            >
-              {/* NAME */}
-              <h3 className="text-3xl font-bold text-white mb-2">
-                {sub.name}
-              </h3>
+        modal: {
+          ondismiss: () => reject("Payment cancelled"),
+        },
+      }).open();
+    });
+  };
 
-              <p className="text-purple-300 text-sm mb-6 capitalize">
-                {sub.billing_cycle} plan
-              </p>
+  /* ================= UPGRADE ================= */
+  const handleUpgrade = async (plan) => {
+    if (processing) return;
+    setProcessing(true);
 
-              {/* PRICE */}
-              <div className="flex items-baseline gap-2 mb-6">
-                <span className="text-3xl font-bold text-white">
-                  ₹{sub.price}
-                </span>
-                <span className="text-gray-400 text-lg">
-                  /{sub.billing_cycle}
-                </span>
-              </div>
+    try {
+      const remaining = Math.max(0, plan.price - wallet);
 
-              {/* DETAILS */}
-              <p className="text-gray-400 font-medium mb-4 text-sm uppercase tracking-wider">
-                Subscription Details
-              </p>
+      // ✅ Wallet enough
+      if (remaining === 0) {
+        await axios.post(
+          `${API_BASE}/users/update_active/${userId}/`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center gap-2 text-gray-300 text-sm">
-                  <Check className="w-4 h-4 text-green-400" />
-                  Started: {new Date(sub.created_at).toLocaleDateString()}
-                </li>
-                <li className="flex items-center gap-2 text-gray-300 text-sm">
-                  <Check className="w-4 h-4 text-green-400" />
-                  Expires: {new Date(sub.expires_at).toLocaleDateString()}
-                </li>
-              </ul>
+        notify("Plan upgraded successfully", "success");
+        setShowPopup(false);
+        fetchSubscriptions();
+        fetchWallet();
+       
+        return;
+      }
 
-              {/* BUTTON */}
-              <button
-                disabled
-                className="w-full py-4 rounded-xl font-semibold bg-gradient-to-r from-purple-500 to-blue-500 text-white opacity-80 cursor-not-allowed"
-              >
-                Active Subscription
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+      // ❌ Wallet low → Razorpay
+      notify(`Wallet low, paying ₹${remaining}`, "warning");
+      await openRazorpay(remaining);
+
+      // 🔥 FINAL UPGRADE API
+      await axios.post(
+        `${API_BASE}/users/update_active/${userId}/`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      notify("Payment successful & plan upgraded", "success");
+      setShowPopup(false);
+      fetchSubscriptions();
+      fetchWallet();
+       setPopupPlan(null);
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+
+    } catch (err) {
+      notify(
+        typeof err === "string" ? err : "Upgrade failed",
+        "error"
+      );
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  /* ================= ACTIONS ================= */
+  // const launchLab = async (plan) => {
+  //   const action = getAction(plan.name);
+  //   await axios.post(
+  //     `${API_BASE}/users/deploy/${action}/`,
+  //     { user_id: userId, payment_id: plan.subscription_id },
+  //     { headers: { Authorization: `Bearer ${token}` } }
+  //   );
+  //   navigate(`/lab?user=${userId}`);
+  // };
+
+const launchLab = async (plan) => {
+  const action = getAction(plan.name);
+
+  if (!action) {
+    notify(
+      `Lab type not supported for plan: ${plan.name}`,
+      "error"
+    );
+    return;
+  }
+
+  try {
+    await axios.post(
+      `${API_BASE}/users/deploy/${action}/`,
+      {
+        user_id: userId,
+        payment_id: plan.subscription_id,
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    notify("Lab launch started", "success");
+
+    navigate(`/lab?user=${userId}`);
+  } catch (err) {
+    notify("Failed to launch lab", "error");
+  }
 };
 
-export default MySubscriptions;
+  const handleContinue = (plan) => {
+    if (!isActive(plan)) {
+      setPopupPlan(plan);
+      setShowPopup(true);
+      return;
+    }
+    navigate("/course-preview/3");
+  };
+
+  /* ================= UI ================= */
+  return (
+    <div className="min-h-screen bg-[#020617] text-white px-6 py-20">
+      <ToastContainer />
+
+      <h1 className="text-4xl font-semibold text-center mb-12">
+        My Subscriptions
+      </h1>
+
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {subscriptions.map((p) => {
+          const active = isActive(p);
+
+          return (
+            <div
+              key={p.subscription_id}
+              className={`p-6 rounded-2xl border
+                ${
+                  active
+                    ? "border-emerald-500/30 bg-emerald-500/5"
+                    : "border-red-500/30 bg-red-500/5"
+                }`}
+            >
+              <h3 className="text-lg font-semibold">{p.name}</h3>
+
+              <p className="text-sm text-gray-400 mt-2">
+                Price: ₹{p.price}
+              </p>
+              <p className="text-sm text-gray-400">
+                Billing: {p.billing_cycle}
+              </p>
+              <p className="text-sm text-gray-400">
+                Expiry: {new Date(p.expires_at).toLocaleDateString()}
+              </p>
+
+              <div className="mt-2 flex justify-between items-center">
+                <span
+                  className={`text-sm ${
+                    active ? "text-emerald-400" : "text-red-400"
+                  }`}
+                >
+                  Status: {active ? "Active" : "Expired"}
+                </span>
+
+                {!active && (
+                  <button
+                    onClick={() => {
+                      setPopupPlan(p);
+                      setShowPopup(true);
+                    }}
+                    className="px-3 h-7 text-xs rounded-md
+                      border border-purple-500/40 text-purple-400"
+                  >
+                    Upgrade
+                  </button>
+                )}
+              </div>
+
+              <div className="mt-5 space-y-2">
+                {active && (
+                  <button
+                    onClick={() => launchLab(p)}
+                    className="w-full h-9 rounded-md text-sm
+                      border border-emerald-500/40 text-emerald-400"
+                  >
+                    Launch Lab
+                  </button>
+                )}
+
+                <button
+                  onClick={() => handleContinue(p)}
+                  className="w-full h-9 rounded-md text-sm
+                    border border-amber-500/40 text-amber-400"
+                >
+                  Continue Watching
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ===== POPUP ===== */}
+      {showPopup && popupPlan && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-[#020617] p-8 rounded-xl border border-purple-500/40 text-center w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-3">
+              Plan Expired
+            </h2>
+            <p className="text-gray-400 mb-6">
+              Please upgrade <b>{popupPlan.name}</b> to continue.
+            </p>
+
+            <div className="flex justify-center gap-4">
+              {subscriptions.length > expiredPlans.length && (
+                <button
+                  onClick={() => setShowPopup(false)}
+                  className="px-5 h-9 text-sm rounded-md
+                    border border-gray-500/40 text-gray-300"
+                >
+                  Skip
+                </button>
+              )}
+
+              <button
+                disabled={processing}
+                onClick={() => handleUpgrade(popupPlan)}
+                className="px-5 h-9 text-sm rounded-md
+                  border border-purple-500/40 text-purple-400"
+              >
+                Upgrade Plan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

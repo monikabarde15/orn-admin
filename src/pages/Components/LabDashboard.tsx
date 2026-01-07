@@ -4,17 +4,52 @@ import axios from "axios";
 
 const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
 
+/* ================= TYPES ================= */
+
 interface Instance {
   user_instance_id: string;
   instance_type: string;
+  instance_name?: string;
   instance_ip?: string;
   status: string;
   web_ssh_url?: string;
-  userName?: string;
-  secret_key?: string;
-  AccessKeyId?: string;
-  SecretAccessKey?: string;
 }
+
+/* ================= PACKAGE EXTRACTOR ================= */
+
+const extractPackageFromName = (name?: string): string => {
+  console.log('name=',name);
+  if (!name) return "docker";
+
+  const lower = name.toLowerCase();
+   console.log('name=',name,'lower=',lower);
+
+  if (lower.includes("kubernetes") || lower.includes("k8s")) return "kubernetes";
+  if (lower.includes("docker")) return "docker";
+  if (lower.includes("monika-terraform-lab")) return "terraform";
+   if (lower.includes("monika-nodea")) return "redhat";
+   if (lower.includes("python")) return "python";
+   if (lower.includes("jenkins")) return "jenkins ";
+  if (lower.includes("linux")) return "linux";
+  if (lower.includes("iscsi")) return "iscsi";
+
+  return "docker"; // fallback
+};
+
+/* ================= DOC MAP ================= */
+
+const DOCS_MAP: Record<string, string> = {
+  kubernetes: "https://dev.backend.onrequestlab.com/learn/kubernetes/",
+  redhat: "https://dev.backend.onrequestlab.com/learn/redhat/",
+  docker: "https://dev.backend.onrequestlab.com/learn/docker/",
+  linux: "https://dev.backend.onrequestlab.com/learn/linux/",
+  iscsi: "https://dev.backend.onrequestlab.com/learn/iscsi/",
+  python: "https://dev.backend.onrequestlab.com/learn/python/",
+  jenkins: "https://dev.backend.onrequestlab.com/learn/jenkins/",
+  terraform: "https://dev.backend.onrequestlab.com/learn/terraform/",
+};
+
+/* ================= COMPONENT ================= */
 
 const LabDashboard: React.FC = () => {
   const location = useLocation();
@@ -23,6 +58,7 @@ const LabDashboard: React.FC = () => {
   const [instance, setInstance] = useState<Instance | null>(null);
   const [loading, setLoading] = useState(true);
   const [leftWidth, setLeftWidth] = useState(70);
+
   const isResizing = useRef(false);
 
   const query = new URLSearchParams(location.search);
@@ -41,19 +77,33 @@ const LabDashboard: React.FC = () => {
         setLoading(false);
         return;
       }
+
       try {
         const res = await axios.get(
           `${API_BASE}/lab/userinst/${userId}/`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         );
 
         const instances: Instance[] = res.data || [];
-        const active =
-          instances.find((i) => i.status === "Launched") || instances[0];
 
-        setInstance(active || null);
-      } catch (err) {
-        console.error("Error fetching instance:", err);
+        // ✅ Pick only running instance
+     const activeInstance =
+  instances
+    .filter((i) => i.isDeleted !== true)
+    .sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() -
+        new Date(a.timestamp).getTime()
+    )[0] || null;
+
+setInstance(activeInstance);
+
+
+
+      } catch (error) {
+        console.error("Error fetching instance:", error);
       } finally {
         setLoading(false);
       }
@@ -67,57 +117,59 @@ const LabDashboard: React.FC = () => {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing.current) return;
-      const newLeftWidth = (e.clientX / window.innerWidth) * 100;
-      if (newLeftWidth > 30 && newLeftWidth < 80) {
-        setLeftWidth(newLeftWidth);
+
+      const newWidth = (e.clientX / window.innerWidth) * 100;
+      if (newWidth > 30 && newWidth < 80) {
+        setLeftWidth(newWidth);
       }
     };
 
-    const stopResizing = () => {
+    const stopResize = () => {
       isResizing.current = false;
       document.body.style.cursor = "default";
     };
 
     window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", stopResizing);
+    window.addEventListener("mouseup", stopResize);
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", stopResizing);
+      window.removeEventListener("mouseup", stopResize);
     };
   }, []);
 
-  const startResizing = () => {
+  const startResize = () => {
     isResizing.current = true;
     document.body.style.cursor = "col-resize";
   };
 
-  /* ================= CONDITIONAL RENDER ================= */
+  /* ================= STATES ================= */
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-300 bg-black">
-        Loading...
+      <div className="flex items-center justify-center h-screen bg-black text-gray-300">
+        Loading lab...
       </div>
     );
+  }
 
-  if (!instance)
+  if (!instance) {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-300 bg-black">
-        No active instance
+      <div className="flex items-center justify-center h-screen bg-black text-gray-300">
+        No active lab found
       </div>
     );
+  }
 
-  const instanceType = instance.instance_type || "container";
+  /* ================= DYNAMIC DOC ================= */
 
-  const tutorialSrc =
-    instanceType === "aws"
-      ? "https://dev.backend.onrequestlab.com/learn/aws/"
-      : instanceType === "iscsi"
-      ? "https://dev.backend.onrequestlab.com/learn/iscsi/"
-      : "https://dev.backend.onrequestlab.com/learn/docker/";
-
+  const packageName = extractPackageFromName(instance.instance_name);
+  const tutorialSrc = DOCS_MAP[packageName];
   const sshUrl = instance.web_ssh_url || "";
+
+  console.log("Lab:", instance.instance_name);
+  console.log("Package:", packageName);
+  console.log("Docs:", tutorialSrc);
 
   /* ================= UI ================= */
 
@@ -129,18 +181,10 @@ const LabDashboard: React.FC = () => {
         width: "100vw",
         backgroundColor: "#111",
         overflow: "hidden",
-        position: "relative",
       }}
     >
-      {/* 🔙 TOP BACK BUTTON */}
-      <div
-        style={{
-          position: "fixed",
-          top: "12px",
-          left: "12px",
-          zIndex: 1000,
-        }}
-      >
+      {/* 🔙 BACK BUTTON */}
+      <div style={{ position: "fixed", top: 12, left: 12, zIndex: 1000 }}>
         <button
           onClick={() => navigate(-1)}
           style={{
@@ -150,42 +194,39 @@ const LabDashboard: React.FC = () => {
             padding: "8px 14px",
             borderRadius: "6px",
             cursor: "pointer",
-            fontSize: "14px",
           }}
         >
           ← Back
         </button>
       </div>
 
-      {/* LEFT PANEL */}
+      {/* 📘 LEFT PANEL – DOCS */}
       <div
         style={{
           width: `${leftWidth}%`,
           backgroundColor: "#fff",
           borderRight: "2px solid #2d2d2d",
-          overflowY: "auto",
           display: "flex",
-          flexDirection: "column",
         }}
       >
         <iframe
           src={tutorialSrc}
-          title="Tutorial"
+          title="Documentation"
           style={{ flex: 1, border: "none" }}
         />
       </div>
 
-      {/* DRAG BAR */}
+      {/* ↔ DRAG BAR */}
       <div
-        onMouseDown={startResizing}
+        onMouseDown={startResize}
         style={{
           width: "6px",
           cursor: "col-resize",
           backgroundColor: "#444",
         }}
-      ></div>
+      />
 
-      {/* RIGHT PANEL */}
+      {/* 💻 RIGHT PANEL – SSH */}
       <div
         style={{
           width: `${100 - leftWidth}%`,
@@ -195,7 +236,7 @@ const LabDashboard: React.FC = () => {
       >
         <iframe
           src={sshUrl}
-          title="WebSSH"
+          title="Web SSH"
           style={{ flex: 1, border: "none" }}
         />
       </div>

@@ -11,7 +11,7 @@ export default function BlogList() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const API_BASE = "https://backend.onrequestlab.com/api/v1";
+  const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
   const getToken = () => localStorage.getItem("token") || "";
 
   const api = axios.create({
@@ -27,9 +27,9 @@ export default function BlogList() {
 
   /* ================= Image Helper ================= */
   const getFullImageUrl = (path) => {
-    if (!path) return DUMMY_IMAGE;
+    if (!path) return 'https://via.placeholder.com/800x400';
     if (path.startsWith("http")) return path;
-    return `https://backend.onrequestlab.com${path}`;
+    return `https://dev.backend.onrequestlab.com${path}`;
   };
 
   const params = useMemo(
@@ -176,7 +176,7 @@ export default function BlogList() {
                     loading="lazy"
                     className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
                     onError={(e) => {
-                      e.currentTarget.src = DUMMY_IMAGE;
+                      e.currentTarget.src = 'https://via.placeholder.com/800x400';
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0f0b16]/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>

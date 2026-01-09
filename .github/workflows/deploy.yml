@@ -2,89 +2,112 @@
 name: Deploy (Dev & Prod)
 
 on:
-    push:
-        branches:
-            - dev
-            - main
+  push:
+    branches:
+      - dev
+      - main
 
 jobs:
-    deploy:
-        runs-on: ubuntu-latest
-        timeout-minutes: 15
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 1
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
-            # Set dev or prod
-            - name: Set environment
-              run: |
-                  if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
-                    echo "ENV=dev" >> $GITHUB_ENV
-                    echo "HOST=${{ secrets.HOST_SERVER_DEV }}" >> $GITHUB_ENV
-                    echo "ENV_FILE=${{ secrets.ENV_DEV }}" >> $GITHUB_ENV
-                  else
-                    echo "ENV=prod" >> $GITHUB_ENV
-                    echo "HOST=${{ secrets.HOST_SERVER_PROD }}" >> $GITHUB_ENV
-                  fi
+      # Determine environment and load secrets
+      - name: Set environment
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+            echo "ENV=dev" >> $GITHUB_ENV
+            echo "HOST=${{ secrets.HOST_SERVER_DEV }}" >> $GITHUB_ENV
+            echo "ENV_FILE=${{ secrets.ENV_DEV }}" >> $GITHUB_ENV
+          else
+            echo "ENV=prod" >> $GITHUB_ENV
+            echo "HOST=${{ secrets.HOST_SERVER_PROD }}" >> $GITHUB_ENV
+            echo "ENV_FILE=${{ secrets.ENV_PROD }}" >> $GITHUB_ENV
+          fi
 
-            - name: Setup SSH Key
-              run: |
-                mkdir -p ~/.ssh
-                echo "${{ secrets.HOST_SERVER_KEY_PAIR }}" > ~/.ssh/id_rsa
-                chmod 600 ~/.ssh/id_rsa
-                ssh-keyscan -H "${{ env.HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.HOST_SERVER_KEY_PAIR }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "${{ env.HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
 
-            # Cache = speed
-            - name: Cache node_modules + Docker layers
-              uses: actions/cache@v4
-              with:
-                  path: |
-                      ~/.npm
-                      /tmp/.buildx-cache
-                  key: ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
-                  restore-keys: ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}-
+      # Cache = speed
+      - name: Cache node_modules + Docker layers
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            /tmp/.buildx-cache
+          key: \( {{ runner.os }}-build- \){{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          restore-keys: \( {{ runner.os }}-build- \){{ hashFiles('package-lock.json') }}-
 
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-            - name: Build & export image
-              run: |
-                  docker buildx create --use
-                  docker buildx build \
-                    --cache-from=type=local,src=/tmp/.buildx-cache \
-                    --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max \
-                    --tag onrequestlab_reactjs:latest \
-                    --output type=docker,dest=app.tar \
-                    .
+      - name: Build & export image
+        run: |
+          docker buildx create --use
+          docker buildx build \
+            --cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max \
+            --tag onrequestlab_reactjs:latest \
+            --output type=docker,dest=app.tar \
+            .
 
-            - name: Transfer image
-              run: |
-                  scp app.tar root@${{ env.HOST }}:~/onrequestlab_reactjs.tar
+      - name: Transfer image
+        run: |
+          scp app.tar root@${{ env.HOST }}:~/onrequestlab_reactjs.tar
 
-            # Restart on server
-            - name: Load image & restart
-              env:
-                  HOST_PASSWORD: ${{ secrets.HOST_PASSWORD }}
-              run: |
-                  ssh root@${{ env.HOST }} << 'EOF'
-                    set -e
+      # ── Main deployment step ──
+      - name: Load image & restart with .env
+        env:
+          HOST_PASSWORD: ${{ secrets.HOST_PASSWORD }}
+        run: |
+          ssh root@${{ env.HOST }} << 'EOF'
+            set -e
 
-                    echo "Loading new Docker image..."
-                    docker load -i onrequestlab_reactjs.tar
+            echo "Loading new Docker image..."
+            docker load -i ~/onrequestlab_reactjs.tar
 
-                    echo "Restarting containers..."
-                    docker rm -f onrequestlab_reactjs
-                    docker run -d -p 127.0.0.1:3000:3000 --name onrequestlab_reactjs onrequestlab_reactjs:latest 
-                    
-                    rm -f onrequestlab_reactjs.tar
-                    echo "Deployed ${{ env.ENV }} successfully!"
-                  EOF
+            echo "Cleaning up old container if exists..."
+            docker rm -f onrequestlab_reactjs 2>/dev/null || true
 
-            - name: Success
-              if: success()
-              run: |
-                  echo "Deployed ${{ env.ENV }} environment"
-                  echo "App running at → http://localhost:3000"
+            echo "Creating .env file from secret..."
+            cat > .env << 'REAL_ENV_EOF'
+            ${{ env.ENV_FILE }}
+            REAL_ENV_EOF
+
+            # Quick debug check (never shows full secret)
+            echo "First few lines of .env (sanitized):"
+            head -n 5 .env | sed 's/./*/g' || true
+            echo "──────────────────────────────────────"
+
+            echo "Starting new container with .env mounted..."
+            docker run -d \
+              --name onrequestlab_reactjs \
+              -p 127.0.0.1:3000:3000 \
+              -v "$(pwd)/.env:/app/.env:ro" \
+              --restart unless-stopped \
+              onrequestlab_reactjs:latest
+
+            echo "Cleaning up transferred tar file..."
+            rm -f ~/onrequestlab_reactjs.tar
+
+            # Optional: remove .env after container starts (extra security)
+            # sleep 5 && rm -f .env
+
+            echo "Successfully deployed ${{ env.ENV }} environment!"
+          EOF
+
+      - name: Success message
+        if: success()
+        run: |
+          echo "Deployment to ${{ env.ENV }} completed successfully"
+          echo "Application should be available at: http://${{ env.HOST }}:3000 (or via your reverse proxy)"

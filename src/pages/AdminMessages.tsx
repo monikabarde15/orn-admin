@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 
-const API_BASE = "https://dev.backend.onrequestlab.com/api/v1/admin/support";
+const API_BASE = `${VIT}/api/v1/admin/support`;
 
 const AdminSupportChat = () => {
   const [chats, setChats] = useState([]);

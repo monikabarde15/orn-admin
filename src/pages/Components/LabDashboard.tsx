@@ -2,7 +2,10 @@ import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
+
+const API_BASE = `${VIT}/api/v1`;
 
 /* ================= TYPES ================= */
 
@@ -39,14 +42,14 @@ const extractPackageFromName = (name?: string): string => {
 /* ================= DOC MAP ================= */
 
 const DOCS_MAP: Record<string, string> = {
-  kubernetes: "https://dev.backend.onrequestlab.com/learn/kubernetes/",
-  redhat: "https://dev.backend.onrequestlab.com/learn/redhat/",
-  docker: "https://dev.backend.onrequestlab.com/learn/docker/",
-  linux: "https://dev.backend.onrequestlab.com/learn/linux/",
-  iscsi: "https://dev.backend.onrequestlab.com/learn/iscsi/",
-  python: "https://dev.backend.onrequestlab.com/learn/python/",
-  jenkins: "https://dev.backend.onrequestlab.com/learn/jenkins/",
-  terraform: "https://dev.backend.onrequestlab.com/learn/terraform/",
+  kubernetes: `${VIT}/learn/kubernetes/`,
+  redhat: `${VIT}/learn/redhat/`,
+  docker: `${VIT}/learn/docker/`,
+  linux: `${VIT}/learn/linux/`,
+  iscsi: `${VIT}/learn/iscsi/`,
+  python: `${VIT}/learn/python/`,
+  jenkins: `${VIT}/learn/jenkins/`,
+  terraform: `${VIT}/learn/terraform/`,
 };
 
 /* ================= COMPONENT ================= */

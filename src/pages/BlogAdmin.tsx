@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 
-const API_BASE = "https://dev.backend.onrequestlab.com/api/v1/admin/blog/";
-const IMAGE_BASE = "https://dev.backend.onrequestlab.com";
+const API_BASE = `${VIT}/api/v1/admin/blog/`;
+const IMAGE_BASE = `${VIT}`;
 
 /* ================= Quill Config ================= */
 const quillModules = {

@@ -7,7 +7,8 @@ import { setPageTitle } from '../../store/themeConfigSlice';
 import IconPencilPaper from '../../components/Icon/IconPencilPaper';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 // Helper to get cookies
 const getCookie = (name: string) => {
   const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
@@ -42,7 +43,7 @@ const Profile = () => {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('https://dev.backend.onrequestlab.com/api/v1/users/profile/', {
+      const response = await axios.get(`${VIT}/api/v1/users/profile/`, {
         headers: {
           'accept': 'application/json',
           'Authorization': `Bearer ${rawToken}`,
@@ -61,7 +62,7 @@ const Profile = () => {
     try {
       setUpdating(true);
       const response = await axios.post(
-        'https://dev.backend.onrequestlab.com/api/v1/users/profile/',
+        `${VIT}/api/v1/users/profile/`,
         {
           first_name: profile.first_name,
           last_name: profile.last_name,

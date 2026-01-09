@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 const LabPricing = () => {
   const [billingType, setBillingType] = useState("monthly");
   const [loading, setLoading] = useState(false);
@@ -24,7 +25,7 @@ const LabPricing = () => {
 
     try {
       const response = await axios.post(
-        "https://dev.backend.onrequestlab.com/api/v1/payment/subscription/create",
+        `${VIT}/api/v1/payment/subscription/create`,
         {
           planType: billingType, // monthly / yearly
         },
@@ -77,7 +78,7 @@ const LabPricing = () => {
   const verifyPayment = async (paymentData, orderId) => {
     try {
       const verifyRes = await axios.post(
-        "https://dev.backend.onrequestlab.com/api/v1/payment/subscription/verify",
+        `${VIT}/api/v1/payment/subscription/verify`,
         {
           ...paymentData,
           order_id: orderId,

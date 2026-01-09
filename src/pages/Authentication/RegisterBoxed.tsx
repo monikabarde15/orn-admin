@@ -13,7 +13,8 @@ import IconLockDots from "../../components/Icon/IconLockDots";
 import CountryList from "country-list-with-dial-code-and-flag";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
-
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 const RegisterBoxed = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -106,7 +107,7 @@ const RegisterBoxed = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "https://dev.backend.onrequestlab.com/api/v1/users/auth/registration/",
+        `${VIT}/api/v1/users/auth/registration/`,
         {
           ...formData,
           phone: finalPhone,

@@ -13,11 +13,12 @@ import { useParams } from "react-router-dom";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../../pages/Components/Footer";
 
-
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 /* ================= AXIOS INSTANCE ================= */
 
 const api = axios.create({
-  baseURL: "https://dev.backend.onrequestlab.com",
+  baseURL: `${VIT}`,
 });
 
 api.interceptors.request.use((config) => {

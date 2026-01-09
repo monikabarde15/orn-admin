@@ -4,6 +4,8 @@ import axios from 'axios';
 import { Send, Star, User, Mail, MessageSquare } from 'lucide-react';
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 
 const FeedbackForm = () => {
   const [formData, setFormData] = useState({
@@ -57,7 +59,7 @@ const payload = {
 };
 
     const response = await axios.post(
-      "https://dev.backend.onrequestlab.com/api/feedback/feedback_vc/",
+      `${VIT}/api/feedback/feedback_vc/`,
       payload,
       {
         headers: {

@@ -13,7 +13,11 @@ import IconTwitter from "../../components/Icon/IconTwitter";
 import IconX from "../../components/Icon/IconX";
 import axios from "axios";
 
-const API_URL = "https://dev.backend.onrequestlab.com/api/v1/admin/feedback/";
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
+
+
+const API_URL = `${VIT}/api/v1/admin/feedback/`;
 
 const FeedbackListNew = () => {
   const dispatch = useDispatch();

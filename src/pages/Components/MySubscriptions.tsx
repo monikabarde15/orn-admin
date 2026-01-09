@@ -4,7 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
+
+const API_BASE = `${VIT}/api/v1`;
 
 const notify = (msg, type = "info") =>
   toast[type](msg, { position: "top-center", autoClose: 2500 });

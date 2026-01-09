@@ -5,7 +5,10 @@ import { motion } from "framer-motion";
 import Footer from "../pages/Components/Footer";
 import Navbar from "../pages/Components/Navbar";
 
-const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
+
+const API_BASE = `${VIT}/api/v1`;
 
 export default function BlogDetail() {
   const { id } = useParams();
@@ -62,21 +65,7 @@ export default function BlogDetail() {
         transition={{ duration: 0.6 }}
         className="max-w-5xl mx-auto"
       >
-        {/* Image with hover effect */}
-        {/* <div className="relative overflow-hidden rounded-2xl mb-8 group shadow-lg shadow-[#7c4dff25]">
-          <motion.img
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.6 }}
-            src={
-              blog.image
-                ? `https://dev.backend.onrequestlab.com${blog.image}`
-                : "https://via.placeholder.com/800x400"
-            }
-            alt={blog.title}
-            className="rounded-2xl w-full object-cover max-h-[500px] transition-transform duration-700 group-hover:brightness-110"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0b0718]/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        </div> */}
+       
 
           {/* Title */}
           <motion.h1

@@ -16,7 +16,8 @@ import IconInstagram from "../../components/Icon/IconInstagram";
 import IconFacebookCircle from "../../components/Icon/IconFacebookCircle";
 import IconTwitter from "../../components/Icon/IconTwitter";
 import IconGoogle from "../../components/Icon/IconGoogle";
-
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 const LoginBoxed = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -67,7 +68,7 @@ const LoginBoxed = () => {
 
     try {
       const response = await axios.post(
-        "https://dev.backend.onrequestlab.com/api/v1/users/auth/login",
+        `${VIT}/api/v1/users/auth/login`,
         { username, password },
         {
           headers: { "Content-Type": "application/json" },

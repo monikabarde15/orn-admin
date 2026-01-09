@@ -7,7 +7,8 @@ import Footer from "../Components/Footer";
 import { Mail, Calendar, Clock, Shield } from "lucide-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 const UserProfile = () => {
   const dispatch = useDispatch();
 
@@ -37,7 +38,7 @@ const UserProfile = () => {
 
     try {
       const response = await axios.get(
-        `https://dev.backend.onrequestlab.com/media/${avatarId}`,
+        `${VIT}/media/${avatarId}`,
         {
           responseType: "blob",
         }
@@ -89,7 +90,7 @@ const UserProfile = () => {
         console.log('tok=',token);
 
         const res = await axios.get(
-          "https://dev.backend.onrequestlab.com/api/v1/users/profile/",
+          `${VIT}/api/v1/users/profile/`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -166,7 +167,7 @@ const UserProfile = () => {
       }
 
       const res = await axios.post(
-        "https://dev.backend.onrequestlab.com/api/v1/users/profile/",
+        `${VIT}/api/v1/users/profile/`,
         form,
         {
           headers: {

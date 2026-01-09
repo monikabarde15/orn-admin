@@ -18,9 +18,12 @@ const Navbar = () => {
   const [cartItems, setCartItems] = useState(JSON.parse(localStorage.getItem("orl_cart") || "[]"));
   const [cartOpen, setCartOpen] = useState(false);
 
+  console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
+
   const menuRef = useRef(null);
   const cartRef = useRef(null);
-  const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
+  const API_BASE = `${VIT}/api/v1`;
 
   useEffect(() => {
     const token = localStorage.getItem("jwt-auth");

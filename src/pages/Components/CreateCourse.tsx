@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef } from "react"
+import React, { useState, useRef, useEffect  } from "react"
 import {
   Plus,
   X,
@@ -25,7 +25,8 @@ const getCookie = (name: string) => {
   if (parts.length === 2) return parts.pop()?.split(";").shift();
   return "";
 };
-
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 const token =
   (getCookie("access") ||
     localStorage.getItem("access") ||
@@ -34,7 +35,7 @@ const token =
 
 
 const api = axios.create({
-  baseURL: "https://dev.backend.onrequestlab.com",
+  baseURL: `${VIT}`,
   withCredentials: true,
   headers: {
     Accept: "application/json",
@@ -61,6 +62,10 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+interface Subscription {
+  id: number
+  name: string
+}
 
 interface CourseFormData {
   title: string
@@ -69,7 +74,7 @@ interface CourseFormData {
   difficulty: string
   duration: string
   instructor: string
-  price: string
+  subscription_name: string
   learningOutcomes: string[]
   prerequisites: string[]
 }
@@ -88,6 +93,30 @@ interface Lesson {
   duration: string
   content: string
 }
+const publicApi = axios.create({
+  baseURL: `${VIT}`,
+})
+const privateApi = axios.create({
+  baseURL: `${VIT}`,
+  withCredentials: true,
+})
+
+privateApi.interceptors.request.use((config) => {
+  const token =
+    getCookie("access") || localStorage.getItem("access")
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+
+  return config
+})
+const fetchSubscriptions = async (): Promise<Subscription[]> => {
+  const res = await publicApi.get("/api/v1/packages/")
+  return res.data
+}
+
+
 
 // ============================================
 // MOCK API - Bypasses all real API calls
@@ -97,7 +126,7 @@ const mockApi = {
   // CREATE COURSE
   // =========================
   createCourse: async (data: CourseFormData): Promise<{ id: string; success: boolean }> => {
-    const res = await api.post(
+    const res = await publicApi.post(
       "/course/courses/",
       {
         title: data.title,
@@ -106,11 +135,11 @@ const mockApi = {
         difficulty: data.difficulty,
         duration: data.duration,
         instructor: data.instructor,
-        price: Number(data.price || 0),
+        subscription_name: data.subscription_name,
         learningOutcomes: data.learningOutcomes.join("\n"),
         prerequisites: data.prerequisites.join("\n"),
         isPublished: false,
-        user: userId,
+        user: Number(userId),
       }
     )
 
@@ -528,6 +557,8 @@ function CourseForm({
   initialData?: CourseFormData
   isLoading?: boolean
 }) {
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
+
   const [formData, setFormData] = useState<CourseFormData>(
     initialData || {
       title: "",
@@ -536,11 +567,16 @@ function CourseForm({
       difficulty: "beginner",
       duration: "",
       instructor: "",
-      price: "",
+      subscription_name: "",
       learningOutcomes: [""],
       prerequisites: [""],
-    },
+    }
   )
+
+  /* ✅ useEffect ALWAYS outside useState */
+  useEffect(() => {
+    fetchSubscriptions().then(setSubscriptions)
+  }, [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -551,74 +587,86 @@ function CourseForm({
     setFormData({ ...formData, [field]: [...formData[field], ""] })
   }
 
-  const updateItem = (field: "learningOutcomes" | "prerequisites", index: number, value: string) => {
-    const newItems = [...formData[field]]
-    newItems[index] = value
-    setFormData({ ...formData, [field]: newItems })
+  const updateItem = (
+    field: "learningOutcomes" | "prerequisites",
+    index: number,
+    value: string
+  ) => {
+    const updated = [...formData[field]]
+    updated[index] = value
+    setFormData({ ...formData, [field]: updated })
   }
 
-  const removeItem = (field: "learningOutcomes" | "prerequisites", index: number) => {
-    const newItems = formData[field].filter((_, i) => i !== index)
-    setFormData({ ...formData, [field]: newItems.length > 0 ? newItems : [""] })
+  const removeItem = (
+    field: "learningOutcomes" | "prerequisites",
+    index: number
+  ) => {
+    const updated = formData[field].filter((_, i) => i !== index)
+    setFormData({
+      ...formData,
+      [field]: updated.length ? updated : [""],
+    })
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+
+      {/* ✅ SUBSCRIPTION DROPDOWN */}
+      <div>
+        <Label>Subscription *</Label>
+        <Select
+          value={formData.subscription_name}
+          onChange={(value) =>
+            setFormData({ ...formData, subscription_name: value })
+          }
+          options={subscriptions.map((s) => ({
+            value: s.name,
+            label: s.name,
+          }))}
+        />
+      </div>
+
       <div className="grid gap-6 md:grid-cols-2">
         <div className="md:col-span-2">
-          <Label htmlFor="title">Course Title *</Label>
+          <Label>Course Title *</Label>
           <Input
-            id="title"
             required
             value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            placeholder="e.g., Complete Web Development Bootcamp"
+            onChange={(e) =>
+              setFormData({ ...formData, title: e.target.value })
+            }
           />
         </div>
 
         <div className="md:col-span-2">
-          <Label htmlFor="description">Description *</Label>
+          <Label>Description *</Label>
           <Textarea
-            id="description"
             required
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            rows={4}
-            placeholder="Describe what students will learn in this course..."
+            onChange={(e) =>
+              setFormData({ ...formData, description: e.target.value })
+            }
           />
         </div>
 
         <div>
-          <Label htmlFor="category">Category *</Label>
+          <Label>Category *</Label>
           <Input
-            id="category"
             required
             value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            placeholder="e.g., Web Development"
+            onChange={(e) =>
+              setFormData({ ...formData, category: e.target.value })
+            }
           />
         </div>
-
 
         <div>
-          <Label htmlFor="duration">Duration</Label>
+          <Label>Duration</Label>
           <Input
-            id="duration"
             value={formData.duration}
-            onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-            placeholder="e.g., 12 hours"
-          />
-        </div>
-
-
-        <div className="md:col-span-2">
-          <Label htmlFor="price">Price (USD)</Label>
-          <Input
-            id="price"
-            type="number"
-            value={formData.price}
-            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-            placeholder="e.g., 49.99"
+            onChange={(e) =>
+              setFormData({ ...formData, duration: e.target.value })
+            }
           />
         </div>
       </div>
@@ -626,68 +674,73 @@ function CourseForm({
       {/* Learning Outcomes */}
       <div>
         <Label>Learning Outcomes</Label>
-        <div className="space-y-2">
-          {formData.learningOutcomes.map((outcome, index) => (
-            <div key={index} className="flex gap-2">
-              <Input
-                value={outcome}
-                onChange={(e) => updateItem("learningOutcomes", index, e.target.value)}
-                placeholder={`Outcome ${index + 1}`}
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => removeItem("learningOutcomes", index)}
-                disabled={formData.learningOutcomes.length === 1}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-          <Button variant="outline" size="sm" onClick={() => addItem("learningOutcomes")}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Outcome
-          </Button>
-        </div>
+        {formData.learningOutcomes.map((item, i) => (
+          <div key={i} className="flex gap-2 mb-2">
+            <Input
+              value={item}
+              onChange={(e) =>
+                updateItem("learningOutcomes", i, e.target.value)
+              }
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => removeItem("learningOutcomes", i)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => addItem("learningOutcomes")}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Outcome
+        </Button>
       </div>
 
       {/* Prerequisites */}
       <div>
         <Label>Prerequisites</Label>
-        <div className="space-y-2">
-          {formData.prerequisites.map((prereq, index) => (
-            <div key={index} className="flex gap-2">
-              <Input
-                value={prereq}
-                onChange={(e) => updateItem("prerequisites", index, e.target.value)}
-                placeholder={`Prerequisite ${index + 1}`}
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => removeItem("prerequisites", index)}
-                disabled={formData.prerequisites.length === 1}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-          <Button variant="outline" size="sm" onClick={() => addItem("prerequisites")}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Prerequisite
-          </Button>
-        </div>
+        {formData.prerequisites.map((item, i) => (
+          <div key={i} className="flex gap-2 mb-2">
+            <Input
+              value={item}
+              onChange={(e) =>
+                updateItem("prerequisites", i, e.target.value)
+              }
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => removeItem("prerequisites", i)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => addItem("prerequisites")}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Prerequisite
+        </Button>
       </div>
 
-      <div className="flex justify-end pt-4">
+      <div className="flex justify-end">
         <Button type="submit" disabled={isLoading}>
           {isLoading ? "Saving..." : "Continue"}
-          {!isLoading && <ChevronRight className="ml-2 h-4 w-4" />}
+          <ChevronRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
     </form>
   )
 }
+
 
 // ============================================
 // MODULE EDITOR (Step 2)

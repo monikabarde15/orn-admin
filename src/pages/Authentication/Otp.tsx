@@ -4,7 +4,8 @@ import axios from "axios";
 import i18next from "i18next";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 const OtpVerification = () => {
   const navigate = useNavigate();
 
@@ -42,7 +43,7 @@ console.log('cookieEmail1',cookieEmailnew);
     setResending(true);
     try {
       const response = await axios.post(
-        "https://dev.backend.onrequestlab.com/api/v1/users/auth/resend-otp/",
+        `${VIT}/api/v1/users/auth/resend-otp/`,
         { email },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -135,7 +136,7 @@ console.log('cookieEmail1',cookieEmailnew);
   setLoading(true);
   try {
     const response = await axios.post(
-      "https://dev.backend.onrequestlab.com/api/v1/users/auth/verify-otp/",
+      `${VIT}/api/v1/users/auth/verify-otp/`,
       { email, otp },
       {
         headers: { "Content-Type": "application/json" },

@@ -7,11 +7,14 @@ import Footer from "../pages/Components/Footer";
 import Navbar from "../pages/Components/Navbar";
 import { BlogsMetatags } from "../pages/Pages/BlogsMetatags";
 
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
+
 export default function BlogList() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
+  const API_BASE = `${VIT}/api/v1`;
   const getToken = () => localStorage.getItem("token") || "";
 
   const api = axios.create({
@@ -29,7 +32,7 @@ export default function BlogList() {
   const getFullImageUrl = (path) => {
     if (!path) return 'https://via.placeholder.com/800x400';
     if (path.startsWith("http")) return path;
-    return `https://dev.backend.onrequestlab.com${path}`;
+    return `${VIT}${path}`;
   };
 
   const params = useMemo(
@@ -204,7 +207,7 @@ export default function BlogList() {
                   </div>
 
                   <Link
-                    to={`/blog-detail/${b.blogId}`}
+                    to={`/blog-detail/${b.slug}`}
                     className="bg-gradient-to-r from-[#8f5bff] to-[#5ec2ff] text-black px-4 py-2 rounded-full text-sm font-medium"
                   >
                     Read →

@@ -4,9 +4,11 @@ import { Clock, GraduationCap, Tag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 /* ================= AXIOS ================= */
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 
 const api = axios.create({
-  baseURL: "https://dev.backend.onrequestlab.com",
+  baseURL: `${VIT}`,
 });
 
 api.interceptors.request.use((config) => {

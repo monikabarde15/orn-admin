@@ -4,7 +4,8 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../pages/Components/Navbar";
 import Footer from "../pages/Components/Footer";
-
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 const ChangePassword = () => {
   const [formData, setFormData] = useState({
     new_password1: "",
@@ -45,7 +46,7 @@ const ChangePassword = () => {
     setLoading(true);
     try {
       await axios.post(
-        "https://dev.backend.onrequestlab.com/api/v1/users/auth/password/change/",
+        `${VIT}/api/v1/users/auth/password/change/`,
         {
           new_password1: formData.new_password1,
           new_password2: formData.new_password2,

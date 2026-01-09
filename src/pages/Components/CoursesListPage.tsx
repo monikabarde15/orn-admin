@@ -20,11 +20,13 @@ const getCookie = (name: string) => {
   if (parts.length === 2) return parts.pop()?.split(";").shift()
   return ""
 }
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 
 /* ================= AXIOS ================= */
 
 const api = axios.create({
-  baseURL: "https://dev.backend.onrequestlab.com",
+  baseURL: `${VIT}`,
   withCredentials: true,
 })
 

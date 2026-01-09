@@ -11,7 +11,8 @@ import IconMail from "../../components/Icon/IconMail";
 import IconLockDots from "../../components/Icon/IconLockDots";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
-
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 const LoginBoxed = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -44,7 +45,7 @@ const LoginBoxed = () => {
 
     try {
       const response = await axios.post(
-        "https://dev.backend.onrequestlab.com/api/v1/users/login/",
+        `${VIT}/api/v1/users/login/`,
         { "login":username, password },
         { headers: { "Content-Type": "application/json" }, withCredentials: true }
       );
@@ -126,7 +127,7 @@ const LoginBoxed = () => {
     setResetLoading(true);
     try {
       const response = await axios.post( 
-        " https://dev.backend.onrequestlab.com/api/v1/users/password/reset/",
+        `${VIT}/api/v1/users/password/reset/`,
         { email: resetEmail },
         { headers: { "Content-Type": "application/json" } }
       );

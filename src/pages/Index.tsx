@@ -22,7 +22,8 @@ import IconCaretDown from '../components/Icon/IconCaretDown';
 import IconPlus from '../components/Icon/IconPlus';
 import IconMultipleForwardRight from '../components/Icon/IconMultipleForwardRight';
 import { useNavigate } from "react-router-dom";
-
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 
 interface DashboardProps {
   userId: string | number;
@@ -60,12 +61,12 @@ const Index: React.FC<DashboardProps> = ({ userId }) => {
 
 // Apna apis array define karo
 const apis = [
-  { url: 'https://dev.backend.onrequestlab.com/api/v1/admin/users/count', name: 'Users' },
-  { url: 'https://dev.backend.onrequestlab.com/api/v1/admin/support/count', name: 'Support' },
-  { url: 'https://dev.backend.onrequestlab.com/api/v1/admin/payments/count', name: 'Payments' },
-  { url: 'https://dev.backend.onrequestlab.com/api/v1/admin/instances/count', name: 'Instances' },
-  { url: 'https://dev.backend.onrequestlab.com/api/v1/admin/feedback/count', name: 'Feedback' },
-  { url: 'https://dev.backend.onrequestlab.com/api/v1/admin/contact/count', name: 'Contact' },
+  { url: `${VIT}/api/v1/admin/users/count`, name: 'Users' },
+  { url: `${VIT}/api/v1/admin/support/count`, name: 'Support' },
+  { url: `${VIT}/api/v1/admin/payments/count`, name: 'Payments' },
+  { url: `${VIT}/api/v1/admin/instances/count`, name: 'Instances' },
+  { url: `${VIT}/api/v1/admin/feedback/count`, name: 'Feedback' },
+  { url: `${VIT}/api/v1/admin/contact/count`, name: 'Contact' },
 ];
 
 // Sabhi API se data fetch karo aur ek array me store karo

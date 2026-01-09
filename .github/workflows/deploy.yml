@@ -24,6 +24,7 @@ jobs:
                   if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
                     echo "ENV=dev" >> $GITHUB_ENV
                     echo "HOST=${{ secrets.HOST_SERVER_DEV }}" >> $GITHUB_ENV
+                    echo "ENV_FILE=${{ secrets.ENV_DEV }}" >> $GITHUB_ENV
                   else
                     echo "ENV=prod" >> $GITHUB_ENV
                     echo "HOST=${{ secrets.HOST_SERVER_PROD }}" >> $GITHUB_ENV

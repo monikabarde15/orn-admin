@@ -31,7 +31,7 @@ jobs:
             
             - name: Create .env file for build
               run: |
-                  printf '%s\n' "${{ github.ref_name == 'main' && secrets.ENV_FILE_PROD || secrets.ENV_FILE_DEV }}" > .env
+                  printf '%b' "${{ github.ref_name == 'main' && secrets.ENV_FILE_PROD || secrets.ENV_FILE_DEV }}" > .env
 
             - name: Setup SSH Key
               run: |

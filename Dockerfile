@@ -17,6 +17,8 @@ WORKDIR /app
 
 COPY --from=builder /app/build ./build 
 
+COPY .env ./build/.env
+
 RUN npm install -g serve
 
 EXPOSE 3000

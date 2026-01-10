@@ -28,10 +28,6 @@ jobs:
                     echo "ENV=prod" >> $GITHUB_ENV
                     echo "HOST=${{ secrets.HOST_SERVER_PROD }}" >> $GITHUB_ENV
                   fi
-            
-            - name: Create .env file for build
-              run: |
-                  printf '%b' "${{ github.ref_name == 'main' && secrets.ENV_FILE_PROD || secrets.ENV_FILE_DEV }}" > .env
 
             - name: Setup SSH Key
               run: |
@@ -52,6 +48,10 @@ jobs:
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
+            
+            - name: Create .env file for build 
+              run: |
+                printf '%b' "${{ github.ref_name == 'main' && secrets.ENV_FILE_PROD || secrets.ENV_FILE_DEV }}" > .env
 
             - name: Build & export image
               run: |

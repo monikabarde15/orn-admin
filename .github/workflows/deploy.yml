@@ -24,16 +24,14 @@ jobs:
                   if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
                     echo "ENV=dev" >> $GITHUB_ENV
                     echo "HOST=${{ secrets.HOST_SERVER_DEV }}" >> $GITHUB_ENV
-                    echo "ENV_FILE=${{ secrets.ENV_DEV }}" >> $GITHUB_ENV
                   else
                     echo "ENV=prod" >> $GITHUB_ENV
                     echo "HOST=${{ secrets.HOST_SERVER_PROD }}" >> $GITHUB_ENV
-                    echo "ENV_FILE=${{ secrets.ENV_PROD }}" >> $GITHUB_ENV
                   fi
             
             - name: Create .env file for build
               run: |
-                  printf '%s\n' "${{ env.ENV_FILE }}" > .env
+                  printf '%s\n' "${{ github.ref_name == 'main' && secrets.ENV_FILE_PROD || secrets.ENV_FILE_DEV }}" > .env
 
             - name: Setup SSH Key
               run: |

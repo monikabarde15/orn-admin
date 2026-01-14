@@ -48,6 +48,10 @@ jobs:
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
+            
+            - name: Create .env file for build 
+              run: |
+                printf '%b' "${{ github.ref_name == 'main' && secrets.ENV_FILE_PROD || secrets.ENV_FILE_DEV }}" > .env
 
             - name: Build & export image
               run: |
@@ -65,8 +69,6 @@ jobs:
 
             # Restart on server
             - name: Load image & restart
-              env:
-                  HOST_PASSWORD: ${{ secrets.HOST_PASSWORD }}
               run: |
                   ssh root@${{ env.HOST }} << 'EOF'
                     set -e
@@ -76,8 +78,8 @@ jobs:
 
                     echo "Restarting containers..."
                     docker rm -f onrequestlab_reactjs
-                    docker run -d -p 127.0.0.1:3000:3000 --name onrequestlab_reactjs onrequestlab_reactjs:latest 
-                    
+                    docker run -d -p 127.0.0.1:3000:3000 --name onrequestlab_reactjs onrequestlab_reactjs:latest
+
                     rm -f onrequestlab_reactjs.tar
                     echo "Deployed ${{ env.ENV }} successfully!"
                   EOF

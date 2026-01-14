@@ -15,7 +15,7 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-COPY --from=builder /app/build ./build 
+COPY --from=builder /app/build ./build
 
 RUN npm install -g serve
 

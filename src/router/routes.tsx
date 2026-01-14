@@ -149,6 +149,7 @@ const Pricing = lazy(() => import('../pages/Components/Pricing'));
 const Courses = lazy(() => import('../pages/Components/Courses'));
 const MySubscription = lazy(() => import('../pages/Components/MySubscription'));
 
+const CertificatePage = lazy(() => import('../pages/Components/CertificatePage'));
 
 
 const PrivacyPolicy = lazy(() => import('../pages/Components/PrivacyPolicy'));
@@ -194,6 +195,11 @@ const routes = [
          {
             path: '/my-subscrption',
             element: <MySubscription />,
+            layout:'web',
+        },
+          {
+            path: '/certificate',
+            element: <CertificatePage />,
             layout:'web',
         },
     {

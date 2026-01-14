@@ -251,7 +251,7 @@ const launchLab = async (plan) => {
       setShowPopup(true);
       return;
     }
-    navigate("/course-preview/3");
+    navigate(`/course-preview/${plan.course_id}`);
   };
 
   /* ================= UI ================= */

@@ -91,6 +91,48 @@ const user = {
   //   toast.info("You have been logged out!", { position: "top-center" });
   //   setTimeout(() => (window.location.href = "/"), 800);
   // };
+  useEffect(() => {
+  let timer: any;
+
+  const logout = () => {
+    localStorage.clear();
+    document.cookie.split(";").forEach(c => {
+      document.cookie = c
+        .replace(/^ +/, "")
+        .replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+    });
+    window.location.href = "/login";
+  };
+
+  const checkExpiry = () => {
+    const expiry = localStorage.getItem("session_expiry");
+    if (expiry && Date.now() > Number(expiry)) {
+      logout();
+    }
+  };
+const SESSION_TIME = 15 * 60;
+const SESSION_TIME_MS = 15 * 60 * 1000;
+
+  const resetTimer = () => {
+    const newExpiry = Date.now() + SESSION_TIME_MS;
+    localStorage.setItem("session_expiry", newExpiry.toString());
+    clearTimeout(timer);
+    timer = setTimeout(logout, SESSION_TIME_MS);
+  };
+
+  ["click", "mousemove", "keydown", "scroll", "touchstart"]
+    .forEach(event => window.addEventListener(event, resetTimer));
+
+  checkExpiry();
+  resetTimer();
+
+  return () => {
+    clearTimeout(timer);
+    ["click", "mousemove", "keydown", "scroll", "touchstart"]
+      .forEach(event => window.removeEventListener(event, resetTimer));
+  };
+}, []);
+
    const handleLogout = () => {
     // localStorage.removeItem("jwt-auth");
     // localStorage.removeItem("user_id");
@@ -193,9 +235,10 @@ setTimeout(() => (window.location.href = "/"), 800);
                   
               <p className="wallet-line">
                 <Wallet size={16} /> {loadingWallet ? "Loading..." : `₹${walletBalance}`}
-              </p>
+              </p> 
               {/* <button className="blue-btn" onClick={() => navigateTo("/wallet-history")}>Wallet History</button> */}
                <button className="blue-btn" onClick={() => navigateTo("/my-subscrption")}>My Subscrption</button>
+                <button className="blue-btn" onClick={() => navigateTo("/certificate")}>My Certificatons</button>
               
               {/* <button className="blue-btn" onClick={() => navigateTo("/instances")}>Your Instances</button> */}
               <button className="red-btn" onClick={handleLogout}>Logout</button>
@@ -273,6 +316,9 @@ setTimeout(() => (window.location.href = "/"), 800);
                   </div> */}
                    <div className="dropdown-item" onClick={() => navigateTo("/my-subscrption")}>
                     <Laptop size={16} /> <span>My Subscrption</span>
+                  </div>
+                   <div className="dropdown-item" onClick={() => navigateTo("/certificate")}>
+                    <Laptop size={16} /> <span>My Certificatons</span>
                   </div>
                   <div className="dropdown-item" onClick={() => navigateTo("/change-password")}>
                     <Lock size={16} /> <span>Change Password</span>

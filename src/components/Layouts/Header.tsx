@@ -176,24 +176,58 @@ console.log('userIDnew=',userIDnew);
   console.log("log");
   navigate('/');
 }
+useEffect(() => {
+  const SESSION_TIME_MS = 15 * 60 * 1000; // 15 minutes
+  let idleTimer: ReturnType<typeof setTimeout>;
 
-        const logout = () => {
-           localStorage.removeItem("jwt-auth");
+  const resetIdleTimer = () => {
+    clearTimeout(idleTimer);
 
-    // Clear all cookies
-    document.cookie.split(";").forEach((cookie) => {
-      const eqPos = cookie.indexOf("=");
-      const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-    });
+    idleTimer = setTimeout(() => {
+      logout(); // <-- YOUR logout function
+    }, SESSION_TIME_MS);
+  };
 
-    setIsLoggedIn(false);
-    toast.info("You have been logged out!", { position: "top-center" });
+  // User activity events
+  const events = [
+    "mousemove",
+    "mousedown",
+    "click",
+    "keydown",
+    "scroll",
+    "touchstart"
+  ];
 
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 1500);
-        };
+  events.forEach(event =>
+    window.addEventListener(event, resetIdleTimer)
+  );
+
+  resetIdleTimer(); // start timer on load
+
+  return () => {
+    clearTimeout(idleTimer);
+    events.forEach(event =>
+      window.removeEventListener(event, resetIdleTimer)
+    );
+  };
+}, []);
+
+const logout = () => {
+            localStorage.removeItem("jwt-auth");
+            // Clear all cookies
+            document.cookie.split(";").forEach((cookie) => {
+            const eqPos = cookie.indexOf("=");
+            const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+            });
+
+            setIsLoggedIn(false);
+            toast.info("You have been logged out!", { position: "top-center" });
+
+            setTimeout(() => {
+            window.location.href = "/";
+            }, 1500);
+};
 
 const userID = JSON.parse(localStorage.getItem("userId") || "{}");
 

@@ -85,13 +85,22 @@ interface Module {
   description: string
   lessons: Lesson[]
 }
-
+interface QuizOption {
+  text: string
+  is_correct: boolean
+}
+interface QuizQuestion {
+  chapter: number
+  question: string
+  options: QuizOption[]
+}
 interface Lesson {
   id: string
   title: string
   type: "video" | "text" | "quiz"
   duration: string
-  content: string
+  content: string,
+  quiz?: QuizQuestion
 }
 const publicApi = axios.create({
   baseURL: `${VIT}`,
@@ -125,26 +134,30 @@ const mockApi = {
   // =========================
   // CREATE COURSE
   // =========================
-  createCourse: async (data: CourseFormData): Promise<{ id: string; success: boolean }> => {
-    const res = await publicApi.post(
-      "/course/courses/",
-      {
-        title: data.title,
-        description: data.description,
-        category: data.category,
-        difficulty: data.difficulty,
-        duration: data.duration,
-        instructor: data.instructor,
-        subscription_name: data.subscription_name,
-        learningOutcomes: data.learningOutcomes.join("\n"),
-        prerequisites: data.prerequisites.join("\n"),
-        isPublished: false,
-        user: Number(userId),
-      }
-    )
+ createCourse: async (
+  data: CourseFormData
+): Promise<{ id: string; success: boolean }> => {
 
-    return { id: String(res.data.id), success: true }
-  },
+  const res = await privateApi.post(
+    "/course/courses/",
+    {
+      title: data.title,
+      description: data.description,
+      category: data.category,
+      difficulty: data.difficulty,
+      duration: data.duration,
+      instructor: data.instructor,
+      subscription_name: data.subscription_name,
+      learningOutcomes: data.learningOutcomes.join("\n"),
+      prerequisites: data.prerequisites.join("\n"),
+      isPublished: false,
+      user: Number(userId),
+    }
+  )
+
+  return { id: String(res.data.id), success: true }
+}
+,
 
   // =========================
   // ADD MODULE
@@ -153,7 +166,7 @@ const mockApi = {
     courseId: string,
     module: Omit<Module, "id">
   ): Promise<{ id: string; success: boolean }> => {
-    const res = await api.post(
+    const res = await privateApi.post(
       "/course/modules/",
       {
         title: module.title,
@@ -172,7 +185,7 @@ const mockApi = {
   // UPDATE MODULE
   // =========================
   updateModule: async (_moduleId: string, data: Partial<Module>): Promise<{ success: boolean }> => {
-    await api.patch(
+    await privateApi.patch(
       `/course/modules/${_moduleId}/`,
       data,
       
@@ -185,7 +198,7 @@ const mockApi = {
   // DELETE MODULE
   // =========================
   deleteModule: async (_moduleId: string): Promise<{ success: boolean }> => {
-    await api.delete(`/course/modules/${_moduleId}/`, {
+    await privateApi.delete(`/course/modules/${_moduleId}/`, {
     
     })
 
@@ -197,31 +210,29 @@ const mockApi = {
   // ADD LESSON
   // =========================
   addLesson: async (
-  moduleId: string,
-  lesson: Omit<Lesson, "id">
-): Promise<{ id: string; success: boolean }> => {
-  const formData = new FormData()
+    moduleId: string,
+    lesson: Omit<Lesson, "id">
+  ): Promise<{ id: string; success: boolean }> => {
 
-  formData.append("title", lesson.title)
-  formData.append("duration", lesson.duration)
-  formData.append("description", lesson.content)
-  formData.append("module", moduleId)
-  formData.append("user", userId)
+    const formData = new FormData()
+    formData.append("title", lesson.title)
+    formData.append("duration", lesson.duration)
+    formData.append("description", lesson.content)
+    formData.append("module", moduleId)
+    formData.append("user", String(userId))
 
-  if (lesson.videoFile) {
-    formData.append("video_file", lesson.videoFile)
-  }
+    if (lesson.videoFile) {
+      formData.append("video_file", lesson.videoFile)
+    }
 
-  if (lesson.attachmentFile) {
-    formData.append("attachment_file", lesson.attachmentFile)
-  }
+    if (lesson.attachmentFile) {
+      formData.append("attachment_file", lesson.attachmentFile)
+    }
 
-  const res = await api.post("/course/chapter/", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  })
+    const res = await privateApi.post("/course/chapter/", formData)
 
-  return { id: String(res.data.id), success: true }
-},
+    return { id: String(res.data.id), success: true }
+  },
 
 
   // =========================
@@ -239,7 +250,7 @@ const mockApi = {
   if (data.videoFile) formData.append("video_file", data.videoFile)
   if (data.attachmentFile) formData.append("attachment_file", data.attachmentFile)
 
-  await api.patch(`/course/chapter/${lessonId}/`, formData, {
+  await privateApi.patch(`/course/chapter/${lessonId}/`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   })
 
@@ -251,19 +262,49 @@ const mockApi = {
   // DELETE LESSON
   // =========================
   deleteLesson: async (_lessonId: string): Promise<{ success: boolean }> => {
-    await api.delete(`/course/chapter/${_lessonId}/`, {
+    await privateApi.delete(`/course/chapter/${_lessonId}/`, {
       
     })
 
     return { success: true }
   },
   // =========================
+  // QUIZ API METHODS ✅
+  // =========================
+   addQuiz : async (data: {
+    chapter: number
+    question: string
+    options: { text: string; is_correct: boolean }[]
+  }) => {
+    return await privateApi.post("/course/quizzes/", data)
+  },
+
+   updateQuiz : async (
+    quizId: string,
+    data: {
+      question: string
+      options: { text: string; is_correct: boolean }[]
+    }
+  ) => {
+    return await privateApi.patch(`/course/quizzes/${quizId}/`, data)
+  },
+  // =========================
+// DELETE QUIZ
+// =========================
+deleteQuiz: async (
+  quizId: string
+): Promise<{ success: boolean }> => {
+  await privateApi.delete(`/course/quizzes/${quizId}/`)
+  return { success: true }
+},
+
+  // =========================
   // UPLOAD THUMBNAIL
   // =========================
   uploadThumbnail: async (file: File): Promise<{ url: string; success: boolean }> => {
     const imageUrl = URL.createObjectURL(file)
 
-    await api.post(
+    await privateApi.post(
       "/course/thumbnail/",
       {
         image_url: imageUrl,
@@ -618,10 +659,10 @@ function CourseForm({
           value={formData.subscription_name}
           onChange={(value) =>
             setFormData({ ...formData, subscription_name: value })
-          }
+          } 
           options={subscriptions.map((s) => ({
-            value: s.name,
-            label: s.name,
+            value: `${s.name} (${s.billing_cycle})`,
+            label: `${s.name} (${s.billing_cycle})`,
           }))}
         />
       </div>
@@ -778,6 +819,13 @@ function ModuleEditor({
     type: "video",
     duration: "",
     content: "",
+    quiz: {
+    chapter: 0,
+    question: "",
+    options: [
+      { text: "", is_correct: false }
+    ]
+  }
   })
 
   const handleAddModule = () => {
@@ -921,155 +969,290 @@ function ModuleEditor({
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              {/* Lessons List */}
-              <div className="space-y-2 mb-4">
-                {module.lessons.map((lesson, lessonIndex) => (
-                  <div
-                    key={lesson.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100"
-                  >
-                    <div className="flex items-center gap-3">
-                      <GripVertical className="h-4 w-4 text-gray-300" />
-                      <span className="text-sm text-gray-400 w-5">{lessonIndex + 1}.</span>
-                      {getLessonIcon(lesson.type)}
-                      <span className="text-sm font-medium text-gray-900">{lesson.title}</span>
-                      <Badge variant="secondary">{lesson.type}</Badge>
-                      {lesson.duration && (
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {lesson.duration}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setEditingLesson({ moduleId: module.id, lesson })
-                          setLessonForm({
-                            title: lesson.title,
-                            type: lesson.type,
-                            duration: lesson.duration,
-                            content: lesson.content,
-                          })
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => onDeleteLesson(module.id, lesson.id)}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+  {/* ================= LESSON LIST ================= */}
+  <div className="space-y-2 mb-4">
+    {module.lessons.map((lesson, lessonIndex) => (
+      <div
+        key={lesson.id}
+        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100"
+      >
+        <div className="flex items-center gap-3">
+          <GripVertical className="h-4 w-4 text-gray-300" />
+          <span className="text-sm text-gray-400 w-5">
+            {lessonIndex + 1}.
+          </span>
+          {getLessonIcon(lesson.type)}
+          <span className="text-sm font-medium text-gray-900">
+            {lesson.title}
+          </span>
+          <Badge variant="secondary">{lesson.type}</Badge>
 
-              {/* Lesson Form */}
-              {(showLessonForm === module.id || (editingLesson && editingLesson.moduleId === module.id)) && (
-                 <Card className="mb-4 border-blue-200 bg-blue-50/30">
-                  <CardContent className="pt-4 space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <Label htmlFor="lessonTitle">Lesson Title *</Label>
-                        <Input
-                          id="lessonTitle"
-                          value={lessonForm.title}
-                          onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
-                          placeholder="e.g., Variables and Data Types"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="lessonType">Lesson Type</Label>
-                        <Select
-                          id="lessonType"
-                          value={lessonForm.type}
-                          onChange={(value) => setLessonForm({ ...lessonForm, type: value as Lesson["type"] })}
-                          options={[
-                            { value: "video", label: "Video" },
-                            { value: "text", label: "Text/Article" },
-                            { value: "quiz", label: "Quiz" },
-                          ]}
-                        />
-                      </div>
-                      {lessonForm.type === "video" && (
-                          <div>
-                            <Label>Video File *</Label>
-                            <input
-                              type="file"
-                              accept="video/*"
-                              onChange={(e) =>
-                                setLessonForm({ ...lessonForm, videoFile: e.target.files?.[0] || null })
-                              }
-                            />
-                          </div>
-                        )}
+          {lesson.duration && lesson.type !== "quiz" && (
+            <span className="text-xs text-gray-500 flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {lesson.duration}
+            </span>
+          )}
+        </div>
 
-                        <div>
-                          <Label>Attachment (PDF / ZIP)</Label>
-                          <input
-                            type="file"
-                            onChange={(e) =>
-                              setLessonForm({ ...lessonForm, attachmentFile: e.target.files?.[0] || null })
-                            }
-                          />
-                        </div>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setEditingLesson({ moduleId: module.id, lesson })
+              setShowLessonForm(module.id)
 
-                      <div>
-                        <Label htmlFor="lessonDuration">Duration</Label>
-                        <Input
-                          id="lessonDuration"
-                          value={lessonForm.duration}
-                          onChange={(e) => setLessonForm({ ...lessonForm, duration: e.target.value })}
-                          placeholder="e.g., 15 mins"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="lessonContent">Content / Description</Label>
-                      <Textarea
-                        id="lessonContent"
-                        value={lessonForm.content}
-                        onChange={(e) => setLessonForm({ ...lessonForm, content: e.target.value })}
-                        placeholder="Lesson content or description..."
-                        rows={3}
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setShowLessonForm(null)
-                          setEditingLesson(null)
-                          setLessonForm({ title: "", type: "video", duration: "", content: "" })
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button onClick={editingLesson ? handleUpdateLesson : () => handleAddLesson(module.id)}>
-                        {editingLesson ? "Update Lesson" : "Add Lesson"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              setLessonForm({
+                title: lesson.title,
+                type: lesson.type,
+                duration: lesson.duration || "",
+                content: lesson.content || "",
+                videoFile: null,
+                attachmentFile: null,
+                quiz:
+                  lesson.type === "quiz"
+                    ? lesson.quiz
+                    : {
+                        chapter: module.id,
+                        question: "",
+                        options: [{ text: "", is_correct: false }],
+                      },
+              })
+            }}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
 
-              {/* Add Lesson Button */}
-              {showLessonForm !== module.id && !editingLesson && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShowLessonForm(module.id)
-                    setEditingLesson(null)
-                    setLessonForm({ title: "", type: "video", duration: "", content: "" })
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDeleteLesson(module.id, lesson.id)}
+          >
+            <Trash2 className="h-4 w-4 text-red-500" />
+          </Button>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {/* ================= LESSON FORM ================= */}
+  {(showLessonForm === module.id ||
+    (editingLesson && editingLesson.moduleId === module.id)) && (
+    <Card className="mb-4 border-blue-200 bg-blue-50/30">
+      <CardContent className="pt-4 space-y-4">
+        {/* Title + Type */}
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <Label>Lesson Title *</Label>
+            <Input
+              value={lessonForm.title}
+              onChange={(e) =>
+                setLessonForm({ ...lessonForm, title: e.target.value })
+              }
+            />
+          </div>
+
+          <div>
+            <Label>Lesson Type</Label>
+            <Select
+              value={lessonForm.type}
+              onChange={(value) =>
+                setLessonForm({
+                  ...lessonForm,
+                  type: value as Lesson["type"],
+                })
+              }
+              options={[
+                { value: "video", label: "Video" },
+                { value: "text", label: "Text / Article" },
+                { value: "quiz", label: "Quiz" },
+              ]}
+            />
+          </div>
+        </div>
+
+        {/* VIDEO */}
+        {lessonForm.type === "video" && (
+          <>
+            <Label>Video File *</Label>
+            <input
+              type="file"
+              accept="video/*"
+              onChange={(e) =>
+                setLessonForm({
+                  ...lessonForm,
+                  videoFile: e.target.files?.[0] || null,
+                })
+              }
+            />
+          </>
+        )}
+
+        {/* TEXT + VIDEO */}
+        {lessonForm.type !== "quiz" && (
+          <>
+            <Label>Duration</Label>
+            <Input
+              value={lessonForm.duration}
+              onChange={(e) =>
+                setLessonForm({
+                  ...lessonForm,
+                  duration: e.target.value,
+                })
+              }
+            />
+
+            <Label>Content / Description</Label>
+            <Textarea
+              value={lessonForm.content}
+              onChange={(e) =>
+                setLessonForm({
+                  ...lessonForm,
+                  content: e.target.value,
+                })
+              }
+              rows={3}
+            />
+          </>
+        )}
+
+        {/* ================= QUIZ ================= */}
+        {lessonForm.type === "quiz" && (
+          <div className="space-y-4">
+            <Label>Question</Label>
+            <Input
+              value={lessonForm.quiz.question}
+              onChange={(e) =>
+                setLessonForm({
+                  ...lessonForm,
+                  quiz: {
+                    ...lessonForm.quiz,
+                    question: e.target.value,
+                  },
+                })
+              }
+            />
+
+            {lessonForm.quiz.options.map((opt, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <Input
+                  placeholder={`Option ${i + 1}`}
+                  value={opt.text}
+                  onChange={(e) => {
+                    const options = [...lessonForm.quiz.options]
+                    options[i].text = e.target.value
+                    setLessonForm({
+                      ...lessonForm,
+                      quiz: { ...lessonForm.quiz, options },
+                    })
                   }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Lesson
-                </Button>
-              )}
-            </CardContent>
+                />
+                <input
+                  type="checkbox"
+                  checked={opt.is_correct}
+                  onChange={(e) => {
+                    const options = [...lessonForm.quiz.options]
+                    options[i].is_correct = e.target.checked
+                    setLessonForm({
+                      ...lessonForm,
+                      quiz: { ...lessonForm.quiz, options },
+                    })
+                  }}
+                />
+                <span className="text-sm">Correct</span>
+              </div>
+            ))}
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                setLessonForm({
+                  ...lessonForm,
+                  quiz: {
+                    ...lessonForm.quiz,
+                    options: [
+                      ...lessonForm.quiz.options,
+                      { text: "", is_correct: false },
+                    ],
+                  },
+                })
+              }
+            >
+              + Add Option
+            </Button>
+          </div>
+        )}
+
+        {/* ACTION BUTTONS */}
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowLessonForm(null)
+              setEditingLesson(null)
+              setLessonForm({
+                title: "",
+                type: "video",
+                duration: "",
+                content: "",
+                videoFile: null,
+                attachmentFile: null,
+                quiz: {
+                  chapter: module.id,
+                  question: "",
+                  options: [{ text: "", is_correct: false }],
+                },
+              })
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={
+              editingLesson
+                ? handleUpdateLesson
+                : () => handleAddLesson(module.id)
+            }
+          >
+            {editingLesson ? "Update Lesson" : "Add Lesson"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )}
+
+  {/* ================= ADD LESSON BUTTON ================= */}
+  {showLessonForm !== module.id && !editingLesson && (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => {
+        setShowLessonForm(module.id)
+        setEditingLesson(null)
+        setLessonForm({
+          title: "",
+          type: "video",
+          duration: "",
+          content: "",
+          videoFile: null,
+          attachmentFile: null,
+          quiz: {
+            chapter: module.id,
+            question: "",
+            options: [{ text: "", is_correct: false }],
+          },
+        })
+      }}
+    >
+      <Plus className="h-4 w-4 mr-2" />
+      Add Lesson
+    </Button>
+  )}
+</CardContent>
+
           </Card>
         ))}
       </div>
@@ -1304,40 +1487,184 @@ export function CreateCourseForm() {
     setIsLoading(false)
   }
 
-  const handleAddLesson = async (moduleId: string, lesson: Omit<Lesson, "id">) => {
-    setIsLoading(true)
-    const result = await mockApi.addLesson(moduleId, lesson)
-    if (result.success) {
-      setModules(
-        modules.map((m) => (m.id === moduleId ? { ...m, lessons: [...m.lessons, { ...lesson, id: result.id }] } : m)),
-      )
-    }
-    setIsLoading(false)
-  }
+  // const handleAddLesson = async (moduleId: string, lesson: Omit<Lesson, "id">) => {
+  //   setIsLoading(true)
+  //   const result = await mockApi.addLesson(moduleId, lesson)
+  //   if (result.success) {
+  //     setModules(
+  //       modules.map((m) => (m.id === moduleId ? { ...m, lessons: [...m.lessons, { ...lesson, id: result.id }] } : m)),
+  //     )
+  //   }
+  //   setIsLoading(false)
+  // }
 
-  const handleUpdateLesson = async (moduleId: string, lessonId: string, data: Partial<Lesson>) => {
-    setIsLoading(true)
-    const result = await mockApi.updateLesson(lessonId, data)
+  // const handleUpdateLesson = async (moduleId: string, lessonId: string, data: Partial<Lesson>) => {
+  //   setIsLoading(true)
+  //   const result = await mockApi.updateLesson(lessonId, data)
+  //   if (result.success) {
+  //     setModules(
+  //       modules.map((m) =>
+  //         m.id === moduleId ? { ...m, lessons: m.lessons.map((l) => (l.id === lessonId ? { ...l, ...data } : l)) } : m,
+  //       ),
+  //     )
+  //   }
+  //   setIsLoading(false)
+  // }
+const handleAddLesson = async (
+  moduleId: string,
+  lesson: Omit<Lesson, "id">
+) => {
+  setIsLoading(true)
+
+  try {
+    // 🔥 QUIZ FLOW (CORRECT)
+    if (lesson.type === "quiz") {
+      // 1️⃣ Create chapter first (empty lesson)
+      const chapterRes = await mockApi.addLesson(moduleId, {
+        title: lesson.title,
+        type: "quiz",
+        duration: "",
+        content: "",
+      })
+
+      // 2️⃣ Use chapter ID for quiz
+      await mockApi.addQuiz({
+        chapter: Number(chapterRes.id), // ✅ REAL chapter ID
+        question: lesson.quiz.question,
+        options: lesson.quiz.options,
+      })
+
+      // 3️⃣ Update UI
+      setModules(
+        modules.map((m) =>
+          m.id === moduleId
+            ? {
+                ...m,
+                lessons: [
+                  ...m.lessons,
+                  {
+                    ...lesson,
+                    id: chapterRes.id,
+                  },
+                ],
+              }
+            : m,
+        ),
+      )
+
+      return
+    }
+
+    // 🔵 VIDEO / TEXT (same as before)
+    const result = await mockApi.addLesson(moduleId, lesson)
+
     if (result.success) {
       setModules(
         modules.map((m) =>
-          m.id === moduleId ? { ...m, lessons: m.lessons.map((l) => (l.id === lessonId ? { ...l, ...data } : l)) } : m,
+          m.id === moduleId
+            ? {
+                ...m,
+                lessons: [...m.lessons, { ...lesson, id: result.id }],
+              }
+            : m,
         ),
       )
     }
+  } finally {
     setIsLoading(false)
   }
+}
 
-  const handleDeleteLesson = async (moduleId: string, lessonId: string) => {
-    setIsLoading(true)
-    const result = await mockApi.deleteLesson(lessonId)
+const handleUpdateLesson = async (
+  moduleId: string,
+  lessonId: string,
+  data: Partial<Lesson>
+) => {
+  setIsLoading(true)
+
+  try {
+    // 🔥 QUIZ UPDATE
+    if (data.type === "quiz" && data.quiz) {
+      const res = await mockApi.updateQuiz(lessonId, {
+        question: data.quiz.question,
+        options: data.quiz.options,
+      })
+
+      if (res.success) {
+        setModules(
+          modules.map((m) =>
+            m.id === moduleId
+              ? {
+                  ...m,
+                  lessons: m.lessons.map((l) =>
+                    l.id === lessonId ? { ...l, ...data } : l,
+                  ),
+                }
+              : m,
+          ),
+        )
+      }
+
+      setIsLoading(false)
+      return
+    }
+
+    // 🔵 VIDEO / TEXT UPDATE
+    const result = await mockApi.updateLesson(lessonId, data)
+
     if (result.success) {
       setModules(
-        modules.map((m) => (m.id === moduleId ? { ...m, lessons: m.lessons.filter((l) => l.id !== lessonId) } : m)),
+        modules.map((m) =>
+          m.id === moduleId
+            ? {
+                ...m,
+                lessons: m.lessons.map((l) =>
+                  l.id === lessonId ? { ...l, ...data } : l,
+                ),
+              }
+            : m,
+        ),
       )
     }
+  } finally {
     setIsLoading(false)
   }
+}
+const handleDeleteLesson = async (
+  moduleId: string,
+  lessonId: string
+) => {
+  setIsLoading(true)
+
+  try {
+    // 🔥 Check if lesson is quiz
+    const module = modules.find((m) => m.id === moduleId)
+    const lesson = module?.lessons.find((l) => l.id === lessonId)
+
+    if (lesson?.type === "quiz") {
+      // 🔥 QUIZ DELETE API
+      await mockApi.deleteQuiz(lessonId)
+    } else {
+      // 🔵 VIDEO / TEXT DELETE API
+      await mockApi.deleteLesson(lessonId)
+    }
+
+    // ✅ Update UI
+    setModules(
+      modules.map((m) =>
+        m.id === moduleId
+          ? {
+              ...m,
+              lessons: m.lessons.filter((l) => l.id !== lessonId),
+            }
+          : m,
+      ),
+    )
+  } finally {
+    setIsLoading(false)
+  }
+}
+
 
   // Step 3: Thumbnail upload
   // const handleThumbnailUpload = async (file: File) => {

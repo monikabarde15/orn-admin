@@ -59,7 +59,27 @@ export default function MySubscriptions() {
 
   return null; // ❗ IMPORTANT
 };
+const normalizeSubscriptions = (data = []) => {
+  const map = {};
 
+  data.forEach((p) => {
+    const key = p.package_id;
+
+    if (!map[key]) {
+      map[key] = p;
+    } else {
+      // 🔥 same package → latest expiry wins
+      if (
+        new Date(p.expires_at) >
+        new Date(map[key].expires_at)
+      ) {
+        map[key] = p;
+      }
+    }
+  });
+
+  return Object.values(map);
+};
 
   /* ================= FETCH ================= */
   const fetchSubscriptions = async () => {
@@ -67,7 +87,9 @@ export default function MySubscriptions() {
       `${API_BASE}/users/subscriptions/`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    setSubscriptions(res.data || []);
+    // setSubscriptions(res.data || []);
+    setSubscriptions(normalizeSubscriptions(res.data || []));
+
   };
 
   const fetchWallet = async () => {
@@ -153,57 +175,69 @@ export default function MySubscriptions() {
 
   /* ================= UPGRADE ================= */
   const handleUpgrade = async (plan) => {
-    if (processing) return;
-    setProcessing(true);
+  if (processing) return;
+  setProcessing(true);
 
-    try {
-      const remaining = Math.max(0, plan.price - wallet);
+  try {
+    const remaining = Math.max(0, plan.price - wallet);
 
-      // ✅ Wallet enough
-      if (remaining === 0) {
-        await axios.post(
-          `${API_BASE}/users/update_active/${userId}/`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        notify("Plan upgraded successfully", "success");
-        setShowPopup(false);
-        fetchSubscriptions();
-        fetchWallet();
-       
-        return;
-      }
-
-      // ❌ Wallet low → Razorpay
-      notify(`Wallet low, paying ₹${remaining}`, "warning");
-      await openRazorpay(remaining);
-
-      // 🔥 FINAL UPGRADE API
+    // ✅ CASE 1: Wallet sufficient
+    if (remaining === 0) {
       await axios.post(
-        `${API_BASE}/users/update_active/${userId}/`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        `${API_BASE}/users/subscriptions/${plan.subscription_id}/upgrade/`,
+        {
+          new_package_id: plan.package_id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
       );
 
-      notify("Payment successful & plan upgraded", "success");
+      notify("Plan upgraded successfully", "success");
       setShowPopup(false);
       fetchSubscriptions();
       fetchWallet();
-       setPopupPlan(null);
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-
-    } catch (err) {
-      notify(
-        typeof err === "string" ? err : "Upgrade failed",
-        "error"
-      );
-    } finally {
-      setProcessing(false);
+      return;
     }
-  };
+
+    // ❌ CASE 2: Wallet low → Razorpay
+    notify(`Wallet low, paying ₹${remaining}`, "warning");
+    await openRazorpay(remaining);
+
+    // 🔥 FINAL UPGRADE API AFTER PAYMENT
+    await axios.post(
+      `${API_BASE}/users/subscriptions/${plan.subscription_id}/upgrade/`,
+      {
+        new_package_id: plan.package_id,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    notify("Payment successful & plan upgraded", "success");
+
+    setShowPopup(false);
+    fetchSubscriptions();
+    fetchWallet();
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+
+  } catch (err) {
+    notify("Upgrade failed", "error");
+  } finally {
+    setProcessing(false);
+  }
+};
+
 
   /* ================= ACTIONS ================= */
   // const launchLab = async (plan) => {
@@ -215,6 +249,7 @@ export default function MySubscriptions() {
   //   );
   //   navigate(`/lab?user=${userId}`);
   // };
+
 
 const launchLab = async (plan) => {
   const action = getAction(plan.name);

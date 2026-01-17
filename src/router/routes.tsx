@@ -180,6 +180,9 @@ const VideoPlayer = lazy(() => import('../pages/Components/VideoPlayer'));
 const EditCoursePage = lazy(() =>
   import("../pages/Components/EditCoursePage")
 )
+
+const CertificateView = lazy(() => import('../pages/Components/CertificateView'));
+
 const routes = [
     // dashboard
      {
@@ -190,6 +193,11 @@ const routes = [
     {
             path: '/your-instances',
             element: <UserInstances />,
+            layout:'web',
+        },
+        {
+            path: '/certificate-view/:certificateId',
+            element: <CertificateView />,
             layout:'web',
         },
          {

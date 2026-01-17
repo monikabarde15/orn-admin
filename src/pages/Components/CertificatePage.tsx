@@ -4,6 +4,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Navbar from './Navbar';
 import Footer from './Footer';
+import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -11,6 +12,8 @@ const notify = (msg, type = "info") =>
   toast[type](msg, { position: "top-center", autoClose: 2500 });
 
 export default function CertificatePage() {
+    const navigate = useNavigate();
+  
   /* ================= AUTH ================= */
   const getCookie = (name) => {
     const v = `; ${document.cookie}`;
@@ -177,7 +180,7 @@ export default function CertificatePage() {
         </h1>
 
         {/* ===== FORM ===== */}
-        <div className="max-w-xl mx-auto mb-10 bg-white/5 p-6 rounded-xl">
+        {/* <div className="max-w-xl mx-auto mb-10 bg-white/5 p-6 rounded-xl">
             <input
             placeholder="Title"
             className="w-full mb-2 p-2 bg-black/30 border"
@@ -222,7 +225,7 @@ export default function CertificatePage() {
             >
             {form.id ? "Update" : "Add"} Certificate
             </button>
-        </div>
+        </div> */}
 
         {/* ===== LIST ===== */}
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-6">
@@ -246,7 +249,15 @@ export default function CertificatePage() {
                 </p>
 
                 <div className="mt-3 flex gap-2 flex-wrap">
-                <button onClick={() => handleView(c)}>View</button>
+                <button
+                onClick={() =>
+                  navigate(`/certificate-view/${c.id}`)
+                }
+                className="bg-purple-600 px-6 py-2 rounded-lg"
+              >
+                View Certificate
+              </button>
+
                 <button onClick={() => handleDownload(c)}>Download</button>
                 <button onClick={() => setForm(c)}>Edit</button>
                 <button onClick={() => handleDelete(c.id)}>Delete</button>

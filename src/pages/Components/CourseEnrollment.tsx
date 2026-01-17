@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
+
 import axios from "axios";
 import {
   PlayCircle,
@@ -293,12 +295,16 @@ const { id } = useParams<{ id: string }>();
         {/* ================= RIGHT ================= */}
         <div className="lg:col-span-1">
           <div className="sticky top-6 bg-slate-900/50 p-6 rounded-2xl border border-slate-800 space-y-4">
-            <button
-              disabled
-              className="w-full bg-purple-600 text-white py-4 rounded-lg font-semibold cursor-default"
-            >
-              Watch
-            </button>
+           <Link to={`/course/${course.id}`}>
+              <button
+                
+                className="w-full py-4 rounded-lg font-semibold border transition
+                border-slate-700 bg-purple-600 text-white hover:bg-purple-500"
+              >
+                Watch
+              </button>
+            </Link>
+            
             <a href="/your-instances">
             <button
               onClick={handleAddToCart}

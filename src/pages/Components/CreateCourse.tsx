@@ -94,14 +94,26 @@ interface QuizQuestion {
   question: string
   options: QuizOption[]
 }
+// interface Lesson {
+//   id: string
+//   title: string
+//   type: "video" | "text" | "quiz"
+//   duration: string
+//   content: string,
+//   quiz?: QuizQuestion
+// }
+
 interface Lesson {
   id: string
   title: string
-  type: "video" | "text" | "quiz"
+  type: "video" | "text" | "quiz" | "pdf"   // ✅ pdf added
   duration: string
-  content: string,
+  content: string
   quiz?: QuizQuestion
+  videoFile?: File | null
+  attachmentFile?: File | null
 }
+
 const publicApi = axios.create({
   baseURL: `${VIT}`,
 })
@@ -864,6 +876,8 @@ function ModuleEditor({
     switch (type) {
       case "video":
         return <Video className="h-4 w-4 text-blue-600" />
+        case "pdf":
+  return <FileText className="h-4 w-4 text-red-600" />
       case "text":
         return <FileText className="h-4 w-4 text-green-600" />
       case "quiz":
@@ -1065,6 +1079,7 @@ function ModuleEditor({
               }
               options={[
                 { value: "video", label: "Video" },
+                 { value: "pdf", label: "PDF Document" }, // ✅ NEW
                 { value: "text", label: "Text / Article" },
                 { value: "quiz", label: "Quiz" },
               ]}
@@ -1088,6 +1103,23 @@ function ModuleEditor({
             />
           </>
         )}
+        {/* PDF UPLOAD */}
+        {lessonForm.type === "pdf" && (
+          <>
+            <Label>Attach PDF *</Label>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) =>
+                setLessonForm({
+                  ...lessonForm,
+                  attachmentFile: e.target.files?.[0] || null,
+                })
+              }
+            />
+          </>
+        )}
+
 
         {/* TEXT + VIDEO */}
         {lessonForm.type !== "quiz" && (

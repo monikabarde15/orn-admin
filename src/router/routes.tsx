@@ -235,11 +235,7 @@ const routes = [
         element: <CreateCourseForm />,
         // layout: 'web',
     },
-     {
-        path: '/create-course',
-        element: <CreateCourseForm />,
-        // layout: 'web',
-    },
+     
      {
         path: '/courses/edit/:id',
         element: <EditCoursePage />,

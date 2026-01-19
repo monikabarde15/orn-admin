@@ -101,7 +101,7 @@ const { id } = useParams<{ id: string }>();
         // const res = await api.get("/course/courses/1/");
         setCourse(res.data);
         setModules(res.data?.modules || []);
-        setThumbnail(res.data?.thumbnail?.image_url || "");
+setThumbnail(res.data?.thumbnail?.image || "");
       } catch (err) {
         console.error("API error:", err);
       } finally {

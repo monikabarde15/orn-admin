@@ -5,6 +5,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { Award, Download, Share2, ArrowLeft } from "lucide-react";
 import logoimg from "../../../public/assets/orllogo.png";
+import { useNavigate } from "react-router-dom";
 
 const CERTIFICATE_LOGO = logoimg;
 
@@ -24,6 +25,7 @@ const CertificateView: React.FC = () => {
   const [certificate, setCertificate] = useState<Certificate | null>(null);
   const [loading, setLoading] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+const navigate = useNavigate();
 
   /* ================= HELPERS ================= */
   const getCookie = (name: string) => {
@@ -128,11 +130,11 @@ const CertificateView: React.FC = () => {
         {/* HEADER */}
         <div className="flex items-center justify-between mb-6">
           <button
-            onClick={() => window.history.back()}
-            className="flex items-center gap-2 text-slate-300"
-          >
-            <ArrowLeft size={18} /> Back
-          </button>
+  onClick={() => navigate("/certificate")}
+  className="flex items-center gap-2 text-slate-300"
+>
+  <ArrowLeft size={18} /> Back
+</button>
 
           <div className="flex gap-3">
             <button
@@ -220,56 +222,165 @@ const CertificateView: React.FC = () => {
 
       {/* ================= HIDDEN CERTIFICATE HTML ================= */}
       <div
-        id="certificate-html"
+  id="certificate-html"
+  style={{
+    position: "absolute",
+    top: "-9999px",
+    left: "-9999px",
+    width: "1123px",
+    height: "794px",
+    backgroundColor: "#0b1220",
+    padding: "40px",
+    fontFamily: "'Poppins', Arial, sans-serif",
+    boxSizing: "border-box",
+  }}
+>
+  {/* OUTER BLUE FRAME */}
+  <div
+    style={{
+      width: "100%",
+      height: "100%",
+      background:
+        "linear-gradient(135deg, #0f172a 0%, #0b3c7a 50%, #0f172a 100%)",
+      padding: "30px",
+      boxSizing: "border-box",
+    }}
+  >
+    {/* INNER WHITE CARD */}
+    <div
+      style={{
+        backgroundColor: "#ffffff",
+        width: "100%",
+        height: "100%",
+        padding: "50px 70px",
+        boxSizing: "border-box",
+        position: "relative",
+      }}
+    >
+      {/* LOGO */}
+      <img
+        src={CERTIFICATE_LOGO}
+        alt="Logo"
+        style={{ width: "160px", marginBottom: "30px" }}
+      />
+
+      {/* TITLE */}
+      <h1
         style={{
-          position: "absolute",
-          top: "-9999px",
-          left: "-9999px",
-          width: "1123px",
-          padding: "60px",
-          backgroundColor: "#ffffff",
-          fontFamily: "Georgia, serif",
-          color: "#000",
-          border: "14px solid #1e3a8a",
+          fontSize: "46px",
+          margin: "0",
+          color: "#0f172a",
+          letterSpacing: "1px",
         }}
       >
-        <img
-          src={CERTIFICATE_LOGO}
-          alt="Logo"
-          style={{ width: "140px", margin: "0 auto 30px", display: "block" }}
-        />
+        CERTIFICATE
+      </h1>
 
-        <h1 style={{ textAlign: "center", fontSize: "42px" }}>
-          Certificate of Completion & Verification
-        </h1>
+      <h3
+        style={{
+          marginTop: "8px",
+          fontSize: "18px",
+          letterSpacing: "3px",
+          color: "#2563eb",
+          fontWeight: 500,
+        }}
+      >
+        OF COMPLETION
+      </h3>
 
-        <p style={{ textAlign: "center", marginTop: "20px" }}>
-          This certificate is proudly presented to
+      <p style={{ marginTop: "30px", fontSize: "16px", color: "#334155" }}>
+        This certifies that
+      </p>
+
+      {/* USER NAME */}
+      <h2
+        style={{
+          fontSize: "40px",
+          margin: "10px 0 20px",
+          color: "#020617",
+          fontWeight: 700,
+        }}
+      >
+        {user.name}
+      </h2>
+
+      <p style={{ fontSize: "16px", color: "#334155", maxWidth: "600px" }}>
+        has successfully completed the course
+      </p>
+
+      {/* COURSE TITLE */}
+      <h3
+        style={{
+          fontSize: "22px",
+          marginTop: "10px",
+          fontWeight: 600,
+          color: "#020617",
+        }}
+      >
+        “{certificate.title}”
+      </h3>
+
+      {/* META INFO */}
+      <div
+        style={{
+          marginTop: "40px",
+          fontSize: "14px",
+          color: "#334155",
+          lineHeight: "1.8",
+        }}
+      >
+        <p>
+          <b>Certificate ID:</b> {certificate.id}
         </p>
-
-        <h2 style={{ textAlign: "center", fontSize: "36px", fontWeight: "bold" }}>
-          {user.name}
-        </h2>
-
-        <p style={{ textAlign: "center" }}>
-          for successfully completing the course
+        <p>
+          <b>Issued On:</b> {certificate.issue_date}
         </p>
-
-        <h3 style={{ textAlign: "center", fontSize: "26px" }}>
-          {certificate.title}
-        </h3>
-
-        <div style={{ marginTop: "40px", border: "2px solid #1e3a8a", padding: "30px" }}>
-          <p><b>Certificate ID:</b> {certificate.id}</p>
-          <p><b>Issued On:</b> {certificate.issue_date}</p>
-          <p><b>Expiry:</b> {certificate.expiry_date || "Lifetime"}</p>
-          <p><b>Status:</b> Active</p>
-        </div>
-
-        <p style={{ textAlign: "center", marginTop: "40px" }}>
-          Verified & issued by <b>OnRequestLab LMS</b>
+        <p>
+          <b>Expiry:</b> {certificate.expiry_date || "Lifetime"}
+        </p>
+        <p>
+          <b>Status:</b> Active
         </p>
       </div>
+
+      {/* SIGNATURE */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "60px",
+          left: "70px",
+        }}
+      >
+        <div
+          style={{
+            width: "200px",
+            borderTop: "2px solid #0f172a",
+            marginBottom: "6px",
+          }}
+        />
+        <p style={{ fontWeight: 600, color: "#020617", margin: 0 }}>
+          Authorized Signature
+        </p>
+        <p style={{ fontSize: "13px", color: "#475569", margin: 0 }}>
+          OnRequestLab LMS
+        </p>
+      </div>
+
+      {/* FOOTER */}
+      <p
+        style={{
+          position: "absolute",
+          bottom: "40px",
+          right: "70px",
+          fontSize: "13px",
+          color: "#475569",
+        }}
+      >
+        Verified & Issued by <b>OnRequestLab</b>
+      </p>
+    </div>
+  </div>
+</div>
     </div>
   );
 };

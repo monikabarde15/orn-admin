@@ -1,22 +1,21 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+
 import axios from "axios";
 import {
-  PlayCircle,
-  FileText,
-  ListChecks,
   ChevronLeft,
   ChevronRight,
   Award,
-  Eye,
-  Download,
   Star,
-  X,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../../pages/Components/Footer";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import logoimg from "../../../public/assets/orllogo.png";
 
 /* ================= TYPES ================= */
 interface QuizOption {
@@ -24,25 +23,26 @@ interface QuizOption {
   text: string;
   is_correct: boolean;
 }
+
 interface Quiz {
   id: number;
   question: string;
   options: QuizOption[];
 }
+
 interface Chapter {
   id: string;
   title: string;
   video?: string | null;
-  pdf?: string | null;
+  file?: string | null;
   quizzes?: Quiz[];
 }
+
 interface Module {
   id: string;
   title: string;
   chapters: Chapter[];
 }
-
-type Step = "learning" | "result" | "review" | "feedback" | "certificate";
 
 interface FlowItem {
   type: "video" | "pdf" | "quiz";
@@ -50,20 +50,38 @@ interface FlowItem {
   moduleId: string;
   chapterId: string;
 }
-import logoimg from "../../../public/assets/orllogo.png";
 
-const CERTIFICATE_LOGO =logoimg;
- // "https://upload.wikimedia.org/wikipedia/commons/e/e3/Udemy_logo.svg";
+type Step = "learning" | "result" | "review" | "feedback" | "certificate";
+
+const CERTIFICATE_LOGO = logoimg;
+
+/* ================= HELPERS ================= */
+const isVideo = (url?: string | null) =>
+  !!url && url.toLowerCase().endsWith(".mp4");
+
+const isPdf = (url?: string | null) =>
+  !!url && url.toLowerCase().endsWith(".pdf");
 
 /* ================= MAIN ================= */
 const CourseTestFinal: React.FC = () => {
   const { id: courseId } = useParams<{ id: string }>();
 
+  const getCookie = (name: string) => {
+    const v = `; ${document.cookie}`;
+    const parts = v.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(";").shift() || "";
+    return "";
+  };
+
+  const user = {
+    name: getCookie("username"),
+    email: getCookie("email"),
+  };
+
   const token =
-    document.cookie
-      .split("; ")
-      .find((r) => r.startsWith("access="))
-      ?.split("=")[1] || localStorage.getItem("access");
+    getCookie("access") || localStorage.getItem("access") || "";
+
+  const userId = getCookie("user_id");
 
   const api = axios.create({
     baseURL: "https://dev.backend.onrequestlab.com",
@@ -73,6 +91,9 @@ const CourseTestFinal: React.FC = () => {
     },
   });
 
+  const generateCertificateId = () => "ORL-" + Date.now();
+  const certificateId = generateCertificateId();
+
   /* ================= STATE ================= */
   const [modules, setModules] = useState<Module[]>([]);
   const [flow, setFlow] = useState<FlowItem[]>([]);
@@ -80,30 +101,73 @@ const CourseTestFinal: React.FC = () => {
   const [step, setStep] = useState<Step>("learning");
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
+  const [certificate, setCertificate] = useState({
+  id: "",
+  title: "",
+  issue_date: "",
+  expiry_date: "",
+});
+const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  const navigate = useNavigate();
+
 
   const [rating, setRating] = useState(5);
   const [feedback, setFeedback] = useState("");
-
-  const [certificateId, setCertificateId] = useState<string | null>(null);
-  const [certificateUrl, setCertificateUrl] = useState<string | null>(null);
-  const [showCertificatePreview, setShowCertificatePreview] = useState(false);
-const [courseTitle, setCourseTitle] = useState("");
+  const [courseTitle, setCourseTitle] = useState("");
 
   const current = flow[flowIndex];
   const isLast = flowIndex === flow.length - 1;
-const getCookie = (name) => {
-    if (typeof document === "undefined") return "";
-    const v = `; ${document.cookie}`;
-    const parts = v.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-    return "";
+
+  /* ================= FLOW BUILDER ================= */
+  const buildFlow = (modules: Module[]): FlowItem[] => {
+    const videos: FlowItem[] = [];
+    const pdfs: FlowItem[] = [];
+    const quizzes: FlowItem[] = [];
+
+    modules.forEach((m) => {
+      m.chapters.forEach((c) => {
+        if (isVideo(c.video)) {
+          videos.push({
+            type: "video",
+            data: "https://" + c.video,
+            moduleId: m.id,
+            chapterId: c.id,
+          });
+        }
+
+        if (isPdf(c.video)) {
+          pdfs.push({
+            type: "pdf",
+            data: "https://" + c.video,
+            moduleId: m.id,
+            chapterId: c.id,
+          });
+        }
+
+        if (isPdf(c.file)) {
+          pdfs.push({
+            type: "pdf",
+            data: "https://" + c.file,
+            moduleId: m.id,
+            chapterId: c.id,
+          });
+        }
+
+        c.quizzes?.forEach((q) => {
+          quizzes.push({
+            type: "quiz",
+            data: q,
+            moduleId: m.id,
+            chapterId: c.id,
+          });
+        });
+      });
+    });
+
+    return [...videos, ...pdfs, ...quizzes];
   };
 
-  const token1 =
-    (getCookie("access") ||
-      localStorage.getItem("access") ||
-      localStorage.getItem("jwt-auth"))?.trim();
-  const userId = getCookie("user_id");
   /* ================= FETCH COURSE ================= */
   useEffect(() => {
     api.get(`/course/courses/${courseId}/`).then((res) => {
@@ -116,462 +180,223 @@ const getCookie = (name) => {
           id: String(c.id),
           title: c.title,
           video: c.video,
-          pdf: c.pdf,
+          file: c.file,
           quizzes: c.quizzes || [],
         })),
       }));
 
       setModules(mapped);
+      const builtFlow = buildFlow(mapped);
+      setFlow(builtFlow);
 
-      const tempFlow: FlowItem[] = [];
-      mapped.forEach((m) =>
-        m.chapters.forEach((c) => {
-          if (c.video)
-            tempFlow.push({
-              type: "video",
-              data: "https://" + c.video,
-              moduleId: m.id,
-              chapterId: c.id,
-            });
-          if (c.pdf)
-            tempFlow.push({
-              type: "pdf",
-              data: "https://" + c.pdf,
-              moduleId: m.id,
-              chapterId: c.id,
-            });
-          c.quizzes?.forEach((q) =>
-            tempFlow.push({
-              type: "quiz",
-              data: q,
-              moduleId: m.id,
-              chapterId: c.id,
-            })
-          );
-        })
-      );
-
-      setFlow(tempFlow);
-      if (tempFlow.length) setActiveModuleId(tempFlow[0].moduleId);
+      if (builtFlow.length) {
+        setActiveModuleId(builtFlow[0].moduleId);
+      }
     });
   }, [courseId]);
 
   useEffect(() => {
     if (current) setActiveModuleId(current.moduleId);
   }, [current]);
-/* ================= PROGRESS API ================= */
-
-const getProgress = async (item_type: string, item_value: string) => {
-  const res = await api.get(
-    `/course/progress/?item_type=${item_type}&status=started`
-  );
-
-  return res.data.find(
-    (p: any) =>
-      p.item_type === item_type &&
-      String(p.item_value) === String(item_value)
-  );
-};
-
-const createProgress = async (
-  item_type: string,
-  item_value: string,
-  status: "started" | "completed"
-) => {
-  return api.post("/course/progress/", {
-    item_type,
-    item_value,
-    status,
-    user: Number(userId),
-  });
-};
-
-const updateProgress = async (
-  progressId: number,
-  status: "started" | "completed"
-) => {
-  return api.patch(`/course/progress/${progressId}/`, {
-    status,
-  });
-};
-
-const markProgress = async (
-  item_type: string,
-  item_value: string,
-  status: "started" | "completed"
-) => {
-  try {
-    const existing = await getProgress(item_type, item_value);
-
-    if (existing) {
-      await updateProgress(existing.id, status);
-    } else {
-      await createProgress(item_type, item_value, status);
-    }
-  } catch (err) {
-    console.error("Progress error:", err);
-  }
-};
-useEffect(() => {
-  if (current?.type === "video") {
-    markProgress("video", current.chapterId, "started");
-  }
-}, [current]);
 
   /* ================= NAVIGATION ================= */
-  // const handleNext = () => {
-  //   if (isLast) setStep("result");
-  //   else setFlowIndex((i) => i + 1);
-  // };
+  const handleNext = () => {
+    if (isLast) setStep("result");
+    else setFlowIndex((i) => i + 1);
+  };
 
-  const handleNext = async () => {
-  if (current) {
-    await markProgress(
-      current.type,
-      current.chapterId,
-      "completed"
-    );
-  }
-
-  if (isLast) setStep("result");
-  else setFlowIndex((i) => i + 1);
-};
-useEffect(() => {
-  if (current?.type === "pdf") {
-    markProgress("chapter", current.chapterId, "started");
-  }
-}, [current]);
-useEffect(() => {
-  if (current?.type === "quiz") {
-    markProgress("quiz", current.data.id, "started");
-  }
-}, [current]);
-useEffect(() => {
-  if (step === "result") {
-    modules.forEach((m) => {
-      markProgress("module", m.id, "completed");
-    });
-
-    markProgress("course", courseId!, "completed");
-  }
-}, [step]);
-const deleteProgress = async (progressId: number) => {
-  await api.delete(`/course/progress/${progressId}/`);
-};
-
-  
   /* ================= RESULT ================= */
   const allQuizzes: Quiz[] = modules.flatMap((m) =>
     m.chapters.flatMap((c) => c.quizzes || [])
   );
 
   const getResultStats = () => {
-    let attempted = 0,
-      correct = 0;
+    let correct = 0;
     allQuizzes.forEach((q) => {
-      if (answers[q.id]) {
-        attempted++;
-        if (
-          answers[q.id] === q.options.find((o) => o.is_correct)?.id
-        )
-          correct++;
+      if (
+        answers[q.id] === q.options.find((o) => o.is_correct)?.id
+      ) {
+        correct++;
       }
     });
+
     return {
       total: allQuizzes.length,
-      attempted,
       correct,
-      wrong: attempted - correct,
       percentage: allQuizzes.length
         ? Math.round((correct / allQuizzes.length) * 100)
         : 0,
     };
   };
 
-  /* ================= CERTIFICATE ================= */
-  const downloadDemoCertificate = () => {
-  const pdfUrl =
-    "https://udemy-certificate.s3.amazonaws.com/pdf/UC-c0bafa92-1608-41c8-a6bc-331698f5682c.pdf";
+  /* ================= FEEDBACK ================= */
+  const submitFeedback = async () => {
+    if (!feedback.trim()) return alert("Please write feedback");
 
-  const link = document.createElement("a");
-  link.href = pdfUrl;
-  link.download = "Certificate-of-Completion.pdf";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+    await api.post("/api/feedback/feedback_vc/", {
+      course: courseId,
+      rating,
+      description: feedback.trim(),
+      user: userId,
+    });
+
+    setStep("certificate");
+  };
+const prepareCertificateData = () => {
+  const issueDate = new Date().toISOString().split("T")[0];
+
+  const cert = {
+    id: "ORL-" + Date.now(),
+    title: courseTitle,
+    issue_date: issueDate,
+    expiry_date: "",
+  };
+
+  setCertificate(cert);
+  return cert;
 };
 
-  const saveCertificateRecordOnly = async () => {
-  await api.post("/certificate/certificate/", {
+  /* ================= CERTIFICATE API ================= */
+//   const saveCertificateRecordOnly = async (cert: any) => {
+//   await api.post("/certificate/certificate/", {
+//     certificate_id: cert.id,
+//     course: courseId,
+//     title: cert.title,
+//     issue_date: cert.issue_date,
+//     is_active: true,
+//   });
+// };
+const saveCertificateRecordOnly = async () => {
+  const res = await api.post("/certificate/certificate/", {
     course: courseId,
     title: courseTitle,
     issue_date: new Date().toISOString().split("T")[0],
     is_active: true,
   });
-};
 
-// const generateCertificate = async () => {
-//   try {
-//     // 1. Save certificate record in backend (PDF null rahega)
-//     await saveCertificateRecordOnly();
-
-//     // 2. Download Udemy demo PDF locally
-//     downloadDemoCertificate();
-
-//     alert("Certificate downloaded (demo PDF)");
-//   } catch (e) {
-//     console.error(e);
-//     alert("Certificate generation failed");
-//   }
-// };
-const th = {
-  border: "1px solid #000",
-  padding: "6px",
-};
-
-const td = {
-  border: "1px solid #000",
-  padding: "6px",
-  textAlign: "center",
-};
-
-const getModuleResults = () => {
-  return modules.map((module) => {
-    let total = 0;
-    let correct = 0;
-
-    module.chapters.forEach((chapter) => {
-      chapter.quizzes?.forEach((quiz) => {
-        total++;
-
-        const selected = answers[quiz.id];
-        const correctOption = quiz.options.find(o => o.is_correct)?.id;
-
-        if (selected && selected === correctOption) {
-          correct++;
-        }
-      });
-    });
-
-    const percentage = total
-      ? Math.round((correct / total) * 100)
-      : 0;
-
-    return {
-      moduleId: module.id,
-      moduleTitle: module.title,
-      total,
-      correct,
-      wrong: total - correct,
-      percentage,
-      status: percentage >= 40 ? "PASS" : "FAIL", // threshold
-    };
+  // 🔥 BACKEND ID HERE
+  setCertificate({
+    id: res.data.id, // <-- SAME ID
+    title: res.data.title,
+    issue_date: res.data.issue_date,
+    expiry_date: res.data.expiry_date,
   });
+
+  return res.data.id;
 };
-// const generateCertificate = async () => {
-//   try {
-//     await saveCertificateRecordOnly();
 
-//     const element = document.getElementById("certificate-html");
-//     if (!element) return;
 
-//     const canvas = await html2canvas(element, {
-//       scale: 2,
-//       useCORS: true,
-//       backgroundColor: "#ffffff",
-//     });
 
-//     const imgData = canvas.toDataURL("image/png");
+  /* ================= CERTIFICATE PDF ================= */
+//   const generateCertificate = async () => {
+//   const element = document.getElementById("certificate-html");
+//   if (!element) return;
 
-//     const pdf = new jsPDF("landscape", "px", "a4");
+//   const cert = prepareCertificateData();
+//   await saveCertificateRecordOnly(cert);
 
-//     const pdfWidth = pdf.internal.pageSize.getWidth();
-//     const pdfHeight = pdf.internal.pageSize.getHeight();
+//   // wait for state render
+//   await new Promise((r) => setTimeout(r, 300));
 
-//     const imgWidth = pdfWidth;
-//     const imgHeight = (canvas.height * imgWidth) / canvas.width;
+//   const canvas = await html2canvas(element, {
+//     scale: 2,
+//     useCORS: true,
+//     backgroundColor: "#ffffff",
+//   });
 
-//     let heightLeft = imgHeight;
-//     let position = 0;
+//   const imgData = canvas.toDataURL("image/png");
+//   const pdf = new jsPDF("landscape", "px", "a4");
 
-//     pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-//     heightLeft -= pdfHeight;
+//   pdf.addImage(
+//     imgData,
+//     "PNG",
+//     0,
+//     0,
+//     pdf.internal.pageSize.getWidth(),
+//     pdf.internal.pageSize.getHeight()
+//   );
 
-//     while (heightLeft > 0) {
-//       position -= pdfHeight;
-//       pdf.addPage();
-//       pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-//       heightLeft -= pdfHeight;
-//     }
-
-//     pdf.save("Certificate-of-Completion.pdf");
-//   } catch (error) {
-//     console.error(error);
-//     alert("Certificate generation failed");
-//   }
+//   pdf.save(`Certificate-${cert.id}.pdf`);
 // };
-const capture = async (id: string) => {
-  const el = document.getElementById(id);
-  if (!el) return null;
-  const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#fff" });
-  return canvas.toDataURL("image/png");
+const handlePrevious = () => {
+  if (flowIndex > 0) {
+    setFlowIndex((i) => i - 1);
+    setStep("learning");
+  }
 };
-
 
 const generateCertificate = async () => {
-  try {
-    await saveCertificateRecordOnly();
+  const element = document.getElementById("certificate-html");
+  if (!element) return;
 
-    const element = document.getElementById("certificate-html");
-    if (!element) return;
+  // 🔥 backend call first
+  const certId = await saveCertificateRecordOnly();
 
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff",
-    });
+  // wait for state update
+  await new Promise((r) => setTimeout(r, 300));
 
-    const imgData = canvas.toDataURL("image/png");
+  const canvas = await html2canvas(element, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: "#ffffff",
+  });
 
-    // A4 Landscape size
-    const pdf = new jsPDF("landscape", "px", "a4");
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
+  const imgData = canvas.toDataURL("image/png");
+  const pdf = new jsPDF("landscape", "px", "a4");
 
-    // 🔑 SCALE IMAGE TO FIT ONE PAGE
-    const imgRatio = canvas.width / canvas.height;
-    const pdfRatio = pdfWidth / pdfHeight;
+  pdf.addImage(
+    imgData,
+    "PNG",
+    0,
+    0,
+    pdf.internal.pageSize.getWidth(),
+    pdf.internal.pageSize.getHeight()
+  );
 
-    let renderWidth = pdfWidth;
-    let renderHeight = pdfHeight;
+  // 🔥 SAME ID in PDF name
+  pdf.save(`Certificate-${certId}.pdf`);
 
-    if (imgRatio > pdfRatio) {
-      renderHeight = pdfWidth / imgRatio;
-    } else {
-      renderWidth = pdfHeight * imgRatio;
-    }
-
-    const x = (pdfWidth - renderWidth) / 2;
-    const y = (pdfHeight - renderHeight) / 2;
-
-    pdf.addImage(
-      imgData,
-      "PNG",
-      x,
-      y,
-      renderWidth,
-      renderHeight
-    );
-
-    pdf.save("Certificate-of-Completion.pdf");
-  } catch (err) {
-    console.error(err);
-    alert("Certificate generation failed");
-  }
+  setStep("certificate");
 };
+useEffect(() => {
+  if (step === "certificate" && certificate.id) {
+    const timer = setTimeout(() => {
+      navigate(`/certificate-view/${certificate.id}`);
+    }, 4000);
 
-
-// const generateCertificate = async () => {
-//   try {
-//     // 1️⃣ Backend me sirf record save
-//     await saveCertificateRecordOnly();
-
-//     // 2️⃣ HTML → Canvas
-//     const element = document.getElementById("certificate-html");
-//     if (!element) return;
-
-//     const canvas = await html2canvas(element, {
-//       scale: 2,
-//       useCORS: true,
-//     });
-
-//     // 3️⃣ Canvas → PDF
-//     const imgData = canvas.toDataURL("image/png");
-//     const pdf = new jsPDF("landscape", "px", [1123, 794]);
-
-//     pdf.addImage(imgData, "PNG", 0, 0, 1123, 794);
-
-//     // 4️⃣ Local Download
-//     pdf.save("Certificate-of-Completion.pdf");
-
-//     alert("Certificate downloaded successfully");
-//   } catch (error) {
-//     console.error(error);
-//     alert("Certificate generation failed");
-//   }
-// };
-// const submitFeedback = async () => {
-//   try {
-//     await api.post("/api/feedback/feedback_vc/", {
-//       course: courseId,
-//       rating: rating,
-//       description: feedback, // ✅ IMPORTANT FIX
-//       user: userId,
-//     });
-
-//     setStep("certificate");
-//   } catch (error) {
-//     console.error("Feedback error:", error);
-//     alert("Feedback submit failed. Please try again.");
-//   }
-// };
-
-
-
-const submitFeedback = async () => {
-  // ❗ FRONTEND VALIDATION
-  if (!feedback.trim()) {
-    alert("Please write your feedback before submitting.");
-    return;
+    return () => clearTimeout(timer);
   }
+}, [step, certificate.id]);
 
-  if (!rating) {
-    alert("Please select a rating.");
-    return;
+
+useEffect(() => {
+  if (window.innerWidth < 1024) {
+    setIsSidebarOpen(false);
   }
+}, []);
 
-  try {
-    await api.post("/api/feedback/feedback_vc/", {
-      course: courseId,
-      rating: rating,
-      description: feedback.trim(), // ✅ blank nahi jayega
-      user: userId  // agar backend token se user leta hai to hata bhi sakte ho
-    });
-
-    setStep("certificate");
-  } catch (error) {
-    console.error("Feedback error:", error);
-    alert("Feedback submit failed. Please try again.");
-  }
-};
-
-
-
-  const previewCertificate = async () => {
-    if (!certificateId) return;
-    const res = await api.get(`/certificate/certificate/${certificateId}/`);
-    setCertificateUrl(res.data.certificate_file);
-    setShowCertificatePreview(true);
-  };
-const user = {
-    name: getCookie("username"),
-    email: getCookie("email"),
-  };
-  console.log('user=',user.name);
   /* ================= UI ================= */
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-[#020617] text-white">
-        <div className="max-w-[1400px] mx-auto px-6 py-8 flex gap-6">
 
-          {/* LEFT MODULES */}
-          <div className="w-[300px] border border-slate-800 rounded-xl">
+      <div className="min-h-screen bg-[#020617] text-white">
+        <div className={`mx-auto px-4 md:px-6 py-6 grid gap-4 relative isolate transition-all duration-300
+  ${
+    isSidebarOpen
+      ? "max-w-[1400px] grid-cols-1 lg:grid-cols-[300px_1fr]"
+      : "max-w-[1600px] grid-cols-1"
+  }`}>
+
+          {/* MODULE LIST */}
+          {/* <div className="w-[300px] border border-slate-800 rounded-xl">
             <div className="p-4 font-semibold border-b">Modules</div>
             {modules.map((m) => (
               <button
                 key={m.id}
-                onClick={() => setFlowIndex(flow.findIndex(f => f.moduleId === m.id))}
+                onClick={() =>
+                  setFlowIndex(flow.findIndex((f) => f.moduleId === m.id))
+                }
                 className={`w-full p-4 text-left hover:bg-slate-800 ${
                   activeModuleId === m.id && "bg-slate-800"
                 }`}
@@ -579,381 +404,471 @@ const user = {
                 {m.title}
               </button>
             ))}
-          </div>
+          </div> */}
+          {/* MODULE LIST */}
+{isSidebarOpen && (
+  <aside className="bg-slate-950 border border-slate-800 rounded-xl 
+lg:sticky lg:top-24 relative z-20 h-fit shadow-lg">
+    <div className="flex items-center justify-between p-4 border-b border-slate-700">
+      <h3 className="font-semibold">Modules</h3>
+      <button
+        onClick={() => setIsSidebarOpen(false)}
+        className="text-slate-400 hover:text-white"
+      >
+        ✕
+      </button>
+    </div>
+
+    <div className="max-h-[70vh] overflow-y-auto">
+      {modules.map((m) => (
+        <button
+          key={m.id}
+          onClick={() =>
+            setFlowIndex(flow.findIndex((f) => f.moduleId === m.id))
+          }
+          className={`w-full px-4 py-3 text-left border-b border-slate-800 hover:bg-slate-800 transition
+            ${activeModuleId === m.id && "bg-purple-600/20 text-purple-300"}
+          `}
+        >
+          {m.title}
+        </button>
+      ))}
+    </div>
+  </aside>
+)}
+{!isSidebarOpen && (
+  <div className="mb-4">
+    <button
+      onClick={() => setIsSidebarOpen(true)}
+      className="bg-purple-600 px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+    >
+      ☰ Show Modules
+    </button>
+  </div>
+)}
 
           {/* RIGHT CONTENT */}
-          <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-8">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-950 
+border border-slate-800 rounded-2xl 
+p-4 sm:p-6 md:p-8 
+min-h-[70vh] shadow-xl 
+relative overflow-hidden">
+    
 
-            {/* VIDEO */}
-            {step === "learning" && current?.type === "video" && (
-              <>
-                <video src={current.data} controls className="w-full rounded-lg" />
-                <div className="text-right mt-4">
-                  <button onClick={handleNext} className="bg-purple-600 px-6 py-2 rounded-lg">
-                    {isLast ? "Submit Test" : "Next"}
-                  </button>
-                </div>
-              </>
-            )}
+        {step === "learning" && current?.type === "video" && (
+  <>
+    <div className="w-full aspect-video bg-black rounded-lg overflow-hidden 
+border border-slate-700 relative z-10 isolate">
+      <video
+        src={current.data}
+        controls
+        autoPlay
+        className="w-full h-full object-contain"
+      />
+    </div>
 
-            {/* PDF */}
-            {step === "learning" && current?.type === "pdf" && (
-              <>
-                <iframe src={current.data} className="w-full h-[75vh] rounded-lg bg-white" />
-                <div className="text-right mt-4">
-                  <button onClick={handleNext} className="bg-purple-600 px-6 py-2 rounded-lg">
-                    {isLast ? "Submit Test" : "Next"}
-                  </button>
-                </div>
-              </>
-            )}
+    <div className="flex flex-col sm:flex-row gap-3 justify-between items-center mt-4">
+  {/* Previous */}
+  <button
+    onClick={handlePrevious}
+    disabled={flowIndex === 0}
+    className={`px-6 py-2 rounded-lg border
+      ${
+        flowIndex === 0
+          ? "border-slate-700 text-slate-500 cursor-not-allowed"
+          : "border-slate-600 hover:bg-slate-800"
+      }
+    `}
+  >
+    ← Previous
+  </button>
 
-            {/* QUIZ */}
+  {/* Next */}
+  <button
+    onClick={handleNext}
+    className="bg-purple-600 px-6 py-2 rounded-lg"
+  >
+    Next →
+  </button>
+</div>
+
+  </>
+)}
+
+
+
+
+          {step === "learning" && current?.type === "pdf" && (
+  <>
+    <iframe
+      src={current.data}
+        className="w-full h-[60vh] sm:h-[65vh] md:h-[75vh] rounded-lg"
+  style={{ maxWidth: "100%" }}
+    />
+
+    <div className="flex justify-between items-center mt-4">
+      {/* Previous */}
+      <button
+        onClick={handlePrevious}
+        disabled={flowIndex === 0}
+        className={`px-6 py-2 rounded-lg border
+          ${
+            flowIndex === 0
+              ? "border-slate-700 text-slate-500 cursor-not-allowed"
+              : "border-slate-600 hover:bg-slate-800"
+          }
+        `}
+      >
+        ← Previous
+      </button>
+
+      {/* Next */}
+      <button
+        onClick={handleNext}
+        className="bg-purple-600 px-6 py-2 rounded-lg"
+      >
+        Next →
+      </button>
+    </div>
+  </>
+)}
+
+
             {step === "learning" && current?.type === "quiz" && (
-              <div className="space-y-4">
+              <div>
                 <h2 className="text-xl font-semibold">{current.data.question}</h2>
                 {current.data.options.map((o: QuizOption) => (
-                  <label
-                    key={o.id}
-                    className={`block p-4 rounded-lg border cursor-pointer ${
-                      answers[current.data.id] === o.id
-                        ? "border-purple-500 bg-purple-500/10"
-                        : "border-slate-700"
-                    }`}
-                  >
+                  <label key={o.id} className="flex gap-3 items-center border p-4 rounded-lg mt-3 cursor-pointer">
                     <input
                       type="radio"
-                      className="mr-2"
                       checked={answers[current.data.id] === o.id}
                       onChange={() =>
                         setAnswers({ ...answers, [current.data.id]: o.id })
                       }
-                    />
+                    />{" "}
                     {o.text}
                   </label>
                 ))}
-                <div className="flex items-center justify-between mt-6">
-  {/* PREV */}
+                <div className="flex justify-between items-center mt-6">
+  {/* Previous */}
   <button
+    onClick={handlePrevious}
     disabled={flowIndex === 0}
-    onClick={() => setFlowIndex(flowIndex - 1)}
-    className={`flex items-center gap-2 px-5 py-2 rounded-lg border
+    className={`px-6 py-2 rounded-lg border
       ${
         flowIndex === 0
           ? "border-slate-700 text-slate-500 cursor-not-allowed"
-          : "border-slate-600 text-white hover:bg-slate-800"
-      }`}
+          : "border-slate-600 hover:bg-slate-800"
+      }
+    `}
   >
-    <ChevronLeft size={18} />
-    Prev
+    ← Previous
   </button>
 
-  {/* NEXT */}
+  {/* Next / Submit */}
   <button
     onClick={handleNext}
-    className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-lg text-white"
+    className="bg-purple-600 px-6 py-2 rounded-lg"
   >
-    {isLast ? "Submit Test" : "Next"}
-    <ChevronRight size={18} />
+    {isLast ? "Submit Test" : "Next →"}
   </button>
 </div>
 
               </div>
             )}
 
-            {/* RESULT */}
-            {step === "result" && (() => {
-              const r = getResultStats();
-              return (
-                <div className="text-center space-y-4">
-                  <Award size={72} className="mx-auto text-yellow-400" />
-                  <h2 className="text-2xl font-bold">Result</h2>
-                  <p>{r.correct} / {r.total} Correct ({r.percentage}%)</p>
-                  <button onClick={() => setStep("review")} className="bg-purple-600 px-6 py-2 rounded-lg">
-                    Review Answers
-                  </button>
-                </div>
-              );
-            })()}
+            {step === "result" && (
+              <div className="text-center">
+                <Award size={64} className="mx-auto text-yellow-400" />
+                <h2 className="text-2xl font-bold">Result</h2>
+                <p>{getResultStats().percentage}%</p>
+                <button onClick={() => setStep("review")} className="bg-purple-600 px-6 py-2 rounded-lg">
+                  Review
+                </button>
+              </div>
+            )}
 
-            {/* REVIEW */}
             {step === "review" && (
-              <div className="space-y-4">
-                {allQuizzes.map((q) => (
-                  <div key={q.id} className="border border-slate-700 p-4 rounded-lg">
-                    <b>{q.question}</b>
-                    {q.options.map((o) => (
-                      <div
-                        key={o.id}
-                        className={
-                          o.is_correct
-                            ? "text-green-400"
-                            : answers[q.id] === o.id
-                            ? "text-red-400"
-                            : "text-slate-300"
-                        }
-                      >
-                        {o.text}
-                      </div>
-                    ))}
-                  </div>
-                ))}
-                <button onClick={() => setStep("feedback")} className="bg-purple-600 px-6 py-2 rounded-lg">
-                  Continue
-                </button>
-              </div>
-            )}
+  <div className="space-y-6">
+    <h2 className="text-2xl font-bold mb-4">Answer Review</h2>
 
-            {/* FEEDBACK */}
-            {step === "feedback" && (
-              <div className="max-w-xl mx-auto bg-slate-800 p-6 rounded-xl space-y-4">
-                <h2 className="text-xl font-semibold">Course Feedback</h2>
-                <div className="flex gap-2">
-                  {[1,2,3,4,5].map((i) => (
-                    <Star
-                      key={i}
-                      onClick={() => setRating(i)}
-                      className={i <= rating ? "text-yellow-400" : "text-slate-600"}
-                    />
-                  ))}
-                </div>
-                <textarea
-                  className="w-full h-28 bg-slate-900 p-3 rounded-lg"
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                />
-                <button   onClick={submitFeedback}
-  disabled={!rating}
- className="w-full bg-purple-600 py-2 rounded-lg">
-                  Submit Feedback
-                </button>
-              </div>
-            )}
+    {allQuizzes.map((q, index) => {
+      const correctOption = q.options.find(o => o.is_correct);
+      const userAnswerId = answers[q.id];
 
-            {/* CERTIFICATE */}
+      return (
+        <div
+          key={q.id}
+          className="border border-slate-700 rounded-lg p-4 bg-slate-800"
+        >
+          <p className="font-semibold mb-3">
+            {index + 1}. {q.question}
+          </p>
+
+          {q.options.map((o) => {
+            const isCorrect = o.id === correctOption?.id;
+            const isSelected = o.id === userAnswerId;
+
+            return (
+              <div
+                key={o.id}
+                className={`p-2 rounded-md mb-2 flex justify-between items-center
+                  ${isCorrect ? "bg-green-700/30 border border-green-500" : ""}
+                  ${!isCorrect && isSelected ? "bg-red-700/30 border border-red-500" : ""}
+                  ${!isCorrect && !isSelected ? "bg-slate-900" : ""}
+                `}
+              >
+                <span>{o.text}</span>
+
+                {isCorrect && (
+                  <span className="text-green-400 text-sm font-semibold">
+                    ✔ Correct
+                  </span>
+                )}
+
+                {!isCorrect && isSelected && (
+                  <span className="text-red-400 text-sm font-semibold">
+                    ✖ Your Answer
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    })}
+
+    <div className="text-center mt-6">
+      <button
+        onClick={() => setStep("feedback")}
+        className="bg-purple-600 px-8 py-3 rounded-lg"
+      >
+        Continue to Feedback
+      </button>
+    </div>
+  </div>
+)}
+
+
+           {step === "feedback" && (
+  <div className="max-w-xl mx-auto bg-slate-800 p-6 rounded-xl border border-slate-700">
+    <h2 className="text-2xl font-bold text-center mb-4">
+      Course Feedback
+    </h2>
+
+    {/* ⭐ STAR RATING */}
+    <div className="flex justify-center gap-2 mb-4">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star
+          key={i}
+          size={32}
+          onClick={() => setRating(i)}
+          className={`cursor-pointer ${
+            i <= rating ? "text-yellow-400" : "text-slate-500"
+          }`}
+          fill={i <= rating ? "#facc15" : "none"}
+        />
+      ))}
+    </div>
+
+    <p className="text-center text-slate-400 mb-4">
+      Rating: {rating} / 5
+    </p>
+
+    {/* ✍ FEEDBACK TEXT */}
+    <textarea
+      value={feedback}
+      onChange={(e) => setFeedback(e.target.value)}
+      placeholder="Write your feedback here..."
+      className="w-full h-28 p-3 rounded-lg bg-slate-900 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+    />
+
+    <div className="text-center mt-6">
+      <button
+        onClick={submitFeedback}
+        className="bg-purple-600 px-8 py-3 rounded-lg"
+      >
+        Submit Feedback
+      </button>
+    </div>
+  </div>
+)}
+
+
             {step === "certificate" && (
-              <div className="text-center space-y-4">
-                <Award size={72} className="mx-auto text-yellow-400" />
-                <h2 className="text-2xl font-bold">Certificate of Completion</h2>
-                {!certificateId && (
-                  <button onClick={generateCertificate} className="bg-green-600 px-6 py-2 rounded-lg">
-                    Generate Certificate
-                  </button>
-                )}
-                {certificateId && (
-                  <div className="flex justify-center gap-4">
-                    <button onClick={previewCertificate} className="bg-purple-600 px-4 py-2 rounded">
-                      <Eye /> Preview
-                    </button>
-                    {certificateUrl && (
-                      <a href={certificateUrl} download className="bg-slate-700 px-4 py-2 rounded">
-                        <Download /> Download
-                      </a>
-                    )}
-                  </div>
-                )}
+              <div className="text-center">
+                <Award size={64} className="mx-auto text-yellow-400" />
+                <h2 className="text-2xl font-bold">Certificate Ready</h2>
+                <button onClick={generateCertificate} className="bg-green-600 px-6 py-2 rounded-lg">
+                  Download Certificate
+                </button>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* CERTIFICATE PREVIEW */}
-      {showCertificatePreview && certificateUrl && (
-  <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-    <div className="bg-white w-[85%] h-[90%] rounded-xl overflow-hidden flex flex-col">
-
-      {/* HEADER */}
-      <div className="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
-        <div>
-          <h2 className="text-lg font-semibold">
-            Certificate of Completion
-          </h2>
-          <p className="text-sm text-slate-300">
-            Cybersecurity Threat Hunting for SOC Analysts
-          </p>
-        </div>
-
-        <div className="flex gap-3">
-          <a
-            href={certificateUrl}
-            download
-            className="bg-green-600 px-4 py-2 rounded"
-          >
-            Download PDF
-          </a>
-          <button
-            onClick={() => setShowCertificatePreview(false)}
-            className="bg-red-500 px-4 py-2 rounded"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-
-      {/* FINAL PDF */}
-      <iframe
-        src={certificateUrl}
-        className="flex-1 w-full"
-        title="Certificate PDF"
-      />
-    </div>
-  </div>
-)}
-
-{/* ===== HIDDEN CERTIFICATE HTML (FOR PDF GENERATION) ===== */}
-<div
+      {/* HIDDEN CERTIFICATE HTML */}
+      <div
   id="certificate-html"
   style={{
     position: "absolute",
     top: "-9999px",
     left: "-9999px",
     width: "1123px",
-    padding: "60px",
-    backgroundColor: "#ffffff",
-    fontFamily: "Georgia, serif",
-    color: "#000",
-    border: "14px solid #1e3a8a",
+    height: "794px",
+    backgroundColor: "#0b1220",
+    padding: "40px",
+    fontFamily: "'Poppins', Arial, sans-serif",
     boxSizing: "border-box",
   }}
 >
-  {/* LOGO */}
-  <img
-    src={CERTIFICATE_LOGO}
-    alt="Platform Logo"
-    style={{
-      width: "140px",
-      display: "block",
-      margin: "0 auto 30px",
-    }}
-  />
-
-  <h1
-    style={{
-      textAlign: "center",
-      fontSize: "42px",
-      marginBottom: "10px",
-    }}
-  >
-    Certificate of Completion & Verification
-  </h1>
-
-  <p
-    style={{
-      textAlign: "center",
-      fontSize: "17px",
-      marginTop: "20px",
-    }}
-  >
-    This certificate is proudly presented to
-  </p>
-
-  <h2
-    style={{
-      textAlign: "center",
-      fontSize: "36px",
-      margin: "20px 0",
-      fontWeight: "bold",
-    }}
-  >
-    {user.name}
-  </h2>
-
-  <p style={{ textAlign: "center", fontSize: "18px" }}>
-    for successfully completing the professional training program
-  </p>
-
-  <h3
-    style={{
-      textAlign: "center",
-      fontSize: "26px",
-      marginTop: "12px",
-    }}
-  >
-    {courseTitle}
-  </h3>
-
-  {/* <p
-    style={{
-      marginTop: "35px",
-      fontSize: "17px",
-      lineHeight: "1.6",
-      textAlign: "center",
-      padding: "0 80px",
-    }}
-  >
-    This certification verifies that the above-named learner has completed all
-    required learning modules, instructional videos, reading materials, and
-    mandatory assessments associated with this course. The learner appeared for
-    the final evaluation and achieved the qualifying score as defined by the
-    assessment criteria of the program.
-  </p> */}
-
-  {/* ASSESSMENT SUMMARY */}
-  <div style={{ marginTop: "35px" }}>
-    <h3 style={{ fontSize: "20px", marginBottom: "10px" }}>
-      Assessment Summary
-    </h3>
-    <ul style={{ fontSize: "16px", lineHeight: "1.8" }}>
-      <li>Total Modules Completed: <b>{modules.length}</b></li>
-      <li>Total Questions in Assessment: <b>{getResultStats().total}</b></li>
-      <li>Correct Answers: <b>{getResultStats().correct}</b></li>
-      <li>Incorrect Answers: <b>{getResultStats().wrong}</b></li>
-      <li>
-        Final Score Achieved: <b>{getResultStats().percentage}%</b>
-      </li>
-      <li>Result Status: <b>PASS</b></li>
-    </ul>
-  </div>
-
-  <p
-    style={{
-      marginTop: "30px",
-      fontSize: "16px",
-      lineHeight: "1.6",
-      textAlign: "center",
-      padding: "0 80px",
-    }}
-  >
-    This certificate serves as an official verification record confirming that
-    the course completion and assessment results have been reviewed and validated
-    by <b>OnRequestLab LMS</b> in accordance with its academic and professional
-    standards. The course duration represents the total instructional hours of
-    video and article-based learning content available at the time of completion.
-  </p>
-
-  <p
-    style={{
-      marginTop: "25px",
-      fontSize: "16px",
-      textAlign: "center",
-    }}
-  >
-    Date of Completion: <b>{new Date().toLocaleDateString()}</b>
-  </p>
-
-  {/* SIGNATURES */}
+  {/* OUTER BLUE FRAME */}
   <div
     style={{
-      marginTop: "70px",
-      display: "flex",
-      justifyContent: "space-between",
-      padding: "0 100px",
-      textAlign: "center",
+      width: "100%",
+      height: "100%",
+      background:
+        "linear-gradient(135deg, #0f172a 0%, #0b3c7a 50%, #0f172a 100%)",
+      padding: "30px",
+      boxSizing: "border-box",
     }}
   >
-    <div>
-      <hr style={{ width: "220px" }} />
-      <p>Instructor / Course Authority</p>
-    </div>
+    {/* INNER WHITE CARD */}
+    <div
+      style={{
+        backgroundColor: "#ffffff",
+        width: "100%",
+        height: "100%",
+        padding: "50px 70px",
+        boxSizing: "border-box",
+        position: "relative",
+      }}
+    >
+      {/* LOGO */}
+      <img
+        src={CERTIFICATE_LOGO}
+        alt="Logo"
+        style={{ width: "160px", marginBottom: "30px" }}
+      />
 
-    <div>
-      <hr style={{ width: "220px" }} />
-      <p>Platform Verification Authority</p>
+      {/* TITLE */}
+      <h1
+        style={{
+          fontSize: "46px",
+          margin: "0",
+          color: "#0f172a",
+          letterSpacing: "1px",
+        }}
+      >
+        CERTIFICATE
+      </h1>
+
+      <h3
+        style={{
+          marginTop: "8px",
+          fontSize: "18px",
+          letterSpacing: "3px",
+          color: "#2563eb",
+          fontWeight: 500,
+        }}
+      >
+        OF COMPLETION
+      </h3>
+
+      <p style={{ marginTop: "30px", fontSize: "16px", color: "#334155" }}>
+        This certifies that
+      </p>
+
+      {/* USER NAME */}
+      <h2
+        style={{
+          fontSize: "40px",
+          margin: "10px 0 20px",
+          color: "#020617",
+          fontWeight: 700,
+        }}
+      >
+        {user.name}
+      </h2>
+
+      <p style={{ fontSize: "16px", color: "#334155", maxWidth: "600px" }}>
+        has successfully completed the course
+      </p>
+
+      {/* COURSE TITLE */}
+      <h3
+        style={{
+          fontSize: "22px",
+          marginTop: "10px",
+          fontWeight: 600,
+          color: "#020617",
+        }}
+      >
+        “{certificate.title}”
+      </h3>
+
+      {/* META INFO */}
+      <div
+        style={{
+          marginTop: "40px",
+          fontSize: "14px",
+          color: "#334155",
+          lineHeight: "1.8",
+        }}
+      >
+        <p>
+          <b>Certificate ID:</b> {certificate.id}
+        </p>
+        <p>
+          <b>Issued On:</b> {certificate.issue_date}
+        </p>
+        <p>
+          <b>Expiry:</b> {certificate.expiry_date || "Lifetime"}
+        </p>
+        <p>
+          <b>Status:</b> Active
+        </p>
+      </div>
+
+      {/* SIGNATURE */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "60px",
+          left: "70px",
+        }}
+      >
+        <div
+          style={{
+            width: "200px",
+            borderTop: "2px solid #0f172a",
+            marginBottom: "6px",
+          }}
+        />
+        <p style={{ fontWeight: 600, color: "#020617", margin: 0 }}>
+          Authorized Signature
+        </p>
+        <p style={{ fontSize: "13px", color: "#475569", margin: 0 }}>
+          OnRequestLab LMS
+        </p>
+      </div>
+
+      {/* FOOTER */}
+      <p
+        style={{
+          position: "absolute",
+          bottom: "40px",
+          right: "70px",
+          fontSize: "13px",
+          color: "#475569",
+        }}
+      >
+        Verified & Issued by <b>OnRequestLab</b>
+      </p>
     </div>
   </div>
 </div>
-
 
 
 

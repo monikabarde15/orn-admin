@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
-
+import React, { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 import axios from "axios";
 import {
   PlayCircle,
@@ -11,29 +10,32 @@ import {
   ChevronUp,
   Download,
 } from "lucide-react";
-import { useParams } from "react-router-dom";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../../pages/Components/Footer";
 
-console.log(import.meta.env.VITE_API_URL);
-const VIT=import.meta.env.VITE_API_URL;
-/* ================= AXIOS INSTANCE ================= */
+/* ================= CONFIG ================= */
 
-const api = axios.create({
-  baseURL: `${VIT}`,
-});
+const VIT = import.meta.env.VITE_API_URL;
+const API_V1 = `${VIT}/api/v1`;
 
-api.interceptors.request.use((config) => {
-  const token =
-    localStorage.getItem("token") ||
-    localStorage.getItem("jwt-auth") ||
-    "";
+const getCookie = (name: string) => {
+  const v = `; ${document.cookie}`;
+  const parts = v.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift() || "";
+  return "";
+};
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+const token =
+  getCookie("access") ||
+  localStorage.getItem("jwt-auth") ||
+  localStorage.getItem("token") ||
+  "";
+
+const userId = getCookie("user_id");
+
+const headers = {
+  Authorization: `Bearer ${token}`,
+};
 
 /* ================= HELPERS ================= */
 
@@ -42,12 +44,35 @@ const resolveUrl = (url?: string | null) => {
   return url.startsWith("http") ? url : `https://${url}`;
 };
 
+const getAction = (name = "") => {
+  const n = name.toLowerCase();
+  if (n.includes("docker")) return "docker";
+  if (n.includes("kubernetes") || n.includes("k8s")) return "kubernetes";
+  if (n.includes("linux")) return "linux";
+  if (n.includes("redhat") || n.includes("rhel")) return "redhat";
+  if (n.includes("terraform")) return "terraform";
+  if (n.includes("iscsi")) return "iscsi";
+  if (n.includes("python")) return "python";
+  if (n.includes("jenkins")) return "jenkins";
+  return null;
+};
+
+/* 🔥 FIXED: timestamp based latest instance */
+const getLatestInstance = (list: any[]) => {
+  if (!list || !list.length) return null;
+
+  return [...list].sort(
+    (a, b) =>
+      new Date(b.timestamp).getTime() -
+      new Date(a.timestamp).getTime()
+  )[0];
+};
+
 /* ================= TYPES ================= */
 
 interface Chapter {
   id: number;
   title: string;
-  description?: string;
   video?: string | null;
   file?: string | null;
 }
@@ -65,82 +90,232 @@ interface Course {
   category: string;
   difficulty: string;
   duration: string;
-  instructor: string;
-  price: string;
   learningOutcomes: string;
-  prerequisites: string;
-  isPublished: boolean;
-  updated_at: string;
+}
+
+interface Subscription {
+  subscription_id: number;
+  course_id: number;
+  name: string;
+  price: number;
 }
 
 /* ================= COMPONENT ================= */
 
 const CourseEnrollment: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+
   const [course, setCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
   const [thumbnail, setThumbnail] = useState("");
+
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [wallet, setWallet] = useState(0);
+
   const [expanded, setExpanded] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
+  const [launching, setLaunching] = useState(false);
 
   const [showVideoPopup, setShowVideoPopup] = useState(false);
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
 
-  const [addingToCart, setAddingToCart] = useState(false);
-  const [inCart, setInCart] = useState(false);
-
   const videoRef = useRef<HTMLVideoElement>(null);
-const { id } = useParams<{ id: string }>();
 
-  /* ================= FETCH DATA ================= */
+  /* ================= FETCH COURSE ================= */
 
   useEffect(() => {
-    const fetchAll = async () => {
+    const fetchCourse = async () => {
       try {
-        const res = await api.get(`/course/courses/${id}/`);
-
-        // const res = await api.get("/course/courses/1/");
+        const res = await axios.get(
+          `${VIT}/course/courses/${id}/`,
+          { headers }
+        );
         setCourse(res.data);
         setModules(res.data?.modules || []);
-setThumbnail(res.data?.thumbnail?.image || "");
-      } catch (err) {
-        console.error("API error:", err);
+        setThumbnail(res.data?.thumbnail?.image || "");
+      } catch (e) {
+        console.error("Course fetch failed", e);
       } finally {
         setLoading(false);
       }
     };
 
+    fetchCourse();
+  }, [id]);
+
+  /* ================= FETCH SUBSCRIPTION + WALLET ================= */
+
+  useEffect(() => {
+    if (!course) return;
+
+    const fetchAll = async () => {
+      try {
+        const [subsRes, walletRes] = await Promise.all([
+          axios.get(`${API_V1}/users/subscriptions/`, { headers }),
+          axios.get(`${API_V1}/users/wallet/balance/`, { headers }),
+        ]);
+
+        const sub = subsRes.data.find(
+          (s: any) => s.course_id === course.id
+        );
+
+        setSubscription(sub || null);
+        setWallet(walletRes.data?.balance || 0);
+      } catch (e) {
+        console.error("Subscription / Wallet fetch failed", e);
+      }
+    };
+
     fetchAll();
-  }, []);
+  }, [course]);
 
-  /* ================= HELPERS ================= */
+  /* ================= RAZORPAY ================= */
 
-  const toggleModule = (id: number) => {
-    setExpanded((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+  const loadRazorpay = () =>
+    new Promise<boolean>((resolve) => {
+      if ((window as any).Razorpay) return resolve(true);
+      const s = document.createElement("script");
+      s.src = "https://checkout.razorpay.com/v1/checkout.js";
+      s.onload = () => resolve(true);
+      s.onerror = () => resolve(false);
+      document.body.appendChild(s);
+    });
+
+  const openRazorpay = async (amount: number) => {
+    const loaded = await loadRazorpay();
+    if (!loaded) throw new Error("Razorpay load failed");
+
+    const orderRes = await axios.post(
+      `${API_V1}/users/create-order/`,
+      { amount },
+      { headers }
     );
+
+    const order = orderRes.data;
+
+    return new Promise<void>((resolve, reject) => {
+      new (window as any).Razorpay({
+        key: order.key_id,
+        amount: order.amount * 100,
+        currency: "INR",
+        order_id: order.order_id,
+
+        handler: async (res: any) => {
+          try {
+            await axios.post(
+              `${API_V1}/users/verify-payment/`,
+              {
+                razorpay_payment_id: res.razorpay_payment_id,
+                razorpay_order_id: res.razorpay_order_id,
+                razorpay_signature: res.razorpay_signature,
+              },
+              { headers }
+            );
+            resolve();
+          } catch {
+            reject("Verification failed");
+          }
+        },
+
+        modal: {
+          ondismiss: () => reject("Payment cancelled"),
+        },
+      }).open();
+    });
   };
 
-  const handleAddToCart = async () => {
-    if (!course) return;
+  /* ================= INSTANCE LIST + POLLING ================= */
+
+  const fetchInstances = async () => {
+    const res = await axios.get(
+      `${API_V1}/lab/userinst/${userId}`,
+      { headers }
+    );
+    return res.data || [];
+  };
+
+  const waitForLatestInstanceReady = () =>
+    new Promise<void>((resolve, reject) => {
+      const interval = setInterval(async () => {
+        try {
+          const list = await fetchInstances();
+          const latest = getLatestInstance(list);
+
+          if (!latest) return;
+
+          // ❌ ignore deleted instances
+          if (latest.isDeleted) return;
+
+          console.log(
+            "LATEST INSTANCE:",
+            latest.status,
+            latest.timestamp
+          );
+
+          // ✅ SUCCESS
+          if (latest.status === "Launched") {
+            clearInterval(interval);
+            resolve();
+          }
+
+          // ❌ FAILURE
+          if (latest.status === "Failed") {
+            clearInterval(interval);
+            reject("Instance failed");
+          }
+        } catch (e) {
+          console.error("Instance polling failed", e);
+        }
+      }, 5000);
+    });
+
+  /* ================= LAUNCH LAB ================= */
+
+  const launchLab = async () => {
+    if (!subscription) {
+      alert("No active subscription");
+      return;
+    }
+
+    const action = getAction(subscription.name);
+    if (!action) {
+      alert(`Unsupported lab: ${subscription.name}`);
+      return;
+    }
+
     try {
-      setAddingToCart(true);
-      await api.post("/cart/add/", { course: course.id });
-      setInCart(true);
-      alert("Course added to cart");
+      setLaunching(true);
+
+      const price = subscription.price || 0;
+
+      // 💰 Wallet / Razorpay
+      if (wallet < price) {
+        await openRazorpay(price - wallet);
+      }
+
+      // 🚀 Deploy
+      await axios.post(
+        `${API_V1}/users/deploy/${action}/`,
+        {
+          user_id: userId,
+          payment_id: subscription.subscription_id,
+        },
+        { headers }
+      );
+
+      // ⏳ Wait for LATEST launched instance
+      await waitForLatestInstanceReady();
+
+      // ✅ Redirect ONLY when launched
+      window.location.href = `/lab?user=${userId}`;
     } catch (err) {
-      console.error(err);
-      alert("Failed to add course to cart");
-    } finally {
-      setAddingToCart(false);
+      console.error("Launch failed", err);
+      alert("Lab launch failed");
+      setLaunching(false);
     }
   };
 
-  const learningPoints =
-    course?.learningOutcomes?.length > 0
-      ? course.learningOutcomes.split(",")
-      : [];
-
-  /* ================= LOADING ================= */
+  /* ================= UI ================= */
 
   if (loading) {
     return (
@@ -158,202 +333,186 @@ setThumbnail(res.data?.thumbnail?.image || "");
     );
   }
 
-  /* ================= UI ================= */
-
   return (
     <>
-    <Navbar />
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      <div className="max-w-7xl mx-auto px-4 py-10 grid lg:grid-cols-3 gap-8">
+      <Navbar />
 
-        {/* ================= LEFT ================= */}
-        <div className="lg:col-span-2 space-y-6">
-
-          {/* THUMBNAIL */}
-          <div className="relative rounded-2xl overflow-hidden">
-            <img
-              src={
-                resolveUrl(thumbnail) ||
-                "https://cfvod.kaltura.com/p/1727411/sp/172741100/thumbnail/entry_id/1_dsoakh0b/version/100000/width/412/height/248"
-              }
-              className="w-full aspect-video object-cover"
-              alt="Course thumbnail"
-            />
+      {launching && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+          <div className="text-white text-xl text-center animate-pulse">
+            🚀 Launching lab… <br />
+            Waiting for instance to be Launched
           </div>
+        </div>
+      )}
 
-          {/* COURSE INFO */}
-          <div className="bg-slate-900/50 p-8 rounded-2xl border border-slate-800">
-            <h1 className="text-4xl font-bold text-white mb-4">
-              {course.title}
-            </h1>
+      <div className="min-h-screen bg-slate-950 px-4 py-10">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-3 gap-8">
 
-            <p className="text-xl text-gray-300 mb-6">
-              {course.description}
-            </p>
+          {/* LEFT */}
+          <div className="lg:col-span-2 space-y-6">
+            <img
+              src={resolveUrl(thumbnail)}
+              className="w-full aspect-video rounded-2xl object-cover"
+            />
 
-            <div className="flex flex-wrap gap-3 mb-4">
-              <span className="bg-purple-600 text-white px-3 py-1 rounded-full">
-                {course.difficulty}
-              </span>
-              <span className="bg-slate-700 text-white px-3 py-1 rounded-full">
-                {course.category}
-              </span>
-              <span className="text-gray-300 flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                {course.duration}
-              </span>
+            <div className="bg-slate-900 p-8 rounded-2xl">
+              <h1 className="text-4xl font-bold text-white">
+                {course.title}
+              </h1>
+              <p className="text-gray-300 mt-4">
+                {course.description}
+              </p>
+
+              <div className="flex gap-4 mt-4 text-gray-400">
+                <span className="flex items-center gap-1">
+                  <Clock size={16} /> {course.duration}
+                </span>
+                <span>{course.category}</span>
+                <span>{course.difficulty}</span>
+              </div>
             </div>
 
-            <p className="text-gray-400">
-              Last updated:{" "}
-              <span className="text-purple-400">
-                {new Date(course.updated_at).toLocaleDateString()}
-              </span>
-            </p>
-          </div>
+            <div className="bg-slate-900 p-8 rounded-2xl">
+              <h2 className="text-2xl font-bold text-white mb-4">
+                What you'll learn
+              </h2>
 
-          {/* WHAT YOU'LL LEARN */}
-          <div className="bg-slate-900/50 p-8 rounded-2xl border border-slate-800">
-            <h2 className="text-2xl font-bold text-white mb-6">
-              What you'll learn
-            </h2>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              {learningPoints.map((p, i) => (
+              {course.learningOutcomes.split(",").map((p, i) => (
                 <div key={i} className="flex gap-2 text-gray-300">
                   <Check className="text-purple-400" />
                   {p.trim()}
                 </div>
               ))}
             </div>
-          </div>
 
-          {/* COURSE CONTENT */}
-          <div className="bg-slate-900/50 p-8 rounded-2xl border border-slate-800">
-            <h2 className="text-2xl font-bold text-white mb-6">
-              Course content
-            </h2>
-
-            {modules.length ? (
-              modules.map((mod) => (
-                <div key={mod.id} className="border border-slate-700 rounded-xl mb-4">
+            <div className="bg-slate-900 p-8 rounded-2xl">
+              {modules.map((mod) => (
+                <div key={mod.id}>
                   <button
-                    onClick={() => toggleModule(mod.id)}
-                    className="w-full flex justify-between items-center p-4 text-white"
+                    onClick={() =>
+                      setExpanded((e) =>
+                        e.includes(mod.id)
+                          ? e.filter((x) => x !== mod.id)
+                          : [...e, mod.id]
+                      )
+                    }
+                    className="w-full flex justify-between p-4 text-white"
                   >
                     {mod.title}
-                    {expanded.includes(mod.id) ? <ChevronUp /> : <ChevronDown />}
+                    {expanded.includes(mod.id) ? (
+                      <ChevronUp />
+                    ) : (
+                      <ChevronDown />
+                    )}
                   </button>
 
-                  {expanded.includes(mod.id) && (
-                    <div className="px-6 pb-4 space-y-3">
-                      {mod.chapters.map((ch) => (
-                        <div
-                          key={ch.id}
-                          className="flex justify-between items-center border-b border-slate-700 py-2 text-gray-300"
-                        >
-                          <span>{ch.title}</span>
+                  {expanded.includes(mod.id) &&
+                    mod.chapters.map((ch) => (
+                      <div
+                        key={ch.id}
+                        className="flex justify-between px-6 py-2 text-gray-300"
+                      >
+                        {ch.title}
 
-                          <div className="flex gap-4">
-                            {ch.video && (
-                              <button
-                                onClick={() => {
-                                  setActiveVideo(resolveUrl(ch.video));
-                                  setShowVideoPopup(true);
-                                }}
-                                className="text-purple-400 flex gap-1"
-                              >
-                                <PlayCircle size={18} />
-                                Play
-                              </button>
-                            )}
+                        <div className="flex gap-4">
+                          {ch.video && (
+                            <button
+                              onClick={() => {
+                                setActiveVideo(
+                                  resolveUrl(ch.video)
+                                );
+                                setShowVideoPopup(true);
+                              }}
+                              className="text-purple-400"
+                            >
+                              <PlayCircle size={18} />
+                            </button>
+                          )}
 
-                            {ch.file && (
-                              <a
-                                href={resolveUrl(ch.file)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-green-400 flex gap-1"
-                              >
-                                <Download size={18} />
-                                Download
-                              </a>
-                            )}
-                          </div>
+                          {ch.file && (
+                            <a
+                              href={resolveUrl(ch.file)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-green-400"
+                            >
+                              <Download size={18} />
+                            </a>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    ))}
                 </div>
-              ))
-            ) : (
-              <p className="text-gray-400">No modules available</p>
-            )}
+              ))}
+            </div>
           </div>
+
+          {/* RIGHT */}
+         {/* RIGHT */}
+<div>
+  <div className="sticky top-6 bg-slate-900 p-6 rounded-2xl space-y-4">
+
+    {/* ✅ WATCH BUTTON */}
+    <a href={`/course/${course.id}`}>
+      <button
+        className="w-full py-4 rounded-lg
+          border border-slate-700
+          bg-slate-800 text-white
+          hover:bg-slate-700 transition"
+      >
+        Watch Course
+      </button>
+    </a>
+
+    {/* 🚀 LAUNCH LAB BUTTON */}
+    <button
+      onClick={launchLab}
+      disabled={!subscription || launching}
+      className="w-full py-4 rounded-lg
+        bg-purple-600 text-white
+        hover:bg-purple-500
+        disabled:opacity-50 transition"
+    >
+      {launching
+        ? "Launching Lab..."
+        : subscription
+        ? "Launch Lab"
+        : "No Active Subscription"}
+    </button>
+
+    {/* 💰 WALLET INFO */}
+    <p className="text-xs text-gray-400 text-center">
+      Wallet balance: ₹{wallet}
+    </p>
+  </div>
+</div>
+
         </div>
 
-        {/* ================= RIGHT ================= */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-6 bg-slate-900/50 p-6 rounded-2xl border border-slate-800 space-y-4">
-           <Link to={`/course/${course.id}`}>
-              <button
-                
-                className="w-full py-4 rounded-lg font-semibold border transition
-                border-slate-700 bg-purple-600 text-white hover:bg-purple-500"
-              >
-                Watch
-              </button>
-            </Link>
-            
-            <a href="/your-instances">
+        {/* VIDEO POPUP */}
+        {showVideoPopup && activeVideo && (
+          <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
             <button
-              onClick={handleAddToCart}
-              disabled={addingToCart || inCart}
-              className={`w-full py-4 rounded-lg font-semibold border transition
-                ${
-                  inCart
-                    ? "border-green-500 text-green-400 cursor-not-allowed"
-                    : "border-slate-700 text-white hover:bg-slate-800"
-                }`}
+              onClick={() => setShowVideoPopup(false)}
+              className="absolute top-6 right-6 text-white"
             >
-              {inCart
-                ? "Already in Cart"
-                : addingToCart
-                ? "Lunching..."
-                : "Lunch Lab"}
+              <X size={32} />
             </button>
-            </a>
 
-            <p className="text-xs text-gray-400 text-center">
-              Lifetime access • Certificate included
-            </p>
+            <video
+              ref={videoRef}
+              src={activeVideo}
+              className="w-full max-w-5xl rounded-xl"
+              controls
+              autoPlay
+            />
           </div>
-        </div>
+        )}
       </div>
 
-      {/* VIDEO POPUP */}
-      {showVideoPopup && activeVideo && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
-          <button
-            onClick={() => setShowVideoPopup(false)}
-            className="absolute top-6 right-6 text-white"
-          >
-            <X size={32} />
-          </button>
-
-          <video
-            ref={videoRef}
-            src={activeVideo}
-            className="w-full max-w-5xl rounded-xl"
-            controls
-            autoPlay
-          />
-        </div>
-      )}
-    </div>
-    <Footer />
+      <Footer />
     </>
-    
   );
 };
 

@@ -13,6 +13,10 @@ const notify = (msg, type = "info") =>
 
 export default function CertificatePage() {
     const navigate = useNavigate();
+    const ITEMS_PER_PAGE = 6;
+
+const [currentPage, setCurrentPage] = useState(1);
+
   
   /* ================= AUTH ================= */
   const getCookie = (name) => {
@@ -167,6 +171,12 @@ export default function CertificatePage() {
     a.click();
     a.remove();
   };
+const totalPages = Math.ceil(certificates.length / ITEMS_PER_PAGE);
+
+const paginatedCertificates = certificates.slice(
+  (currentPage - 1) * ITEMS_PER_PAGE,
+  currentPage * ITEMS_PER_PAGE
+);
 
   /* ================= UI ================= */
   return (
@@ -176,7 +186,7 @@ export default function CertificatePage() {
         <ToastContainer />
 
         <h1 className="text-4xl font-semibold text-center mb-8">
-            🎓 Certificate Management
+            🎓 My Certificate Management
         </h1>
 
         {/* ===== FORM ===== */}
@@ -228,43 +238,115 @@ export default function CertificatePage() {
         </div> */}
 
         {/* ===== LIST ===== */}
-        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-6">
-            {certificates.map((c) => (
-            <div key={c.id} className="p-5 border rounded">
-                <h3 className="font-semibold">{c.title}</h3>
+       <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
+  {certificates.map((c) => (
+    <div
+      key={c.id}
+      className="relative rounded-2xl border border-white/10 
+                 bg-gradient-to-b from-[#0f172a] to-[#020617]
+                 p-6 shadow-xl hover:shadow-purple-500/20
+                 transition-all duration-300"
+    >
+      {/* Title */}
+      <h3 className="text-2xl font-semibold mb-2">
+        {c.title}
+      </h3>
 
-                <p className="text-sm text-gray-400">
-                Issue: {c.issue_date}
-                </p>
-                <p className="text-sm text-gray-400">
-                Expiry: {c.expiry_date}
-                </p>
+      {/* Meta */}
+      <div className="text-sm text-gray-400 space-y-1 mb-4">
+        <p>Issue Date: {c.issue_date || "—"}</p>
+        <p>Expiry Date: {c.expiry_date || "—"}</p>
+      </div>
 
-                <p
-                className={`text-sm ${
-                    c.is_active ? "text-emerald-400" : "text-red-400"
-                }`}
-                >
-                Status: {c.is_active ? "Active" : "Inactive"}
-                </p>
+      {/* Status */}
+      <div className="mb-6">
+        <span
+          className={`inline-block px-3 py-1 text-xs rounded-full
+            ${c.is_active
+              ? "bg-emerald-500/10 text-emerald-400"
+              : "bg-red-500/10 text-red-400"
+            }`}
+        >
+          {c.is_active ? "Active" : "Inactive"}
+        </span>
+      </div>
 
-                <div className="mt-3 flex gap-2 flex-wrap">
-                <button
-                onClick={() =>
-                  navigate(`/certificate-view/${c.id}`)
-                }
-                className="bg-purple-600 px-6 py-2 rounded-lg"
-              >
-                View Certificate
-              </button>
+      {/* Primary Action */}
+      <button
+        onClick={() => navigate(`/certificate-view/${c.id}`)}
+        className="w-full mb-4 py-3 rounded-xl font-medium
+                   bg-gradient-to-r from-purple-500 to-blue-500
+                   hover:opacity-90 transition"
+      >
+        View Certificate
+      </button>
 
-                <button onClick={() => handleDownload(c)}>Download</button>
-                <button onClick={() => setForm(c)}>Edit</button>
-                <button onClick={() => handleDelete(c.id)}>Delete</button>
-                </div>
-            </div>
-            ))}
-        </div>
+      {/* Secondary Actions */}
+      <div className="flex justify-between text-sm text-gray-300">
+        <button
+          onClick={() => handleDownload(c)}
+          className="hover:text-white transition"
+        >
+          Download
+        </button>
+
+       
+
+        <button
+          onClick={() => handleDelete(c.id)}
+          className="text-red-400 hover:text-red-300 transition"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  ))}
+</div>
+{/* PAGINATION */}
+{totalPages > 1 && (
+  <div className="flex justify-center items-center gap-3 mt-12">
+    
+    {/* Prev */}
+    <button
+      disabled={currentPage === 1}
+      onClick={() => setCurrentPage((p) => p - 1)}
+      className="px-4 py-2 rounded-lg border border-white/10
+                 disabled:opacity-40 hover:bg-white/10"
+    >
+      Prev
+    </button>
+
+    {/* Page Numbers */}
+    {[...Array(totalPages)].map((_, i) => {
+      const page = i + 1;
+      return (
+        <button
+          key={page}
+          onClick={() => setCurrentPage(page)}
+          className={`px-4 py-2 rounded-lg border
+            ${
+              currentPage === page
+                ? "bg-gradient-to-r from-purple-500 to-blue-500 border-transparent"
+                : "border-white/10 hover:bg-white/10"
+            }`}
+        >
+          {page}
+        </button>
+      );
+    })}
+
+    {/* Next */}
+    <button
+      disabled={currentPage === totalPages}
+      onClick={() => setCurrentPage((p) => p + 1)}
+      className="px-4 py-2 rounded-lg border border-white/10
+                 disabled:opacity-40 hover:bg-white/10"
+    >
+      Next
+    </button>
+  </div>
+)}
+
         </div>
         <Footer />
     </>

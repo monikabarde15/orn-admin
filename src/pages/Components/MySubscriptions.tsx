@@ -274,7 +274,7 @@ const launchLab = async (plan) => {
 
     notify("Lab launch started", "success");
 
-    navigate(`/lab?user=${userId}`);
+   // navigate(`/lab?user=${userId}`);
   } catch (err) {
     notify("Failed to launch lab", "error");
   }
@@ -291,120 +291,142 @@ const launchLab = async (plan) => {
 
   /* ================= UI ================= */
   return (
-    <div className="min-h-screen bg-[#020617] text-white px-6 py-20">
-      <ToastContainer />
+   <div className="min-h-screen bg-gradient-to-b from-[#020617] via-[#020617] to-[#020617] text-white px-6 py-20">
+    <ToastContainer />
 
-      <h1 className="text-4xl font-semibold text-center mb-12">
-        My Subscriptions
-      </h1>
+    <h1 className="text-4xl font-semibold text-center mb-14">
+      My Subscriptions
+    </h1>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {subscriptions.map((p) => {
-          const active = isActive(p);
+    <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
+      {subscriptions.map((p) => {
+        const active = isActive(p);
 
-          return (
-            <div
-              key={p.subscription_id}
-              className={`p-6 rounded-2xl border
+        return (
+          <div
+            key={p.subscription_id}
+            className="relative rounded-3xl p-8
+              bg-white/5 backdrop-blur-xl
+              border border-white/10
+              shadow-[0_0_40px_rgba(124,58,237,0.15)]
+              hover:scale-[1.02] transition"
+          >
+            {/* STATUS BADGE */}
+            <span
+              className={`absolute top-4 right-4 px-3 py-1 text-xs rounded-full
                 ${
                   active
-                    ? "border-emerald-500/30 bg-emerald-500/5"
-                    : "border-red-500/30 bg-red-500/5"
+                    ? "bg-emerald-500/15 text-emerald-400"
+                    : "bg-red-500/15 text-red-400"
                 }`}
             >
-              <h3 className="text-lg font-semibold">{p.name}</h3>
+              {active ? "Active" : "Expired"}
+            </span>
 
-              <p className="text-sm text-gray-400 mt-2">
-                Price: ₹{p.price}
-              </p>
-              <p className="text-sm text-gray-400">
-                Billing: {p.billing_cycle}
-              </p>
-              <p className="text-sm text-gray-400">
-                Expiry: {new Date(p.expires_at).toLocaleDateString()}
-              </p>
+            {/* TITLE */}
+            <h3 className="text-2xl font-semibold mb-2">
+              {p.name}
+            </h3>
 
-              <div className="mt-2 flex justify-between items-center">
-                <span
-                  className={`text-sm ${
-                    active ? "text-emerald-400" : "text-red-400"
-                  }`}
-                >
-                  Status: {active ? "Active" : "Expired"}
-                </span>
-
-                {!active && (
-                  <button
-                    onClick={() => {
-                      setPopupPlan(p);
-                      setShowPopup(true);
-                    }}
-                    className="px-3 h-7 text-xs rounded-md
-                      border border-purple-500/40 text-purple-400"
-                  >
-                    Upgrade
-                  </button>
-                )}
-              </div>
-
-              <div className="mt-5 space-y-2">
-                {active && (
-                  <button
-                    onClick={() => launchLab(p)}
-                    className="w-full h-9 rounded-md text-sm
-                      border border-emerald-500/40 text-emerald-400"
-                  >
-                    Launch Lab
-                  </button>
-                )}
-
-                <button
-                  onClick={() => handleContinue(p)}
-                  className="w-full h-9 rounded-md text-sm
-                    border border-amber-500/40 text-amber-400"
-                >
-                  Continue Watching
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ===== POPUP ===== */}
-      {showPopup && popupPlan && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-[#020617] p-8 rounded-xl border border-purple-500/40 text-center w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-3">
-              Plan Expired
-            </h2>
-            <p className="text-gray-400 mb-6">
-              Please upgrade <b>{popupPlan.name}</b> to continue.
+            <p className="text-sm text-purple-300 mb-6">
+              Billing: {p.billing_cycle}
             </p>
 
-            <div className="flex justify-center gap-4">
-              {subscriptions.length > expiredPlans.length && (
+            {/* PRICE */}
+            <div className="flex items-end gap-1 mb-8">
+              <span className="text-4xl font-bold">
+                ₹{p.price}
+              </span>
+              <span className="text-sm text-gray-400 mb-1">
+                /{p.billing_cycle}
+              </span>
+            </div>
+
+            {/* DETAILS */}
+            <div className="space-y-2 text-sm text-gray-300 mb-8">
+              <p>✔ Full Access</p>
+              <p>✔ SSH</p>
+              <p>✔ Support</p>
+              <p>
+                Expiry:{" "}
+                {new Date(p.expires_at).toLocaleDateString()}
+              </p>
+            </div>
+
+            {/* ACTION BUTTONS */}
+            <div className="space-y-3">
+              {active ? (
                 <button
-                  onClick={() => setShowPopup(false)}
-                  className="px-5 h-9 text-sm rounded-md
-                    border border-gray-500/40 text-gray-300"
+                  onClick={() => launchLab(p)}
+                  className="w-full h-11 rounded-xl
+                    bg-gradient-to-r from-purple-500 to-blue-500
+                    text-white font-medium shadow-lg
+                    hover:opacity-90 transition"
                 >
-                  Skip
+                  Launch Lab
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setPopupPlan(p);
+                    setShowPopup(true);
+                  }}
+                  className="w-full h-11 rounded-xl
+                    border border-purple-500/40
+                    text-purple-400 hover:bg-purple-500/10 transition"
+                >
+                  Upgrade Plan
                 </button>
               )}
 
               <button
-                disabled={processing}
-                onClick={() => handleUpgrade(popupPlan)}
-                className="px-5 h-9 text-sm rounded-md
-                  border border-purple-500/40 text-purple-400"
+                onClick={() => handleContinue(p)}
+                className="w-full h-11 rounded-xl
+                  border border-white/20
+                  text-gray-300 hover:bg-white/10 transition"
               >
-                Upgrade Plan
+                Continue Watching
               </button>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })}
     </div>
+
+    {/* ===== EXPIRED POPUP ===== */}
+    {showPopup && popupPlan && (
+      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div className="bg-[#020617] p-8 rounded-2xl border border-purple-500/40 text-center w-full max-w-md">
+          <h2 className="text-2xl font-semibold mb-4">
+            Plan Expired
+          </h2>
+
+          <p className="text-gray-400 mb-6">
+            Upgrade <b>{popupPlan.name}</b> to continue using this lab.
+          </p>
+
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => setShowPopup(false)}
+              className="px-5 h-10 rounded-lg
+                border border-gray-500/40 text-gray-300"
+            >
+              Cancel
+            </button>
+
+            <button
+              disabled={processing}
+              onClick={() => handleUpgrade(popupPlan)}
+              className="px-5 h-10 rounded-lg
+                bg-gradient-to-r from-purple-500 to-blue-500
+                text-white font-medium"
+            >
+              Upgrade Now
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
   );
 }

@@ -240,7 +240,7 @@ setTimeout(() => (window.location.href = "/"), 800);
                <button className="blue-btn" onClick={() => navigateTo("/my-subscrption")}>My Subscrption</button>
                 <button className="blue-btn" onClick={() => navigateTo("/certificate")}>My Certificatons</button>
               
-              {/* <button className="blue-btn" onClick={() => navigateTo("/instances")}>Your Instances</button> */}
+              <button className="blue-btn" onClick={() => navigateTo("/your-instances")}>My Instances</button>
               <button className="red-btn" onClick={handleLogout}>Logout</button>
             </div>
           ) : (
@@ -311,9 +311,9 @@ setTimeout(() => (window.location.href = "/"), 800);
                   {/* <div className="dropdown-item" onClick={() => navigateTo("/wallet-history")}>
                     <Wallet size={16} /> <span>Wallet History</span>
                   </div> */}
-                  {/* <div className="dropdown-item" onClick={() => navigateTo("/your-instances")}>
-                    <Laptop size={16} /> <span>Your Instances</span>
-                  </div> */}
+                  <div className="dropdown-item" onClick={() => navigateTo("/your-instances")}>
+                    <Laptop size={16} /> <span>My Instances</span>
+                  </div>
                    <div className="dropdown-item" onClick={() => navigateTo("/my-subscrption")}>
                     <Laptop size={16} /> <span>My Subscrption</span>
                   </div>

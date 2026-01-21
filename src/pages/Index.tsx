@@ -384,7 +384,7 @@ useEffect(() => {
                         </div>
                     </div>
 
-                    {/*<div className="panel h-full">
+                    <div className="panel h-full">
                         <div className="flex items-center mb-5">
                             <h5 className="font-semibold text-lg dark:text-white-light">Sales By Category</h5>
                         </div>
@@ -399,11 +399,11 @@ useEffect(() => {
                                 )}
                             </div>
                         </div>
-                    </div>*/}
+                    </div>
                 </div>
 
                 <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
-                    {/*<div className="panel h-full sm:col-span-2 xl:col-span-1">
+                    <div className="panel h-full sm:col-span-2 xl:col-span-1">
                         <div className="flex items-center mb-5">
                             <h5 className="font-semibold text-lg dark:text-white-light">
                                 Daily Sales
@@ -499,10 +499,10 @@ useEffect(() => {
                                 </div>
                             </div>
                         </div>
-                    </div>*/}
+                    </div>
 
                     <div className="panel h-full p-0">
-                        {/*<div className="flex items-center justify-between w-full p-5 absolute">
+                        <div className="flex items-center justify-between w-full p-5 absolute">
                             <div className="relative">
                                 <div className="text-success dark:text-success-light bg-success-light dark:bg-success w-11 h-11 rounded-lg flex items-center justify-center">
                                     <IconShoppingCart />
@@ -521,10 +521,10 @@ useEffect(() => {
                             ) : (
                                 <ReactApexChart series={totalOrders.series} options={totalOrders.options} type="area" height={290} />
                             )}
-                        </div>*/}
+                        </div>
                     </div>
                 </div>
-                {/*<div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+                <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
                     <div className="panel h-full sm:col-span-2 xl:col-span-1 pb-0">
                         <h5 className="font-semibold text-lg dark:text-white-light mb-5">Recent Activities</h5>
                         <PerfectScrollbar className="relative h-[290px] ltr:pr-3 rtl:pl-3 ltr:-mr-3 rtl:-ml-3 mb-4">
@@ -1017,7 +1017,7 @@ useEffect(() => {
                             </table>
                         </div>
                     </div>
-                </div>*/}
+                </div>
             </div>
         </div>
   );

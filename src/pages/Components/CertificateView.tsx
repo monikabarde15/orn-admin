@@ -6,6 +6,8 @@ import html2canvas from "html2canvas";
 import { Award, Download, Share2, ArrowLeft } from "lucide-react";
 import logoimg from "../../../public/assets/orllogo.png";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../../pages/Components/Navbar";
+import Footer from "../Components/Footer";
 
 const CERTIFICATE_LOGO = logoimg;
 
@@ -124,17 +126,19 @@ const navigate = useNavigate();
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-6">
+    <>
+     <Navbar />
+     <div className="min-h-screen bg-slate-900 text-white p-4">
       <div className="max-w-7xl mx-auto">
 
         {/* HEADER */}
         <div className="flex items-center justify-between mb-6">
-          <button
-  onClick={() => navigate("/certificate")}
-  className="flex items-center gap-2 text-slate-300"
->
-  <ArrowLeft size={18} /> Back
-</button>
+                <button
+        onClick={() => navigate("/certificate")}
+        className="flex items-center gap-2 text-slate-300"
+      >
+        <ArrowLeft size={18} /> Back
+      </button>
 
           <div className="flex gap-3">
             <button
@@ -146,7 +150,7 @@ const navigate = useNavigate();
 
             <button
               onClick={downloadPdf}
-              className="bg-green-600 px-4 py-2 rounded flex items-center gap-2"
+              className="w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40"
             >
               <Download size={18} /> Download
             </button>
@@ -154,10 +158,10 @@ const navigate = useNavigate();
         </div>
 
         {/* MAIN LAYOUT */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-1">
 
           {/* LEFT : PDF */}
-          <div className="bg-white rounded-xl h-[85vh] overflow-hidden">
+          <div className="bg-white rounded-xl h-[57vh] overflow-hidden">
             {pdfUrl ? (
               <iframe
                 src={pdfUrl}
@@ -172,7 +176,7 @@ const navigate = useNavigate();
           </div>
 
           {/* RIGHT : DETAILS */}
-          <div className="bg-slate-800 rounded-xl p-6 space-y-6 overflow-y-auto">
+          <div className="bg-slate-800 rounded-xl p-4 space-y-6 overflow-y-auto">
             <div className="flex items-center gap-3">
               <Award className="text-yellow-400" size={42} />
               <div>
@@ -230,7 +234,7 @@ const navigate = useNavigate();
     width: "1123px",
     height: "794px",
     backgroundColor: "#0b1220",
-    padding: "40px",
+    padding: "20px",
     fontFamily: "'Poppins', Arial, sans-serif",
     boxSizing: "border-box",
   }}
@@ -382,6 +386,9 @@ const navigate = useNavigate();
   </div>
 </div>
     </div>
+     <Footer />
+    </>
+    
   );
 };
 

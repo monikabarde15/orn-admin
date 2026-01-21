@@ -204,6 +204,24 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     if (isLast) setStep("result");
     else setFlowIndex((i) => i + 1);
   };
+const getOrderedModuleFlow = (moduleId: string) => {
+  const moduleFlow = flow
+    .map((f, index) => ({ ...f, index }))
+    .filter((f) => f.moduleId === moduleId);
+
+  return [
+    ...moduleFlow.filter((f) => f.type === "video"),
+    ...moduleFlow.filter((f) => f.type === "pdf"),
+    ...moduleFlow.filter((f) => f.type === "quiz"),
+  ];
+};
+
+const getFlowLabel = (item: FlowItem) => {
+  if (item.type === "video") return "🎥 Video";
+  if (item.type === "pdf") return "📄 PDF";
+  if (item.type === "quiz") return "❓ Quiz";
+  return "";
+};
 
   /* ================= RESULT ================= */
   const allQuizzes: Quiz[] = modules.flatMap((m) =>
@@ -256,68 +274,73 @@ const prepareCertificateData = () => {
   return cert;
 };
 
-  /* ================= CERTIFICATE API ================= */
-//   const saveCertificateRecordOnly = async (cert: any) => {
-//   await api.post("/certificate/certificate/", {
-//     certificate_id: cert.id,
-//     course: courseId,
-//     title: cert.title,
-//     issue_date: cert.issue_date,
-//     is_active: true,
-//   });
-// };
+  
+
 const saveCertificateRecordOnly = async () => {
-  const res = await api.post("/certificate/certificate/", {
-    course: courseId,
-    title: courseTitle,
-    issue_date: new Date().toISOString().split("T")[0],
-    is_active: true,
-  });
+  try {
+    const res = await api.post("/certificate/certificate/", {
+      course: courseId,
+      title: courseTitle,
+      issue_date: new Date().toISOString().split("T")[0],
+      is_active: true,
+    });
 
-  // 🔥 BACKEND ID HERE
-  setCertificate({
-    id: res.data.id, // <-- SAME ID
-    title: res.data.title,
-    issue_date: res.data.issue_date,
-    expiry_date: res.data.expiry_date,
-  });
+    // ✅ new certificate created
+    return res.data.id;
 
-  return res.data.id;
+  } catch (err: any) {
+    const data = err.response?.data;
+
+    // 🔥 CASE: bunny_error string ke andar certificate_id
+    if (data?.bunny_error) {
+      try {
+        // string ko object me convert karo
+        const parsed = JSON.parse(
+          data.bunny_error.replace(/'/g, '"')
+        );
+
+        if (parsed.certificate_id) {
+          return parsed.certificate_id;
+        }
+      } catch (e) {
+        console.error("Parsing error:", e);
+      }
+    }
+
+    throw err;
+  }
 };
 
+const getSidebarChaptersInOrder = (module: Module) => {
+  const videos: Chapter[] = [];
+  const pdfs: Chapter[] = [];
+  const quizzes: Chapter[] = [];
 
+  module.chapters.forEach((c) => {
+    // 🎥 Video
+    if (c.video && c.video.toLowerCase().endsWith(".mp4")) {
+      videos.push(c);
+    }
 
-  /* ================= CERTIFICATE PDF ================= */
-//   const generateCertificate = async () => {
-//   const element = document.getElementById("certificate-html");
-//   if (!element) return;
+    // 📄 PDF (video field ya file field se)
+    if (
+      (c.video && c.video.toLowerCase().endsWith(".pdf")) ||
+      (c.file && c.file.toLowerCase().endsWith(".pdf"))
+    ) {
+      pdfs.push(c);
+    }
 
-//   const cert = prepareCertificateData();
-//   await saveCertificateRecordOnly(cert);
+    // ❓ Quiz
+    if (c.quizzes && c.quizzes.length > 0) {
+      quizzes.push(c);
+    }
+  });
 
-//   // wait for state render
-//   await new Promise((r) => setTimeout(r, 300));
+  // 🔥 FINAL ORDER: Video → PDF → Quiz
+  return [...videos, ...pdfs, ...quizzes];
+};
 
-//   const canvas = await html2canvas(element, {
-//     scale: 2,
-//     useCORS: true,
-//     backgroundColor: "#ffffff",
-//   });
-
-//   const imgData = canvas.toDataURL("image/png");
-//   const pdf = new jsPDF("landscape", "px", "a4");
-
-//   pdf.addImage(
-//     imgData,
-//     "PNG",
-//     0,
-//     0,
-//     pdf.internal.pageSize.getWidth(),
-//     pdf.internal.pageSize.getHeight()
-//   );
-
-//   pdf.save(`Certificate-${cert.id}.pdf`);
-// };
+  
 const handlePrevious = () => {
   if (flowIndex > 0) {
     setFlowIndex((i) => i - 1);
@@ -325,14 +348,36 @@ const handlePrevious = () => {
   }
 };
 
+const getModuleStartIndex = (moduleId: string) => {
+  // 1️⃣ VIDEO first
+  let index = flow.findIndex(
+    (f) => f.moduleId === moduleId && f.type === "video"
+  );
+
+  // 2️⃣ PDF second
+  if (index === -1) {
+    index = flow.findIndex(
+      (f) => f.moduleId === moduleId && f.type === "pdf"
+    );
+  }
+
+  // 3️⃣ QUIZ last
+  if (index === -1) {
+    index = flow.findIndex(
+      (f) => f.moduleId === moduleId && f.type === "quiz"
+    );
+  }
+
+  return index;
+};
+
 const generateCertificate = async () => {
   const element = document.getElementById("certificate-html");
   if (!element) return;
 
-  // 🔥 backend call first
+  // 🔥 Either NEW or EXISTING ID
   const certId = await saveCertificateRecordOnly();
 
-  // wait for state update
   await new Promise((r) => setTimeout(r, 300));
 
   const canvas = await html2canvas(element, {
@@ -353,11 +398,16 @@ const generateCertificate = async () => {
     pdf.internal.pageSize.getHeight()
   );
 
-  // 🔥 SAME ID in PDF name
   pdf.save(`Certificate-${certId}.pdf`);
 
   setStep("certificate");
+
+    // ⏳ 3 seconds delay ke baad redirect
+    setTimeout(() => {
+      navigate(`/certificate-view/${certId}`);
+    }, 3000); // 3000ms = 3 sec
 };
+
 useEffect(() => {
   if (step === "certificate" && certificate.id) {
     const timer = setTimeout(() => {
@@ -367,6 +417,43 @@ useEffect(() => {
     return () => clearTimeout(timer);
   }
 }, [step, certificate.id]);
+
+
+
+const getModulePriority = (module: Module) => {
+  let hasVideo = false;
+  let hasPdf = false;
+  let hasQuiz = false;
+
+  module.chapters.forEach((c) => {
+    // 🎥 VIDEO
+    if (c.video && c.video.toLowerCase().endsWith(".mp4")) {
+      hasVideo = true;
+    }
+
+    // 📄 PDF
+    if (
+      (c.video && c.video.toLowerCase().endsWith(".pdf")) ||
+      (c.file && c.file.toLowerCase().endsWith(".pdf"))
+    ) {
+      hasPdf = true;
+    }
+
+    // ❓ QUIZ
+    if (c.quizzes && c.quizzes.length > 0) {
+      hasQuiz = true;
+    }
+  });
+
+  // 🔥 PRIORITY ORDER
+  if (hasVideo) return 1; // VIDEO FIRST
+  if (hasPdf) return 2;   // PDF SECOND
+  if (hasQuiz) return 3;  // QUIZ LAST
+  return 4;
+};
+const sortedModules = [...modules].sort(
+  (a, b) => getModulePriority(a) - getModulePriority(b)
+);
 
 
 useEffect(() => {
@@ -381,34 +468,21 @@ useEffect(() => {
       <Navbar />
 
       <div className="min-h-screen bg-[#020617] text-white">
-        <div className={`mx-auto px-4 md:px-6 py-6 grid gap-4 relative isolate transition-all duration-300
-  ${
-    isSidebarOpen
-      ? "max-w-[1400px] grid-cols-1 lg:grid-cols-[300px_1fr]"
-      : "max-w-[1600px] grid-cols-1"
-  }`}>
+       <div
+  className={`mx-auto px-4 md:px-6 py-6 grid gap-1 relative isolate transition-all duration-300
+    ${
+      isSidebarOpen
+        ? "max-w-[1300px] grid-cols-1 lg:grid-cols-[260px_1fr]"
+        : "max-w-[1500px] grid-cols-1"
+    }`}
+>
 
-          {/* MODULE LIST */}
-          {/* <div className="w-[300px] border border-slate-800 rounded-xl">
-            <div className="p-4 font-semibold border-b">Modules</div>
-            {modules.map((m) => (
-              <button
-                key={m.id}
-                onClick={() =>
-                  setFlowIndex(flow.findIndex((f) => f.moduleId === m.id))
-                }
-                className={`w-full p-4 text-left hover:bg-slate-800 ${
-                  activeModuleId === m.id && "bg-slate-800"
-                }`}
-              >
-                {m.title}
-              </button>
-            ))}
-          </div> */}
+
+         
           {/* MODULE LIST */}
 {isSidebarOpen && (
   <aside className="bg-slate-950 border border-slate-800 rounded-xl 
-lg:sticky lg:top-24 relative z-20 h-fit shadow-lg">
+lg:sticky lg:top-20 relative z-20 h-fit shadow-lg">
     <div className="flex items-center justify-between p-4 border-b border-slate-700">
       <h3 className="font-semibold">Modules</h3>
       <button
@@ -419,7 +493,7 @@ lg:sticky lg:top-24 relative z-20 h-fit shadow-lg">
       </button>
     </div>
 
-    <div className="max-h-[70vh] overflow-y-auto">
+    {/* <div className="max-h-[70vh] overflow-y-auto">
       {modules.map((m) => (
         <button
           key={m.id}
@@ -433,7 +507,25 @@ lg:sticky lg:top-24 relative z-20 h-fit shadow-lg">
           {m.title}
         </button>
       ))}
-    </div>
+    </div> */
+    <div className="max-h-[70vh] overflow-y-auto">
+  {sortedModules.map((m) => (
+    <button
+      key={m.id}
+      onClick={() => {
+        const index = getModuleStartIndex(m.id);
+        if (index !== -1) setFlowIndex(index);
+      }}
+      className={`w-full px-4 py-3 text-left border-b border-slate-800 hover:bg-slate-800 transition
+        ${activeModuleId === m.id && "bg-purple-600/20 text-purple-300"}
+      `}
+    >
+      {m.title}
+    </button>
+  ))}
+</div>
+
+}
   </aside>
 )}
 {!isSidebarOpen && (
@@ -448,17 +540,15 @@ lg:sticky lg:top-24 relative z-20 h-fit shadow-lg">
 )}
 
           {/* RIGHT CONTENT */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-950 
-border border-slate-800 rounded-2xl 
-p-4 sm:p-6 md:p-8 
-min-h-[70vh] shadow-xl 
-relative overflow-hidden">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-950
+    border border-slate-800 rounded-2xl
+    p-1 sm:p-1
+    shadow-xl">
     
 
         {step === "learning" && current?.type === "video" && (
   <>
-    <div className="w-full aspect-video bg-black rounded-lg overflow-hidden 
-border border-slate-700 relative z-10 isolate">
+    <div className="flex flex-col sm:flex-row gap-2 justify-between items-center mt-2">
       <video
         src={current.data}
         controls
@@ -502,7 +592,7 @@ border border-slate-700 relative z-10 isolate">
   <>
     <iframe
       src={current.data}
-        className="w-full h-[60vh] sm:h-[65vh] md:h-[75vh] rounded-lg"
+        className="w-full h-[55vh] sm:h-[60vh] md:h-[65vh] rounded-lg rounded-lg"
   style={{ maxWidth: "100%" }}
     />
 

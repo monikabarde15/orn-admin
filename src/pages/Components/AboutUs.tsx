@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Target, Users, Award, Rocket, Server, CheckCircle } from 'lucide-react';
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
+import { AboutMetaTags } from '../Pages/AboutMetaTags';
 
 
 const AboutUs = () => {
@@ -58,6 +59,7 @@ const AboutUs = () => {
 
   return (
     <>
+    <AboutMetaTags />
      <Navbar />
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-16 px-4">
       <div className="max-w-7xl mx-auto">

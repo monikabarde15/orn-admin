@@ -18,7 +18,7 @@ const LabPricing = () => {
   const navigate = useNavigate();
 
   const [billingTypes, setBillingTypes] = useState([]);
-  const [billingType, setBillingType] = useState("hourly");
+  const [billingType, setBillingType] = useState("free");
   const [labs, setLabs] = useState([]);
   const [loadingLabs, setLoadingLabs] = useState(false);
   const [launchingLabId, setLaunchingLabId] = useState(null);
@@ -145,7 +145,7 @@ const LabPricing = () => {
           t.yearlyPackageId = pkg.package_id;
         }
 
-        if (cycle === "hourly" || cycle === "hour") {
+        if (cycle === "free" || cycle === "free") {
           t.payAsYouGo.hourlyRate = pkg.price;
           t.payAsYouGo.packageId = pkg.package_id;
           t.free.available = true;
@@ -174,8 +174,16 @@ const LabPricing = () => {
     }
   }, [billingType, allPackages]);
 
-  const getCurrentFeatures = (lab) =>
-    billingType === "free" ? lab.billing_cycle : lab.paidFeatures;
+  const getCurrentFeatures = (lab) => {
+  if (!lab) return [];
+
+  if (billingType === "free") {
+    return lab.freeFeatures || [];
+  }
+
+  return lab.paidFeatures || [];
+};
+
 
   const getFreeAction = (labName) => {
     const name = (labName || "").toLowerCase();
@@ -485,9 +493,9 @@ console.log('lab=',lab);
 
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 to-blue-300 bg-clip-text text-transparent mb-4">
+          <h2 className="text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 to-blue-300 bg-clip-text text-transparent mb-4">
             Simple pricing. No surprise fees.
-          </h1>
+          </h2>
           <p className="text-gray-400 mt-6 text-xl max-w-2xl mx-auto">
             Choose the perfect lab for your learning journey and start
             practicing today
@@ -497,7 +505,7 @@ console.log('lab=',lab);
         {/* BILLING TOGGLE */}
         <div className="flex justify-center mb-12">
           <div className="inline-flex items-center bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-1">
-            {["hourly", "monthly", "yearly"].map((type) => (
+            {["free", "monthly", "yearly"].map((type) => (
               <button
                 key={type}
                 onClick={() => setBillingType(type)}
@@ -567,18 +575,17 @@ console.log('lab=',lab);
                     </p>
 
                     <ul className="space-y-3">
-                      {getCurrentFeatures(lab).map(
-                        (feature, idx) => (
-                          <li
-                            key={idx}
-                            className="flex items-center gap-2 text-gray-300 text-sm"
-                          >
-                            <Check className="w-4 h-4 text-green-400" />
-                            {feature}
-                          </li>
-                        )
-                      )}
-                    </ul>
+  {(getCurrentFeatures(lab) || []).map((feature, idx) => (
+    <li
+      key={idx}
+      className="flex items-center gap-2 text-gray-300 text-sm"
+    >
+      <Check className="w-4 h-4 text-green-400" />
+      {feature}
+    </li>
+  ))}
+</ul>
+
                   </div>
 
                   <div className="flex flex-col gap-3">
@@ -587,7 +594,7 @@ console.log('lab=',lab);
                       onClick={() => handlePlanClick(lab)}
                       disabled={launchingLabId === lab.planId}
                     >
-                      {billingType === "hourly"
+                      {billingType === "free"
                         ? launchingLabId === lab.planId
                           ? "Launching..."
                           : "Start Free Trial"

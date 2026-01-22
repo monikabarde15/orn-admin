@@ -17,6 +17,7 @@ const Navbar = () => {
   const [profileMenu, setProfileMenu] = useState(false);
   const [cartItems, setCartItems] = useState(JSON.parse(localStorage.getItem("orl_cart") || "[]"));
   const [cartOpen, setCartOpen] = useState(false);
+const logoutTimerRef = useRef<any>(null);
 
   console.log(import.meta.env.VITE_API_URL);
 const VIT=import.meta.env.VITE_API_URL;
@@ -91,45 +92,60 @@ const user = {
   //   toast.info("You have been logged out!", { position: "top-center" });
   //   setTimeout(() => (window.location.href = "/"), 800);
   // };
-  useEffect(() => {
-  let timer: any;
+  
+useEffect(() => {
+  const SESSION_TIME_MS = 3 * 60 * 1000; // 15 min
 
   const logout = () => {
-    localStorage.clear();
-    document.cookie.split(";").forEach(c => {
-      document.cookie = c
+    // 🔴 Remove localStorage
+    localStorage.removeItem("jwt-auth");
+    localStorage.removeItem("access");
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("session_expiry");
+
+    // 🔴 Remove ALL accessible cookies
+    document.cookie.split(";").forEach(cookie => {
+      document.cookie = cookie
         .replace(/^ +/, "")
         .replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
     });
-    window.location.href = "/login";
-  };
 
-  const checkExpiry = () => {
-    const expiry = localStorage.getItem("session_expiry");
-    if (expiry && Date.now() > Number(expiry)) {
-      logout();
-    }
+    // 🔴 IMPORTANT: update UI
+    setIsLoggedIn(false);
+
+    toast.info("Session expired. Logged out!", {
+      position: "top-center",
+    });
+
+    setTimeout(() => {
+      window.location.href = "/";
+    }, 800);
   };
-const SESSION_TIME = 15 * 60;
-const SESSION_TIME_MS = 15 * 60 * 1000;
 
   const resetTimer = () => {
-    const newExpiry = Date.now() + SESSION_TIME_MS;
-    localStorage.setItem("session_expiry", newExpiry.toString());
-    clearTimeout(timer);
-    timer = setTimeout(logout, SESSION_TIME_MS);
+    if (logoutTimerRef.current) {
+      clearTimeout(logoutTimerRef.current);
+    }
+
+    logoutTimerRef.current = setTimeout(logout, SESSION_TIME_MS);
   };
 
-  ["click", "mousemove", "keydown", "scroll", "touchstart"]
-    .forEach(event => window.addEventListener(event, resetTimer));
+  // 🧠 user activity detect
+  const events = ["click", "mousemove", "keydown", "scroll", "touchstart"];
+  events.forEach(event =>
+    window.addEventListener(event, resetTimer)
+  );
 
-  checkExpiry();
+  // start countdown
   resetTimer();
 
   return () => {
-    clearTimeout(timer);
-    ["click", "mousemove", "keydown", "scroll", "touchstart"]
-      .forEach(event => window.removeEventListener(event, resetTimer));
+    if (logoutTimerRef.current) {
+      clearTimeout(logoutTimerRef.current);
+    }
+    events.forEach(event =>
+      window.removeEventListener(event, resetTimer)
+    );
   };
 }, []);
 
@@ -245,7 +261,7 @@ setTimeout(() => (window.location.href = "/"), 800);
             </div>
           ) : (
             <button className="navbar-btn mobile-login-btn">
-              <a href="/login">Login</a> / <a href="/auth/boxed-signup">Signup</a>
+              <a href="/login">Login</a> / <a href="/register">Signup</a>
             </button>
           )}
         </div>
@@ -334,7 +350,7 @@ setTimeout(() => (window.location.href = "/"), 800);
             </div>
           ) : (
             <button className="navbar-btn">
-              <a href="/login">Login</a> / <a href="/auth/boxed-signup">Signup</a>
+              <a href="/login">Login</a> / <a href="/register">Signup</a>
             </button>
           )}
         </div>

@@ -1032,7 +1032,7 @@ const userID = JSON.parse(localStorage.getItem("userId") || "{}");
                                         </NavLink>
                                     </li>
                                     <li>
-                                        <NavLink to="/auth/boxed-signup" target="_blank">
+                                        <NavLink to="/register" target="_blank">
                                             {t('register_boxed')}
                                         </NavLink>
                                     </li>

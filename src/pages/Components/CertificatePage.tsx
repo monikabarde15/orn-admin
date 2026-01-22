@@ -283,12 +283,12 @@ const paginatedCertificates = certificates.slice(
 
       {/* Secondary Actions */}
       <div className="flex justify-between text-sm text-gray-300">
-        <button
+        {/* <button
           onClick={() => handleDownload(c)}
           className="hover:text-white transition"
         >
           Download
-        </button>
+        </button> */}
 
        
 

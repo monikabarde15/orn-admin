@@ -5,6 +5,8 @@ export const ContactMetaTags = () => {
     <Helmet>
       <title>Contact Us for DevOps lab assistance and RedHat Lab Training</title>
       <meta name="description" content="Contact Us for Devops Lab Assistance or RedHat Lab Training." />
+      <link rel="canonical" href="https://onrequestlab.com/contact-us" />
+
     </Helmet>
   );
 };

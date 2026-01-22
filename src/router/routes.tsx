@@ -768,7 +768,7 @@ const routes = [
         layout: 'web',
     },
     {
-        path: '/auth/boxed-signup',
+        path: '/register',
         element: <RegisterBoxed />,
         layout: 'blank',
     },

@@ -354,40 +354,31 @@ const launchLab = async (plan) => {
             </div>
 
             {/* ACTION BUTTONS */}
-            <div className="space-y-3">
-              {active ? (
-                <button
-                  onClick={() => launchLab(p)}
-                  className="w-full h-11 rounded-xl
-                    bg-gradient-to-r from-purple-500 to-blue-500
-                    text-white font-medium shadow-lg
-                    hover:opacity-90 transition"
-                >
-                  Launch Lab
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setPopupPlan(p);
-                    setShowPopup(true);
-                  }}
-                  className="w-full h-11 rounded-xl
-                    border border-purple-500/40
-                    text-purple-400 hover:bg-purple-500/10 transition"
-                >
-                  Upgrade Plan
-                </button>
-              )}
+          <div className="space-y-3">
+  {!active && (
+    <button
+      onClick={() => {
+        setPopupPlan(p);
+        setShowPopup(true);
+      }}
+      className="w-full h-11 rounded-xl
+        border border-purple-500/40
+        text-purple-400 hover:bg-purple-500/10 transition"
+    >
+      Upgrade Plan
+    </button>
+  )}
 
-              <button
-                onClick={() => handleContinue(p)}
-                className="w-full h-11 rounded-xl
-                  border border-white/20
-                  text-gray-300 hover:bg-white/10 transition"
-              >
-                Continue Watching
-              </button>
-            </div>
+  <button
+    onClick={() => handleContinue(p)}
+    className="w-full h-11 rounded-xl
+      border border-white/20
+      text-gray-300 hover:bg-white/10 transition"
+  >
+    Continue Watching
+  </button>
+</div>
+
           </div>
         );
       })}

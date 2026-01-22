@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Send, Star, User, Mail, MessageSquare } from 'lucide-react';
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
+import { FeedbackMetatage } from '../Pages/FeedbackMetatage';
 console.log(import.meta.env.VITE_API_URL);
 const VIT=import.meta.env.VITE_API_URL;
 
@@ -106,6 +107,7 @@ const payload = {
 
   return (
     <>
+    <FeedbackMetatage />
     <Navbar />
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-16 px-4">
       <div className="max-w-4xl mx-auto">

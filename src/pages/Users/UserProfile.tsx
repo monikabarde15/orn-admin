@@ -166,8 +166,8 @@ const UserProfile = () => {
         form.append("avatar", selectedImage);
       }
 
-      const res = await axios.post(
-        `${VIT}/api/v1/users/profile/`,
+      const res = await axios.patch(
+        `${VIT}/api/v1/users/profile/update/`,
         form,
         {
           headers: {

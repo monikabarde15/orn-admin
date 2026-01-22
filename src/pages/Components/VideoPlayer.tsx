@@ -72,6 +72,8 @@ const CourseTestFinal: React.FC = () => {
     if (parts.length === 2) return parts.pop()?.split(";").shift() || "";
     return "";
   };
+// ⏱ TIMER STATE
+const [timeLeft, setTimeLeft] = useState(0);
 
   const user = {
     name: getCookie("username"),
@@ -90,6 +92,14 @@ const CourseTestFinal: React.FC = () => {
       "Content-Type": "application/json",
     },
   });
+const getTimeForItem = (item?: FlowItem) => {
+  if (!item) return 0;
+
+  if (item.type === "video") return 300; // 5 min
+  if (item.type === "pdf") return 180;   // 3 min
+  if (item.type === "quiz") return 60;   // 1 min
+  return 0;
+};
 
   const generateCertificateId = () => "ORL-" + Date.now();
   const certificateId = generateCertificateId();
@@ -167,6 +177,24 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     return [...videos, ...pdfs, ...quizzes];
   };
+useEffect(() => {
+  if (!current) return;
+  setTimeLeft(getTimeForItem(current));
+}, [current]);
+useEffect(() => {
+  if (!current || step !== "learning") return;
+
+  if (timeLeft <= 0) {
+    handleNext(); // ⏭ auto next / submit
+    return;
+  }
+
+  const timer = setInterval(() => {
+    setTimeLeft((t) => t - 1);
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, [timeLeft, current, step]);
 
   /* ================= FETCH COURSE ================= */
   useEffect(() => {
@@ -544,7 +572,15 @@ lg:sticky lg:top-20 relative z-20 h-fit shadow-lg">
     border border-slate-800 rounded-2xl
     p-1 sm:p-1
     shadow-xl">
-    
+    {step === "learning" && current && (
+  <div className="flex justify-end items-center mb-2 pr-2">
+    <span className="bg-slate-800 border border-slate-700 px-3 py-1 rounded-lg text-sm text-purple-300">
+      ⏱ {Math.floor(timeLeft / 60)}:
+      {(timeLeft % 60).toString().padStart(2, "0")}
+    </span>
+  </div>
+)}
+
 
         {step === "learning" && current?.type === "video" && (
   <>

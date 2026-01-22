@@ -13,6 +13,8 @@ import IconLockDots from "../../components/Icon/IconLockDots";
 import CountryList from "country-list-with-dial-code-and-flag";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
+import { SingupMetaTags } from "../Pages/SingupMetaTags";
+
 console.log(import.meta.env.VITE_API_URL);
 const VIT=import.meta.env.VITE_API_URL;
 const RegisterBoxed = () => {
@@ -98,55 +100,121 @@ const RegisterBoxed = () => {
   // -------------------------------
   // Submit
   // -------------------------------
-  const handleSubmit = async (e: any) => {
-    e.preventDefault();
-    if (!validate()) return;
+  // const handleSubmit = async (e: any) => {
+  //   e.preventDefault();
+  //   if (!validate()) return;
 
-    const finalPhone = `${formData.country_code}${formData.phone}`;
+  //   const finalPhone = `${formData.country_code}${formData.phone}`;
 
-    setLoading(true);
-    try {
-      const response = await axios.post(
-        `${VIT}/api/v1/users/auth/registration/`,
-        {
-          ...formData,
-          phone: finalPhone,
-          is_superuser: false,
-          is_staff: false,
-          is_active: true,
-        }
-      );
+  //   setLoading(true);
+  //   try {
+  //     const response = await axios.post(
+  //       `${VIT}/api/v1/users/auth/registration/`,
+  //       {
+  //         ...formData,
+  //         phone: finalPhone,
+  //         is_superuser: false,
+  //         is_staff: false,
+  //         is_active: true,
+  //       }
+  //     );
 
-      // Backend says OTP sent
-      if (response.data?.detail) {
+  //     // Backend says OTP sent
+  //     if (response.data?.detail) {
+  //       sessionStorage.setItem("formData", JSON.stringify(formData));
+  //       localStorage.setItem("email", formData.email);
+
+  //       toast.success("OTP sent successfully!", { position: "top-center" });
+  //       navigate("/otp");
+  //     } else {
+  //       toast.success("Registration successful!", { position: "top-center" });
+  //       navigate("/");
+  //     }
+  //   } catch (error: any) {
+  //     if (error.response?.data) {
+  //       const serverErrors = error.response.data;
+
+  //       const formatted: any = {};
+  //       Object.keys(serverErrors).forEach((k) => {
+  //         formatted[k] = serverErrors[k][0];
+  //       });
+
+  //       setApiErrors(formatted);
+
+  //       toast.error("Fix red fields.", { position: "top-center" });
+  //     } else {
+  //       toast.error("Something went wrong.", { position: "top-center" });
+  //     }
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+const handleSubmit = async (e: any) => {
+  e.preventDefault();
+  if (!validate()) return;
+
+  const finalPhone = `${formData.country_code}${formData.phone}`;
+
+  setLoading(true);
+  try {
+    const payload = {
+      username: formData.username || formData.email,
+      email: formData.email,
+      password: formData.password1, // ✅ FIX HERE
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      phone: finalPhone,
+      is_superuser: false,
+      is_staff: false,
+      is_active: true,
+    };
+
+    console.log("REGISTER PAYLOAD 👉", payload); // 🧪 DEBUG
+
+    const response = await axios.post(
+      `${VIT}/api/v1/users/register/`,
+      payload
+    );
+    if (response.data?.status_code === 201) {
+      const user = response.data.user;
         sessionStorage.setItem("formData", JSON.stringify(formData));
         localStorage.setItem("email", formData.email);
 
-        toast.success("OTP sent successfully!", { position: "top-center" });
+      // ✅ Store required data
+      sessionStorage.setItem("otp_user", JSON.stringify({
+        user_id: user.id,
+        email: user.email,
+        username: user.username,
+      }));
+
+      // (optional) email for resend OTP
+      localStorage.setItem("otp_email", user.email);
+
+      // ✅ Toast
+      toast.info("Please verify OTP", { position: "top-center" });
+
+      // ✅ Redirect to OTP page
+      setTimeout(() => {
         navigate("/otp");
-      } else {
-        toast.success("Registration successful!", { position: "top-center" });
-        navigate("/");
-      }
-    } catch (error: any) {
-      if (error.response?.data) {
-        const serverErrors = error.response.data;
-
-        const formatted: any = {};
-        Object.keys(serverErrors).forEach((k) => {
-          formatted[k] = serverErrors[k][0];
-        });
-
-        setApiErrors(formatted);
-
-        toast.error("Fix red fields.", { position: "top-center" });
-      } else {
-        toast.error("Something went wrong.", { position: "top-center" });
-      }
-    } finally {
-      setLoading(false);
+      }, 800);
     }
-  };
+
+    // if (response.data?.detail) {
+    //   toast.success("OTP sent successfully!", { position: "top-center" });
+    //   navigate("/otp");
+    // } else {
+    //   toast.success("Registration successful!", { position: "top-center" });
+    //   navigate("/");
+    // }
+  } catch (error: any) {
+    toast.error(
+      error.response?.data?.message || "Registration failed",
+      { position: "top-center" }
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   const fields = [
     { name: "first_name", label: "First Name", icon: <IconUser /> },
@@ -159,6 +227,7 @@ const RegisterBoxed = () => {
 
   return (
     <>
+    <SingupMetaTags />
      <Navbar />
       <div className="relative flex min-h-screen items-center justify-center bg-[url(/assets/images/auth/map.png)] bg-cover bg-center px-6 py-10 dark:bg-[#060818] sm:px-16">
 

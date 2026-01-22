@@ -5,6 +5,7 @@ export const SupportMetatage = () => {
     <Helmet>
       <title>Support | DevOps Lab Assistance and RedHat Training Help</title>
       <meta name="description" content="Get DevOps lab assistance and Kubernetes training help from our support team. We provide quick solutions to keep your labs running smoothly. Let's Connect"/>
+    <link rel="canonical" href="https://onrequestlab.com/support" />
     </Helmet>
   );
 };

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
+import { SupportMetatage } from "../Pages/SupportMetatage";
 
 const Support: React.FC = () => {
   const fadeUp = {
@@ -33,6 +34,7 @@ const Support: React.FC = () => {
 
   return (
     <>
+    <SupportMetatage />
       <Navbar/>
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-20 px-4">
           <div className="max-w-6xl mx-auto">

@@ -12,6 +12,9 @@ import IconMail from "../../components/Icon/IconMail";
 import IconLockDots from "../../components/Icon/IconLockDots";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
+// import { SingupMetaTags } from "../Pages/SingupMetaTags";
+
+
 console.log(import.meta.env.VITE_API_URL);
 const VIT=import.meta.env.VITE_API_URL;
 const SESSION_TIME = 15 * 60;
@@ -331,7 +334,7 @@ const submitForm = async (e: React.FormEvent) => {
             <div className="text-center mt-6 dark:text-white">
               {i18next.t("Don't have an account?")}{" "}
               <Link
-                to="/auth/boxed-signup"
+                to="/register"
                 className="uppercase text-primary underline transition hover:text-black dark:hover:text-white"
               >
                 {i18next.t("Register here")}

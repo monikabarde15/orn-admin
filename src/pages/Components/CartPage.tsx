@@ -239,57 +239,114 @@ const loaderTimerRef = useRef(null);
   }
 };
 
-  const pollForLaunchedInstances = (paymentId = null) => {
-    if (pollRef.current) clearInterval(pollRef.current);
+  // const pollForLaunchedInstances = (paymentId = null) => {
+  //   if (pollRef.current) clearInterval(pollRef.current);
 
-    pollRef.current = setInterval(async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/lab/userinst/${userId}/`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+  //   pollRef.current = setInterval(async () => {
+  //     try {
+  //       const res = await axios.get(`${API_BASE}/lab/userinst/${userId}/`, {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       });
 
-        const instances = res.data || [];
+  //       const instances = res.data || [];
 
-        const launched = instances.find((i) => {
-          if (i.status !== "Launched") return false;
+  //       const launched = instances.find((i) => {
+  //         if (i.status !== "Launched") return false;
 
-          if (!paymentId) return true;
+  //         if (!paymentId) return true;
 
-          if (paymentId === "free")
-            return i.is_free || !i.payment_id || i.payment_id === "free";
+  //         if (paymentId === "free")
+  //           return i.is_free || !i.payment_id || i.payment_id === "free";
 
-          return i.payment_id === paymentId;
-        });
+  //         return i.payment_id === paymentId;
+  //       });
 
-        if (launched) {
-          clearInterval(pollRef.current);
-          pollRef.current = null;
+  //       if (launched) {
+  //         clearInterval(pollRef.current);
+  //         pollRef.current = null;
 
-          setCartItems([]);
-          localStorage.removeItem("orl_cart");
+  //         setCartItems([]);
+  //         localStorage.removeItem("orl_cart");
 
-          const url =
-            launched?.web_ssh_url ||
-            launched?.webssh_url ||
-            launched?.web_ssh ||
-            launched?.web_ssh_link ||
-            launched?.webssh ||
-            launched?.console_url ||
-            launched?.public_url ||
-            launched?.ssh_url ||
-            launched?.instance_url ||
-            launched?.connect_url ||
-            launched?.user_instance_link;
+  //         const url =
+  //           launched?.web_ssh_url ||
+  //           launched?.webssh_url ||
+  //           launched?.web_ssh ||
+  //           launched?.web_ssh_link ||
+  //           launched?.webssh ||
+  //           launched?.console_url ||
+  //           launched?.public_url ||
+  //           launched?.ssh_url ||
+  //           launched?.instance_url ||
+  //           launched?.connect_url ||
+  //           launched?.user_instance_link;
 
-          if (url) window.open(url, "_blank");
+  //         if (url) window.open(url, "_blank");
 
-          window.location.href = `/lab?user=${userId}`;
-        }
-      } catch (err) {
-        console.error("Polling error:", err);
-      }
-    }, 1000);
-  };
+  //         window.location.href = `/lab?user=${userId}`;
+  //       }
+  //     } catch (err) {
+  //       console.error("Polling error:", err);
+  //     }
+  //   }, 1000);
+  // };
+
+  
+  const pollForLaunchedInstances = () => {
+  if (pollRef.current) clearInterval(pollRef.current);
+
+  pollRef.current = setInterval(async () => {
+    try {
+      const res = await axios.get(
+        `${API_BASE}/lab/userinst/${userId}/`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const instances = Array.isArray(res.data) ? res.data : [];
+
+      // ✅ STEP 1: only launched & not deleted
+      const launchedInstances = instances.filter(
+        (i) =>
+          i.status === "Launched" &&
+          i.isDeleted !== true
+      );
+
+      if (!launchedInstances.length) return;
+
+      // ✅ STEP 2: pick LATEST launched instance
+      const latestLaunched = launchedInstances.sort(
+        (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+      )[0];
+
+      console.log("✅ Latest launched instance:", latestLaunched);
+
+      // ✅ STEP 3: stop polling
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+
+      // ✅ STEP 4: cleanup
+      setCartItems([]);
+      localStorage.removeItem("orl_cart");
+
+      // ✅ STEP 5: open web ssh (optional)
+      const url =
+        latestLaunched.web_ssh_url ||
+        latestLaunched.webssh_url ||
+        latestLaunched.web_ssh ||
+        latestLaunched.console_url ||
+        latestLaunched.public_url ||
+        latestLaunched.instance_url;
+
+      if (url) window.open(url, "_blank");
+
+      // ✅ STEP 6: AUTO REDIRECT (THIS WAS MISSING)
+      window.location.href = `/lab?user=${userId}`;
+
+    } catch (err) {
+      console.error("Polling error:", err);
+    }
+  }, 1000);
+};
 
   const loadRazorpay = () =>
     new Promise((resolve) => {
@@ -406,56 +463,172 @@ const loaderTimerRef = useRef(null);
     }
   };
 
-  const updateActiveStatus = async (item) => {
-    try {
-      const res = await axios.post(
-        `${API_BASE}/users/update_active/${userId}/`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      return res.data;
-    } catch {
-      notify("Failed to update active status", "error");
-      return null;
-    }
-  };
+  // const updateActiveStatus = async (item) => {
+  //   try {
+  //     const res = await axios.post(
+  //       `${API_BASE}/users/update_active/${userId}/`,
+  //       {},
+  //       { headers: { Authorization: `Bearer ${token}` } }
+  //     );
+  //     return res.data;
+  //   } catch {
+  //     notify("Failed to update active status", "error");
+  //     return null;
+  //   }
+  // };
+
+  
+  const updateActiveStatus = async () => {
+  try {
+    const res = await axios.post(
+      `${API_BASE}/users/update_active/${userId}/`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("update_active API error 👉", error.response);
+    notify(
+      error?.response?.data?.message || "Failed to update active status",
+      "error"
+    );
+    return null;
+  }
+};
+const upgradeSubscription = async (subscriptionId, newPackageId) => {
+  try {
+    const res = await axios.post(
+      `${API_BASE}/users/subscriptions/${subscriptionId}/upgrade/`,
+      {
+        new_package_id: newPackageId, // ✅ curl ke jaisa
+      },
+      {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return res.data;
+  } catch (error) {
+    console.error("upgrade API error 👉", error.response);
+    notify(
+      error?.response?.data?.message || "Subscription upgrade failed",
+      "error"
+    );
+    return null;
+  }
+};
+
+  // const handleUpgrade = async (item) => {
+  //   if (!requireLogin()) return;
+  //   if (upgradeInProgress || isLaunching) return;
+
+  //   const confirmUpgrade = window.confirm("Do you want to upgrade this plan?");
+  //   if (!confirmUpgrade) return;
+
+  //   setUpgradeInProgress(true);
+  //   setIsLaunching(true);
+
+  //   try {
+  //     const updated = await updateActiveStatus(item);
+  //     if (!updated) {
+  //       notify("Update active failed", "error");
+  //       return;
+  //     }
+
+  //     notify("Plan activated successfully!", "success");
+
+  //     const wallet = await checkWallet();
+  //     const remaining = Math.max(0, item.price - wallet);
+
+  //     if (remaining === 0) {
+  //       notify(`₹${item.price} deducted. Upgrading...`, "success");
+  //       await launchSingle(item, "wallet");
+  //       pollForLaunchedInstances();
+  //     } else {
+  //       notify(`Wallet low, paying ₹${remaining} via Razorpay`, "warning");
+  //       await openRazorpay(remaining);
+  //     }
+  //   } catch (err) {
+  //     notify(err?.response?.data?.message || "Upgrade failed", "error");
+  //   } finally {
+  //     setUpgradeInProgress(false);
+  //   }
+  // };
 
   const handleUpgrade = async (item) => {
-    if (!requireLogin()) return;
-    if (upgradeInProgress || isLaunching) return;
+  if (!requireLogin()) return;
+  if (upgradeInProgress || isLaunching) return;
 
-    const confirmUpgrade = window.confirm("Do you want to upgrade this plan?");
-    if (!confirmUpgrade) return;
+  const confirmUpgrade = window.confirm(
+    "Do you want to upgrade this plan?"
+  );
+  if (!confirmUpgrade) return;
 
-    setUpgradeInProgress(true);
-    setIsLaunching(true);
+  setUpgradeInProgress(true);
+  setIsLaunching(true); // 🔥 loader ON
 
-    try {
-      const updated = await updateActiveStatus(item);
-      if (!updated) {
-        notify("Update active failed", "error");
-        return;
-      }
+  try {
+    // 1️⃣ subscription id
+    const subscriptionId =
+      item.subscription?.id || item.subscription?.subscription_id;
 
-      notify("Plan activated successfully!", "success");
-
-      const wallet = await checkWallet();
-      const remaining = Math.max(0, item.price - wallet);
-
-      if (remaining === 0) {
-        notify(`₹${item.price} deducted. Upgrading...`, "success");
-        await launchSingle(item, "wallet");
-        pollForLaunchedInstances();
-      } else {
-        notify(`Wallet low, paying ₹${remaining} via Razorpay`, "warning");
-        await openRazorpay(remaining);
-      }
-    } catch (err) {
-      notify(err?.response?.data?.message || "Upgrade failed", "error");
-    } finally {
-      setUpgradeInProgress(false);
+    if (!subscriptionId) {
+      notify("Subscription ID missing", "error");
+      return;
     }
-  };
+
+    // 2️⃣ new package id
+    const newPackageId = item.planId;
+
+    if (!newPackageId) {
+      notify("Package ID missing", "error");
+      return;
+    }
+
+    // 3️⃣ UPGRADE
+    const upgraded = await upgradeSubscription(
+      subscriptionId,
+      newPackageId
+    );
+
+    if (!upgraded) return;
+
+    notify("Subscription upgraded successfully!", "success");
+
+    // ⭐ IMPORTANT: update local subscription
+    item.subscription = upgraded;
+
+    // 4️⃣ DIRECT INSTANCE LAUNCH (wallet based)
+    notify("Launching instance...", "info");
+
+    await launchSingle(item, "wallet"); // 🔥 direct launch
+
+    // 5️⃣ START POLLING (loader keeps running)
+    pollForLaunchedInstances("wallet");
+
+  } catch (err) {
+    notify(
+      err?.response?.data?.message || "Upgrade failed",
+      "error"
+    );
+  } finally {
+    // ❌ YAHAN loader band NAHI karna
+    // loader polling ke baad band hoga
+    setUpgradeInProgress(false);
+  }
+};
+
+
+
 
   return (
     <>

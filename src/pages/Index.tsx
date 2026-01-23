@@ -1,1025 +1,397 @@
+"use client";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useDispatch, useSelector } from 'react-redux';
-
+import { useSelector } from "react-redux";
+import ReactApexChart from "react-apexcharts";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import "react-perfect-scrollbar/dist/css/styles.css";
-import ReactApexChart from "react-apexcharts";
+
 import Dropdown from "../components/Dropdown";
+import IconHorizontalDots from "../components/Icon/IconHorizontalDots";
+import IconDollarSign from "../components/Icon/IconDollarSign";
+import IconShoppingCart from "../components/Icon/IconShoppingCart";
+import IconArrowLeft from "../components/Icon/IconArrowLeft";
 
-import IconHorizontalDots from '../components/Icon/IconHorizontalDots';
-import IconDollarSign from '../components/Icon/IconDollarSign';
-import IconInbox from '../components/Icon/IconInbox';
-import IconTag from '../components/Icon/IconTag';
-import IconCreditCard from '../components/Icon/IconCreditCard';
-import IconShoppingCart from '../components/Icon/IconShoppingCart';
-import IconArrowLeft from '../components/Icon/IconArrowLeft';
-import IconCashBanknotes from '../components/Icon/IconCashBanknotes';
-import IconUser from '../components/Icon/IconUser';
-import IconNetflix from '../components/Icon/IconNetflix';
-import IconBolt from '../components/Icon/IconBolt';
-import IconCaretDown from '../components/Icon/IconCaretDown';
-import IconPlus from '../components/Icon/IconPlus';
-import IconMultipleForwardRight from '../components/Icon/IconMultipleForwardRight';
-import { useNavigate } from "react-router-dom";
-console.log(import.meta.env.VITE_API_URL);
-const VIT=import.meta.env.VITE_API_URL;
+const VIT = import.meta.env.VITE_API_URL;
 
-interface DashboardProps {
-  userId: string | number;
-}
-
-const Index: React.FC<DashboardProps> = ({ userId }) => {
-        const navigate = useNavigate();
-    
-  const [loading, setLoading] = useState(true);
-  const [counts, setCounts] = useState<number[]>([0, 0]);
-  const [revenueChart, setRevenueChart] = useState<any>({
-    series: [{ name: "Revenue", data: [0, 0] }],
-    options: { chart: { id: "revenue-chart" }, xaxis: { categories: ["Payments", "Instances"] } },
-  });
-    const isDark = useSelector((state: IRootState) => state.themeConfig.theme === 'dark' || state.themeConfig.isDarkMode);
-
+const Index = () => {
+  const isDark = useSelector(
+    (state: any) =>
+      state.themeConfig.theme === "dark" || state.themeConfig.isDarkMode
+  );
 
   const getCookie = (name: string) => {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop()?.split(";").shift();
   };
- const user = JSON.parse(localStorage.getItem("userId") || "{}");
+const [activities, setActivities] = useState<any[]>([]);
+const [orders, setOrders] = useState<any[]>([]);
 
-  const accessToken = getCookie("access");
+  const token = getCookie("access");
 
-  const colors = [
-  'rgba(52,152,219,0.7)',   // Users - blue
-  'rgba(46,204,113,0.7)',   // Support - green
-  'rgba(231,76,60,0.7)',    // Payments - red
-  'rgba(155,89,182,0.7)',   // Instances - purple
-  'rgba(241,196,15,0.7)',   // Feedback - yellow
-  'rgba(230,126,34,0.7)',   // Contact - orange
-];
+  const [loading, setLoading] = useState(true);
+  const [counts, setCounts] = useState<any>({});
 
-// Apna apis array define karo
-const apis = [
-  { url: `${VIT}/api/v1/admin/users/count`, name: 'Users' },
-  { url: `${VIT}/api/v1/admin/support/count`, name: 'Support' },
-  { url: `${VIT}/api/v1/admin/payments/count`, name: 'Payments' },
-  { url: `${VIT}/api/v1/admin/instances/count`, name: 'Instances' },
-  { url: `${VIT}/api/v1/admin/feedback/count`, name: 'Feedback' },
-  { url: `${VIT}/api/v1/admin/contact/count`, name: 'Contact' },
-];
+  /* ================= API CALL (ONE TIME) ================= */
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const headers = { Authorization: `Bearer ${token}` };
 
-// Sabhi API se data fetch karo aur ek array me store karo
+        const [
+          users,
+          support,
+          payments,
+          instances,
+          feedback,
+          contact,
+        ] = await Promise.all([
+          fetch(`${VIT}/api/v1/admin/users/count`, { headers }).then(r => r.json()),
+          fetch(`${VIT}/api/v1/admin/support/count`, { headers }).then(r => r.json()),
+          fetch(`${VIT}/api/v1/admin/payments/count`, { headers }).then(r => r.json()),
+          fetch(`${VIT}/api/v1/admin/instances/count`, { headers }).then(r => r.json()),
+          fetch(`${VIT}/api/v1/admin/feedback/count`, { headers }).then(r => r.json()),
+          fetch(`${VIT}/api/v1/admin/contact/count`, { headers }).then(r => r.json()),
+        ]);
+
+        setCounts({
+          users: users.count || 0,
+          support: support.count || 0,
+          payments: payments.count || 0,
+          instances: instances.count || 0,
+          feedback: feedback.count || 0,
+          contact: contact.count || 0,
+        });
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAll();
+  }, []);
 useEffect(() => {
-  const fetchCounts = async () => {
-    setLoading(true);
-    try {
-      const results = await Promise.all(
-        apis.map(async (api) => {
-          const res = await fetch(api.url, {
-            headers: { Authorization: 'Bearer ' + accessToken },
-          });
-          const data = await res.json();
-          return { name: api.name, count: data.count ?? 0 };
-        })
-      );
-      setCounts(results); // results ek array hai: [{ name: 'Users', count: 5 }, ...]
+  const headers = { Authorization: `Bearer ${token}` };
 
-      // Chart ke liye labels aur data array banao
-      const chartLabels = results.map(item => item.name);
-      const chartData = results.map(item => item.count);
+  // Recent Activities (Users)
+  fetch(`${VIT}/api/v1/admin/users/?page=1`, { headers })
+    .then(res => res.json())
+    .then(data => {
+      const mapped = data.results.map((u: any) => ({
+        text: `${u.username} joined`,
+        time: new Date(u.date_joined).toLocaleTimeString(),
+        status: u.is_active ? 'Completed' : 'Pending',
+        color: u.is_active ? 'bg-success' : 'bg-danger',
+      }));
+      setActivities(mapped.slice(0, 6));
+    });
 
-      // Chart data update karo
-      setRevenueChart({
-        ...revenueChart,
-        series: [{ name: 'Total Count', data: chartData}],
-        options: {
-          ...revenueChart.options,
-          xaxis: { categories: chartLabels },
-          colors: colors,
-        },
-      });
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+  // Recent Orders (Payments)
+  fetch(`${VIT}/api/v1/admin/payments/?page=1`, { headers })
+    .then(res => res.json())
+    .then(data => {
+      setOrders(data.results.slice(0, 5));
+    });
+
+}, []);
+
+  /* ================= MAIN AREA GRAPH ================= */
+  const mainChart = {
+    series: [
+      {
+        name: "Total",
+        data: [
+          counts.users,
+          counts.support,
+          counts.payments,
+          counts.instances,
+          counts.feedback,
+          counts.contact,
+        ],
+      },
+    ],
+    options: {
+      chart: { type: "area", toolbar: false },
+      stroke: { curve: "smooth", width: 3 },
+      dataLabels: { enabled: true },
+      colors: ["#5dade2"],
+      xaxis: {
+        categories: [
+          "Users",
+          "Support",
+          "Payments",
+          "Instances",
+          "Feedback",
+          "Contact",
+        ],
+      },
+    },
   };
-  fetchCounts();
-}, [userId, accessToken]);
 
-
-  const isRtl = false; // adjust according to your theme
- //Sales By Category
-    const salesByCategory: any = {
-        series: [985, 737, 270],
-        options: {
-            chart: {
-                type: 'donut',
-                height: 460,
-                fontFamily: 'Nunito, sans-serif',
-            },
-            dataLabels: {
-                enabled: false,
-            },
-            stroke: {
+  /* ================= SALES BY CATEGORY ================= */
+  const donutChart = {
+    series: [
+      counts.users,
+      counts.payments,
+      counts.instances,
+    ],
+    options: {
+      chart: { type: "donut" },
+      labels: ["Users", "Payments", "Instances"],
+      colors: ["#f39c12", "#6f42c1", "#e74c3c"],
+      legend: { position: "bottom" },
+      plotOptions: {
+        pie: {
+          donut: {
+            size: "65%",
+            labels: {
+              show: true,
+              total: {
                 show: true,
-                width: 25,
-                colors: isDark ? '#0e1726' : '#fff',
+                label: "Total",
+                formatter: () =>
+                  counts.users +
+                  counts.payments +
+                  counts.instances,
+              },
             },
-            colors: isDark ? ['#5c1ac3', '#e2a03f', '#e7515a', '#e2a03f'] : ['#e2a03f', '#5c1ac3', '#e7515a'],
-            legend: {
-                position: 'bottom',
-                horizontalAlign: 'center',
-                fontSize: '14px',
-                markers: {
-                    width: 10,
-                    height: 10,
-                    offsetX: -2,
-                },
-                height: 50,
-                offsetY: 20,
-            },
-            plotOptions: {
-                pie: {
-                    donut: {
-                        size: '65%',
-                        background: 'transparent',
-                        labels: {
-                            show: true,
-                            name: {
-                                show: true,
-                                fontSize: '29px',
-                                offsetY: -10,
-                            },
-                            value: {
-                                show: true,
-                                fontSize: '26px',
-                                color: isDark ? '#bfc9d4' : undefined,
-                                offsetY: 16,
-                                formatter: (val: any) => {
-                                    return val;
-                                },
-                            },
-                            total: {
-                                show: true,
-                                label: 'Total',
-                                color: '#888ea8',
-                                fontSize: '29px',
-                                formatter: (w: any) => {
-                                    return w.globals.seriesTotals.reduce(function (a: any, b: any) {
-                                        return a + b;
-                                    }, 0);
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-            labels: ['Apparel', 'Sports', 'Others'],
-            states: {
-                hover: {
-                    filter: {
-                        type: 'none',
-                        value: 0.15,
-                    },
-                },
-                active: {
-                    filter: {
-                        type: 'none',
-                        value: 0.15,
-                    },
-                },
-            },
+          },
         },
-    };
+      },
+    },
+  };
 
-    //Daily Sales
-    const dailySales: any = {
-        series: [
-            {
-                name: 'Sales',
-                data: [44, 55, 41, 67, 22, 43, 21],
-            },
-            {
-                name: 'Last Week',
-                data: [13, 23, 20, 8, 13, 27, 33],
-            },
+  /* ================= DAILY SALES ================= */
+  const dailySales = {
+    series: [
+      {
+        name: "Sales",
+        data: [
+          counts.users,
+          counts.support,
+          counts.payments,
+          counts.instances,
+          counts.feedback,
+          counts.contact,
+          counts.users,
         ],
-        options: {
-            chart: {
-                height: 160,
-                type: 'bar',
-                fontFamily: 'Nunito, sans-serif',
-                toolbar: {
-                    show: false,
-                },
-                stacked: true,
-                stackType: '100%',
-            },
-            dataLabels: {
-                enabled: false,
-            },
-            stroke: {
-                show: true,
-                width: 1,
-            },
-            colors: ['#e2a03f', '#e0e6ed'],
-            responsive: [
-                {
-                    breakpoint: 480,
-                    options: {
-                        legend: {
-                            position: 'bottom',
-                            offsetX: -10,
-                            offsetY: 0,
-                        },
-                    },
-                },
-            ],
-            xaxis: {
-                labels: {
-                    show: false,
-                },
-                categories: ['Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat'],
-            },
-            yaxis: {
-                show: false,
-            },
-            fill: {
-                opacity: 1,
-            },
-            plotOptions: {
-                bar: {
-                    horizontal: false,
-                    columnWidth: '25%',
-                },
-            },
-            legend: {
-                show: false,
-            },
-            grid: {
-                show: false,
-                xaxis: {
-                    lines: {
-                        show: false,
-                    },
-                },
-                padding: {
-                    top: 10,
-                    right: -20,
-                    bottom: -20,
-                    left: -20,
-                },
-            },
-        },
-    };
+      },
+    ],
+    options: {
+      chart: { type: "bar", stacked: true, toolbar: false },
+      colors: ["#e2a03f"],
+      xaxis: {
+        categories: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+      },
+    },
+  };
 
-    //Total Orders
-    const totalOrders: any = {
-        series: [
-            {
-                name: 'Sales',
-                data: [28, 40, 36, 52, 38, 60, 38, 52, 36, 40],
-            },
+  /* ================= TOTAL ORDERS ================= */
+  const totalOrders = {
+    series: [
+      {
+        data: [
+          counts.users,
+          counts.payments,
+          counts.instances,
+          counts.feedback,
+          counts.contact,
         ],
-        options: {
-            chart: {
-                height: 290,
-                type: 'area',
-                fontFamily: 'Nunito, sans-serif',
-                sparkline: {
-                    enabled: true,
-                },
-            },
-            stroke: {
-                curve: 'smooth',
-                width: 2,
-            },
-            colors: isDark ? ['#00ab55'] : ['#00ab55'],
-            labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-            yaxis: {
-                min: 0,
-                show: false,
-            },
-            grid: {
-                padding: {
-                    top: 125,
-                    right: 0,
-                    bottom: 0,
-                    left: 0,
-                },
-            },
-            fill: {
-                opacity: 1,
-                type: 'gradient',
-                gradient: {
-                    type: 'vertical',
-                    shadeIntensity: 1,
-                    inverseColors: !1,
-                    opacityFrom: 0.3,
-                    opacityTo: 0.05,
-                    stops: [100, 100],
-                },
-            },
-            tooltip: {
-                x: {
-                    show: false,
-                },
-            },
-        },
-    };
+      },
+    ],
+    options: {
+      chart: { type: "area", sparkline: { enabled: true } },
+      stroke: { curve: "smooth" },
+      colors: ["#00ab55"],
+    },
+  };
 
   return (
-   <div>
-            <ul className="flex space-x-2 rtl:space-x-reverse">
-                <li>
-                    <Link to="/" className="text-primary hover:underline">
-                        Dashboard
-                    </Link>
-                </li>
-                {/*<li className="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
-                    <span>User Dashboard</span>
-                </li>*/}
-            </ul>
+    <div>
+      <ul className="flex space-x-2">
+        <li>
+          <Link to="/" className="text-primary">
+            Dashboard
+          </Link>
+        </li>
+      </ul>
 
-            <div className="pt-5">
-                <div className="grid xl:grid-cols-3 gap-6 mb-6">
-                    <div className="panel h-full xl:col-span-2">
-                        <div className="flex items-center justify-between dark:text-white-light mb-5">
-                            <h5 className="font-semibold text-lg"></h5>
-                            <div className="dropdown">
-                                <Dropdown
-                                    offset={[0, 1]}
-                                    placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
-                                    button={<IconHorizontalDots className="text-black/70 dark:text-white/70 hover:!text-primary" />}
-                                >
-                                    <ul>
-                                        <li>
-                                            <button type="button">Weekly</button>
-                                        </li>
-                                        <li>
-                                            <button type="button">Monthly</button>
-                                        </li>
-                                        <li>
-                                            <button type="button">Yearly</button>
-                                        </li>
-                                    </ul>
-                                </Dropdown>
-                            </div>
-                        </div>
-                        {/*<p className="text-lg dark:text-white-light/90">
-                            Total Profit <span className="text-primary ml-2">$10,840</span>
-                        </p>*/}
-                        <div className="relative">
-                            <div className="bg-white dark:bg-black rounded-lg overflow-hidden">
-                                {loading ? (
-                                    <div className="min-h-[325px] grid place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] ">
-                                        <span className="animate-spin border-2 border-black dark:border-white !border-l-transparent  rounded-full w-5 h-5 inline-flex"></span>
-                                    </div>
-                                ) : (
-                                    <ReactApexChart series={revenueChart.series} options={revenueChart.options} type="area" height={325} />
-                                )}
-                            </div>
-                        </div>
-                    </div>
+      <div className="pt-5">
+        {/* ================= TOP GRAPH ================= */}
+        <div className="grid xl:grid-cols-3 gap-6 mb-6">
+          <div className="panel xl:col-span-2">
+            {loading ? (
+              <div className="h-[325px] grid place-content-center">
+                <span className="animate-spin border-2 rounded-full w-6 h-6"></span>
+              </div>
+            ) : (
+              <ReactApexChart
+                series={mainChart.series}
+                options={mainChart.options}
+                type="area"
+                height={325}
+              />
+            )}
+          </div>
 
-                    <div className="panel h-full">
-                        <div className="flex items-center mb-5">
-                            <h5 className="font-semibold text-lg dark:text-white-light">Sales By Category</h5>
-                        </div>
-                        <div>
-                            <div className="bg-white dark:bg-black rounded-lg overflow-hidden">
-                                {loading ? (
-                                    <div className="min-h-[325px] grid place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] ">
-                                        <span className="animate-spin border-2 border-black dark:border-white !border-l-transparent  rounded-full w-5 h-5 inline-flex"></span>
-                                    </div>
-                                ) : (
-                                    <ReactApexChart series={salesByCategory.series} options={salesByCategory.options} type="donut" height={460} />
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+          <div className="panel">
+            <h5 className="font-semibold mb-3">Sales By Orders</h5>
+            {!loading && (
+              <ReactApexChart
+                series={donutChart.series}
+                options={donutChart.options}
+                type="donut"
+                height={360}
+              />
+            )}
+          </div>
+        </div>
 
-                <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
-                    <div className="panel h-full sm:col-span-2 xl:col-span-1">
-                        <div className="flex items-center mb-5">
-                            <h5 className="font-semibold text-lg dark:text-white-light">
-                                Daily Sales
-                                <span className="block text-white-dark text-sm font-normal">Go to columns for details.</span>
-                            </h5>
-                            <div className="ltr:ml-auto rtl:mr-auto relative">
-                                <div className="w-11 h-11 text-warning bg-[#ffeccb] dark:bg-warning dark:text-[#ffeccb] grid place-content-center rounded-full">
-                                    <IconDollarSign />
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <div className="bg-white dark:bg-black rounded-lg overflow-hidden">
-                                {loading ? (
-                                    <div className="min-h-[325px] grid place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] ">
-                                        <span className="animate-spin border-2 border-black dark:border-white !border-l-transparent  rounded-full w-5 h-5 inline-flex"></span>
-                                    </div>
-                                ) : (
-                                    <ReactApexChart series={dailySales.series} options={dailySales.options} type="bar" height={160} />
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                    <div className="panel h-full">
-                        <div className="flex items-center justify-between dark:text-white-light mb-5">
-                            <h5 className="font-semibold text-lg">Summary</h5>
-                            <div className="dropdown">
-                                <Dropdown
-                                    placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
-                                    button={<IconHorizontalDots className="w-5 h-5 text-black/70 dark:text-white/70 hover:!text-primary" />}
-                                >
-                                    <ul>
-                                        <li>
-                                            <button type="button">View Report</button>
-                                        </li>
-                                        <li>
-                                            <button type="button">Edit Report</button>
-                                        </li>
-                                        <li>
-                                            <button type="button">Mark as Done</button>
-                                        </li>
-                                    </ul>
-                                </Dropdown>
-                            </div>
-                        </div>
-                        <div className="space-y-9">
-                            <div className="flex items-center">
-                                <div className="w-9 h-9 ltr:mr-3 rtl:ml-3">
-                                    <div className="bg-secondary-light dark:bg-secondary text-secondary dark:text-secondary-light  rounded-full w-9 h-9 grid place-content-center">
-                                        <IconInbox />
-                                    </div>
-                                </div>
-                                <div className="flex-1">
-                                    <div className="flex font-semibold text-white-dark mb-2">
-                                        <h6>Income</h6>
-                                        <p className="ltr:ml-auto rtl:mr-auto">$92,600</p>
-                                    </div>
-                                    <div className="rounded-full h-2 bg-dark-light dark:bg-[#1b2e4b] shadow">
-                                        <div className="bg-gradient-to-r from-[#7579ff] to-[#b224ef] w-11/12 h-full rounded-full"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex items-center">
-                                <div className="w-9 h-9 ltr:mr-3 rtl:ml-3">
-                                    <div className="bg-success-light dark:bg-success text-success dark:text-success-light rounded-full w-9 h-9 grid place-content-center">
-                                        <IconTag />
-                                    </div>
-                                </div>
-                                <div className="flex-1">
-                                    <div className="flex font-semibold text-white-dark mb-2">
-                                        <h6>Profit</h6>
-                                        <p className="ltr:ml-auto rtl:mr-auto">$37,515</p>
-                                    </div>
-                                    <div className="w-full rounded-full h-2 bg-dark-light dark:bg-[#1b2e4b] shadow">
-                                        <div className="bg-gradient-to-r from-[#3cba92] to-[#0ba360] w-full h-full rounded-full" style={{ width: '65%' }}></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex items-center">
-                                <div className="w-9 h-9 ltr:mr-3 rtl:ml-3">
-                                    <div className="bg-warning-light dark:bg-warning text-warning dark:text-warning-light rounded-full w-9 h-9 grid place-content-center">
-                                        <IconCreditCard />
-                                    </div>
-                                </div>
-                                <div className="flex-1">
-                                    <div className="flex font-semibold text-white-dark mb-2">
-                                        <h6>Expenses</h6>
-                                        <p className="ltr:ml-auto rtl:mr-auto">$55,085</p>
-                                    </div>
-                                    <div className="w-full rounded-full h-2 bg-dark-light dark:bg-[#1b2e4b] shadow">
-                                        <div className="bg-gradient-to-r from-[#f09819] to-[#ff5858] w-full h-full rounded-full" style={{ width: '80%' }}></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="panel h-full p-0">
-                        <div className="flex items-center justify-between w-full p-5 absolute">
-                            <div className="relative">
-                                <div className="text-success dark:text-success-light bg-success-light dark:bg-success w-11 h-11 rounded-lg flex items-center justify-center">
-                                    <IconShoppingCart />
-                                </div>
-                            </div>
-                            <h5 className="font-semibold text-2xl ltr:text-right rtl:text-left dark:text-white-light">
-                                3,192
-                                <span className="block text-sm font-normal">Total Orders</span>
-                            </h5>
-                        </div>
-                        <div className="bg-transparent rounded-lg overflow-hidden">
-                            {loading ? (
-                                <div className="min-h-[325px] grid place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] ">
-                                    <span className="animate-spin border-2 border-black dark:border-white !border-l-transparent  rounded-full w-5 h-5 inline-flex"></span>
-                                </div>
-                            ) : (
-                                <ReactApexChart series={totalOrders.series} options={totalOrders.options} type="area" height={290} />
-                            )}
-                        </div>
-                    </div>
-                </div>
-                <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
-                    <div className="panel h-full sm:col-span-2 xl:col-span-1 pb-0">
-                        <h5 className="font-semibold text-lg dark:text-white-light mb-5">Recent Activities</h5>
-                        <PerfectScrollbar className="relative h-[290px] ltr:pr-3 rtl:pl-3 ltr:-mr-3 rtl:-ml-3 mb-4">
-                            <div className="text-sm cursor-pointer">
-                                <div className="flex items-center py-1.5 relative group">
-                                    <div className="bg-primary w-1.5 h-1.5 rounded-full ltr:mr-1 rtl:ml-1.5"></div>
-                                    <div className="flex-1">Updated Server Logs</div>
-                                    <div className="ltr:ml-auto rtl:mr-auto text-xs text-white-dark dark:text-gray-500">Just Now</div>
-
-                                    <span className="badge badge-outline-primary absolute ltr:right-0 rtl:left-0 text-xs bg-primary-light dark:bg-black opacity-0 group-hover:opacity-100">
-                                        Pending
-                                    </span>
-                                </div>
-                                <div className="flex items-center py-1.5 relative group">
-                                    <div className="bg-success w-1.5 h-1.5 rounded-full ltr:mr-1 rtl:ml-1.5"></div>
-                                    <div className="flex-1">Send Mail to HR and Admin</div>
-                                    <div className="ltr:ml-auto rtl:mr-auto text-xs text-white-dark dark:text-gray-500">2 min ago</div>
-
-                                    <span className="badge badge-outline-success absolute ltr:right-0 rtl:left-0 text-xs bg-success-light dark:bg-black opacity-0 group-hover:opacity-100">
-                                        Completed
-                                    </span>
-                                </div>
-                                <div className="flex items-center py-1.5 relative group">
-                                    <div className="bg-danger w-1.5 h-1.5 rounded-full ltr:mr-1 rtl:ml-1.5"></div>
-                                    <div className="flex-1">Backup Files EOD</div>
-                                    <div className="ltr:ml-auto rtl:mr-auto text-xs text-white-dark dark:text-gray-500">14:00</div>
-
-                                    <span className="badge badge-outline-danger absolute ltr:right-0 rtl:left-0 text-xs bg-danger-light dark:bg-black opacity-0 group-hover:opacity-100">Pending</span>
-                                </div>
-                                <div className="flex items-center py-1.5 relative group">
-                                    <div className="bg-black w-1.5 h-1.5 rounded-full ltr:mr-1 rtl:ml-1.5"></div>
-                                    <div className="flex-1">Collect documents from Sara</div>
-                                    <div className="ltr:ml-auto rtl:mr-auto text-xs text-white-dark dark:text-gray-500">16:00</div>
-
-                                    <span className="badge badge-outline-dark absolute ltr:right-0 rtl:left-0 text-xs bg-dark-light dark:bg-black opacity-0 group-hover:opacity-100">Completed</span>
-                                </div>
-                                <div className="flex items-center py-1.5 relative group">
-                                    <div className="bg-warning w-1.5 h-1.5 rounded-full ltr:mr-1 rtl:ml-1.5"></div>
-                                    <div className="flex-1">Conference call with Marketing Manager.</div>
-                                    <div className="ltr:ml-auto rtl:mr-auto text-xs text-white-dark dark:text-gray-500">17:00</div>
-
-                                    <span className="badge badge-outline-warning absolute ltr:right-0 rtl:left-0 text-xs bg-warning-light dark:bg-black opacity-0 group-hover:opacity-100">
-                                        In progress
-                                    </span>
-                                </div>
-                                <div className="flex items-center py-1.5 relative group">
-                                    <div className="bg-info w-1.5 h-1.5 rounded-full ltr:mr-1 rtl:ml-1.5"></div>
-                                    <div className="flex-1">Rebooted Server</div>
-                                    <div className="ltr:ml-auto rtl:mr-auto text-xs text-white-dark dark:text-gray-500">17:00</div>
-
-                                    <span className="badge badge-outline-info absolute ltr:right-0 rtl:left-0 text-xs bg-info-light dark:bg-black opacity-0 group-hover:opacity-100">Completed</span>
-                                </div>
-                                <div className="flex items-center py-1.5 relative group">
-                                    <div className="bg-secondary w-1.5 h-1.5 rounded-full ltr:mr-1 rtl:ml-1.5"></div>
-                                    <div className="flex-1">Send contract details to Freelancer</div>
-                                    <div className="ltr:ml-auto rtl:mr-auto text-xs text-white-dark dark:text-gray-500">18:00</div>
-
-                                    <span className="badge badge-outline-secondary absolute ltr:right-0 rtl:left-0 text-xs bg-secondary-light dark:bg-black opacity-0 group-hover:opacity-100">
-                                        Pending
-                                    </span>
-                                </div>
-                                <div className="flex items-center py-1.5 relative group">
-                                    <div className="bg-primary w-1.5 h-1.5 rounded-full ltr:mr-1 rtl:ml-1.5"></div>
-                                    <div className="flex-1">Updated Server Logs</div>
-                                    <div className="ltr:ml-auto rtl:mr-auto text-xs text-white-dark dark:text-gray-500">Just Now</div>
-
-                                    <span className="badge badge-outline-primary absolute ltr:right-0 rtl:left-0 text-xs bg-primary-light dark:bg-black opacity-0 group-hover:opacity-100">
-                                        Pending
-                                    </span>
-                                </div>
-                                <div className="flex items-center py-1.5 relative group">
-                                    <div className="bg-success w-1.5 h-1.5 rounded-full ltr:mr-1 rtl:ml-1.5"></div>
-                                    <div className="flex-1">Send Mail to HR and Admin</div>
-                                    <div className="ltr:ml-auto rtl:mr-auto text-xs text-white-dark dark:text-gray-500">2 min ago</div>
-
-                                    <span className="badge badge-outline-success absolute ltr:right-0 rtl:left-0 text-xs bg-success-light dark:bg-black opacity-0 group-hover:opacity-100">
-                                        Completed
-                                    </span>
-                                </div>
-                                <div className="flex items-center py-1.5 relative group">
-                                    <div className="bg-danger w-1.5 h-1.5 rounded-full ltr:mr-1 rtl:ml-1.5"></div>
-                                    <div className="flex-1">Backup Files EOD</div>
-                                    <div className="ltr:ml-auto rtl:mr-auto text-xs text-white-dark dark:text-gray-500">14:00</div>
-
-                                    <span className="badge badge-outline-danger absolute ltr:right-0 rtl:left-0 text-xs bg-danger-light dark:bg-black opacity-0 group-hover:opacity-100">Pending</span>
-                                </div>
-                                <div className="flex items-center py-1.5 relative group">
-                                    <div className="bg-black w-1.5 h-1.5 rounded-full ltr:mr-1 rtl:ml-1.5"></div>
-                                    <div className="flex-1">Collect documents from Sara</div>
-                                    <div className="ltr:ml-auto rtl:mr-auto text-xs text-white-dark dark:text-gray-500">16:00</div>
-
-                                    <span className="badge badge-outline-dark absolute ltr:right-0 rtl:left-0 text-xs bg-dark-light dark:bg-black opacity-0 group-hover:opacity-100">Completed</span>
-                                </div>
-                                <div className="flex items-center py-1.5 relative group">
-                                    <div className="bg-warning w-1.5 h-1.5 rounded-full ltr:mr-1 rtl:ml-1.5"></div>
-                                    <div className="flex-1">Conference call with Marketing Manager.</div>
-                                    <div className="ltr:ml-auto rtl:mr-auto text-xs text-white-dark dark:text-gray-500">17:00</div>
-
-                                    <span className="badge badge-outline-warning absolute ltr:right-0 rtl:left-0 text-xs bg-warning-light dark:bg-black opacity-0 group-hover:opacity-100">
-                                        In progress
-                                    </span>
-                                </div>
-                                <div className="flex items-center py-1.5 relative group">
-                                    <div className="bg-info w-1.5 h-1.5 rounded-full ltr:mr-1 rtl:ml-1.5"></div>
-                                    <div className="flex-1">Rebooted Server</div>
-                                    <div className="ltr:ml-auto rtl:mr-auto text-xs text-white-dark dark:text-gray-500">17:00</div>
-
-                                    <span className="badge badge-outline-info absolute ltr:right-0 rtl:left-0 text-xs bg-info-light dark:bg-black opacity-0 group-hover:opacity-100">Completed</span>
-                                </div>
-                                <div className="flex items-center py-1.5 relative group">
-                                    <div className="bg-secondary w-1.5 h-1.5 rounded-full ltr:mr-1 rtl:ml-1.5"></div>
-                                    <div className="flex-1">Send contract details to Freelancer</div>
-                                    <div className="ltr:ml-auto rtl:mr-auto text-xs text-white-dark dark:text-gray-500">18:00</div>
-
-                                    <span className="badge badge-outline-secondary absolute ltr:right-0 rtl:left-0 text-xs bg-secondary-light dark:bg-black opacity-0 group-hover:opacity-100">
-                                        Pending
-                                    </span>
-                                </div>
-                            </div>
-                        </PerfectScrollbar>
-                        <div className="border-t border-white-light dark:border-white/10">
-                            <Link to="/" className=" font-semibold group hover:text-primary p-4 flex items-center justify-center group">
-                                View All
-                                <IconArrowLeft className="rtl:rotate-180 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition duration-300 ltr:ml-1 rtl:mr-1" />
-                            </Link>
-                        </div>
-                    </div>
-                    <div className="panel h-full">
-                        <div className="flex items-center justify-between dark:text-white-light mb-5">
-                            <h5 className="font-semibold text-lg">Transactions</h5>
-                            <div className="dropdown">
-                                <Dropdown placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`} button={<IconHorizontalDots className="text-black/70 dark:text-white/70 hover:!text-primary" />}>
-                                    <ul>
-                                        <li>
-                                            <button type="button">View Report</button>
-                                        </li>
-                                        <li>
-                                            <button type="button">Edit Report</button>
-                                        </li>
-                                        <li>
-                                            <button type="button">Mark as Done</button>
-                                        </li>
-                                    </ul>
-                                </Dropdown>
-                            </div>
-                        </div>
-                        <div>
-                            <div className="space-y-6">
-                                <div className="flex">
-                                    <span className="shrink-0 grid place-content-center text-base w-9 h-9 rounded-md bg-success-light dark:bg-success text-success dark:text-success-light">SP</span>
-                                    <div className="px-3 flex-1">
-                                        <div>Shaun Park</div>
-                                        <div className="text-xs text-white-dark dark:text-gray-500">10 Jan 1:00PM</div>
-                                    </div>
-                                    <span className="text-success text-base px-1 ltr:ml-auto rtl:mr-auto whitespace-pre">+$36.11</span>
-                                </div>
-                                <div className="flex">
-                                    <span className="shrink-0 grid place-content-center w-9 h-9 rounded-md bg-warning-light dark:bg-warning text-warning dark:text-warning-light">
-                                        <IconCashBanknotes />
-                                    </span>
-                                    <div className="px-3 flex-1">
-                                        <div>Cash withdrawal</div>
-                                        <div className="text-xs text-white-dark dark:text-gray-500">04 Jan 1:00PM</div>
-                                    </div>
-                                    <span className="text-danger text-base px-1 ltr:ml-auto rtl:mr-auto whitespace-pre">-$16.44</span>
-                                </div>
-                                <div className="flex">
-                                    <span className="shrink-0 grid place-content-center w-9 h-9 rounded-md bg-danger-light dark:bg-danger text-danger dark:text-danger-light">
-                                        <IconUser className="w-6 h-6" />
-                                    </span>
-                                    <div className="px-3 flex-1">
-                                        <div>Amy Diaz</div>
-                                        <div className="text-xs text-white-dark dark:text-gray-500">10 Jan 1:00PM</div>
-                                    </div>
-                                    <span className="text-success text-base px-1 ltr:ml-auto rtl:mr-auto whitespace-pre">+$66.44</span>
-                                </div>
-                                <div className="flex">
-                                    <span className="shrink-0 grid place-content-center w-9 h-9 rounded-md bg-secondary-light dark:bg-secondary text-secondary dark:text-secondary-light">
-                                        <IconNetflix />
-                                    </span>
-                                    <div className="px-3 flex-1">
-                                        <div>Netflix</div>
-                                        <div className="text-xs text-white-dark dark:text-gray-500">04 Jan 1:00PM</div>
-                                    </div>
-                                    <span className="text-danger text-base px-1 ltr:ml-auto rtl:mr-auto whitespace-pre">-$32.00</span>
-                                </div>
-                                <div className="flex">
-                                    <span className="shrink-0 grid place-content-center text-base w-9 h-9 rounded-md bg-info-light dark:bg-info text-info dark:text-info-light">DA</span>
-                                    <div className="px-3 flex-1">
-                                        <div>Daisy Anderson</div>
-                                        <div className="text-xs text-white-dark dark:text-gray-500">10 Jan 1:00PM</div>
-                                    </div>
-                                    <span className="text-success text-base px-1 ltr:ml-auto rtl:mr-auto whitespace-pre">+$10.08</span>
-                                </div>
-                                <div className="flex">
-                                    <span className="shrink-0 grid place-content-center w-9 h-9 rounded-md bg-primary-light dark:bg-primary text-primary dark:text-primary-light">
-                                        <IconBolt />
-                                    </span>
-                                    <div className="px-3 flex-1">
-                                        <div>Electricity Bill</div>
-                                        <div className="text-xs text-white-dark dark:text-gray-500">04 Jan 1:00PM</div>
-                                    </div>
-                                    <span className="text-danger text-base px-1 ltr:ml-auto rtl:mr-auto whitespace-pre">-$22.00</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="panel h-full p-0 border-0 overflow-hidden">
-                        <div className="p-6 bg-gradient-to-r from-[#4361ee] to-[#160f6b] min-h-[190px]">
-                            <div className="flex justify-between items-center mb-6">
-                                <div className="bg-black/50 rounded-full p-1 ltr:pr-3 rtl:pl-3 flex items-center text-white font-semibold">
-                                    <img className="w-8 h-8 rounded-full border-2 border-white/50 block object-cover ltr:mr-1 rtl:ml-1" src="/assets/images/profile-34.jpeg" alt="avatar" />
-                                    Alan Green
-                                </div>
-                                <button type="button" className="ltr:ml-auto rtl:mr-auto flex items-center justify-between w-9 h-9 bg-black text-white rounded-md hover:opacity-80">
-                                    <IconPlus className="w-6 h-6 m-auto" />
-                                </button>
-                            </div>
-                            <div className="text-white flex justify-between items-center">
-                                <p className="text-xl">Wallet Balance</p>
-                                <h5 className="ltr:ml-auto rtl:mr-auto text-2xl">
-                                    <span className="text-white-light">$</span>2953
-                                </h5>
-                            </div>
-                        </div>
-                        <div className="-mt-12 px-8 grid grid-cols-2 gap-2">
-                            <div className="bg-white rounded-md shadow px-4 py-2.5 dark:bg-[#060818]">
-                                <span className="flex justify-between items-center mb-4 dark:text-white">
-                                    Received
-                                    <IconCaretDown className="w-4 h-4 text-success rotate-180" />
-                                </span>
-                                <div className="btn w-full  py-1 text-base shadow-none border-0 bg-[#ebedf2] dark:bg-black text-[#515365] dark:text-[#bfc9d4]">$97.99</div>
-                            </div>
-                            <div className="bg-white rounded-md shadow px-4 py-2.5 dark:bg-[#060818]">
-                                <span className="flex justify-between items-center mb-4 dark:text-white">
-                                    Spent
-                                    <IconCaretDown className="w-4 h-4 text-danger" />
-                                </span>
-                                <div className="btn w-full  py-1 text-base shadow-none border-0 bg-[#ebedf2] dark:bg-black text-[#515365] dark:text-[#bfc9d4]">$53.00</div>
-                            </div>
-                        </div>
-                        <div className="p-5">
-                            <div className="mb-5">
-                                <span className="bg-[#1b2e4b] text-white text-xs rounded-full px-4 py-1.5 before:bg-white before:w-1.5 before:h-1.5 before:rounded-full ltr:before:mr-2 rtl:before:ml-2 before:inline-block">
-                                    Pending
-                                </span>
-                            </div>
-                            <div className="mb-5 space-y-1">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-[#515365] font-semibold">Netflix</p>
-                                    <p className="text-base">
-                                        <span>$</span> <span className="font-semibold">13.85</span>
-                                    </p>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <p className="text-[#515365] font-semibold">BlueHost VPN</p>
-                                    <p className="text-base">
-                                        <span>$</span> <span className="font-semibold ">15.66</span>
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="text-center px-2 flex justify-around">
-                                <button type="button" className="btn btn-secondary ltr:mr-2 rtl:ml-2">
-                                    View Details
-                                </button>
-                                <button type="button" className="btn btn-success">
-                                    Pay Now $29.51
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid lg:grid-cols-2 grid-cols-1 gap-6">
-                    <div className="panel h-full w-full">
-                        <div className="flex items-center justify-between mb-5">
-                            <h5 className="font-semibold text-lg dark:text-white-light">Recent Orders</h5>
-                        </div>
-                        <div className="table-responsive">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th className="ltr:rounded-l-md rtl:rounded-r-md">Customer</th>
-                                        <th>Product</th>
-                                        <th>Invoice</th>
-                                        <th>Price</th>
-                                        <th className="ltr:rounded-r-md rtl:rounded-l-md">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr className="text-white-dark hover:text-black dark:hover:text-white-light/90 group">
-                                        <td className="min-w-[150px] text-black dark:text-white">
-                                            <div className="flex items-center">
-                                                <img className="w-8 h-8 rounded-md ltr:mr-3 rtl:ml-3 object-cover" src="/assets/images/profile-6.jpeg" alt="avatar" />
-                                                <span className="whitespace-nowrap">Luke Ivory</span>
-                                            </div>
-                                        </td>
-                                        <td className="text-primary">Headphone</td>
-                                        <td>
-                                            <Link to="/apps/invoice/preview">#46894</Link>
-                                        </td>
-                                        <td>$56.07</td>
-                                        <td>
-                                            <span className="badge bg-success shadow-md dark:group-hover:bg-transparent">Paid</span>
-                                        </td>
-                                    </tr>
-                                    <tr className="text-white-dark hover:text-black dark:hover:text-white-light/90 group">
-                                        <td className="text-black dark:text-white">
-                                            <div className="flex items-center">
-                                                <img className="w-8 h-8 rounded-md ltr:mr-3 rtl:ml-3 object-cover" src="/assets/images/profile-7.jpeg" alt="avatar" />
-                                                <span className="whitespace-nowrap">Andy King</span>
-                                            </div>
-                                        </td>
-                                        <td className="text-info">Nike Sport</td>
-                                        <td>
-                                            <Link to="/apps/invoice/preview">#76894</Link>
-                                        </td>
-                                        <td>$126.04</td>
-                                        <td>
-                                            <span className="badge bg-secondary shadow-md dark:group-hover:bg-transparent">Shipped</span>
-                                        </td>
-                                    </tr>
-                                    <tr className="text-white-dark hover:text-black dark:hover:text-white-light/90 group">
-                                        <td className="text-black dark:text-white">
-                                            <div className="flex items-center">
-                                                <img className="w-8 h-8 rounded-md ltr:mr-3 rtl:ml-3 object-cover" src="/assets/images/profile-8.jpeg" alt="avatar" />
-                                                <span className="whitespace-nowrap">Laurie Fox</span>
-                                            </div>
-                                        </td>
-                                        <td className="text-warning">Sunglasses</td>
-                                        <td>
-                                            <Link to="/apps/invoice/preview">#66894</Link>
-                                        </td>
-                                        <td>$56.07</td>
-                                        <td>
-                                            <span className="badge bg-success shadow-md dark:group-hover:bg-transparent">Paid</span>
-                                        </td>
-                                    </tr>
-                                    <tr className="text-white-dark hover:text-black dark:hover:text-white-light/90 group">
-                                        <td className="text-black dark:text-white">
-                                            <div className="flex items-center">
-                                                <img className="w-8 h-8 rounded-md ltr:mr-3 rtl:ml-3 object-cover" src="/assets/images/profile-9.jpeg" alt="avatar" />
-                                                <span className="whitespace-nowrap">Ryan Collins</span>
-                                            </div>
-                                        </td>
-                                        <td className="text-danger">Sport</td>
-                                        <td>
-                                            <Link to="/apps/invoice/preview">#75844</Link>
-                                        </td>
-                                        <td>$110.00</td>
-                                        <td>
-                                            <span className="badge bg-secondary shadow-md dark:group-hover:bg-transparent">Shipped</span>
-                                        </td>
-                                    </tr>
-                                    <tr className="text-white-dark hover:text-black dark:hover:text-white-light/90 group">
-                                        <td className="text-black dark:text-white">
-                                            <div className="flex items-center">
-                                                <img className="w-8 h-8 rounded-md ltr:mr-3 rtl:ml-3 object-cover" src="/assets/images/profile-10.jpeg" alt="avatar" />
-                                                <span className="whitespace-nowrap">Irene Collins</span>
-                                            </div>
-                                        </td>
-                                        <td className="text-secondary">Speakers</td>
-                                        <td>
-                                            <Link to="/apps/invoice/preview">#46894</Link>
-                                        </td>
-                                        <td>$56.07</td>
-                                        <td>
-                                            <span className="badge bg-success shadow-md dark:group-hover:bg-transparent">Paid</span>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div className="panel h-full w-full">
-                        <div className="flex items-center justify-between mb-5">
-                            <h5 className="font-semibold text-lg dark:text-white-light">Top Selling Product</h5>
-                        </div>
-                        <div className="table-responsive">
-                            <table>
-                                <thead>
-                                    <tr className="border-b-0">
-                                        <th className="ltr:rounded-l-md rtl:rounded-r-md">Product</th>
-                                        <th>Price</th>
-                                        <th>Discount</th>
-                                        <th>Sold</th>
-                                        <th className="ltr:rounded-r-md rtl:rounded-l-md">Source</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr className="text-white-dark hover:text-black dark:hover:text-white-light/90 group">
-                                        <td className="min-w-[150px] text-black dark:text-white">
-                                            <div className="flex">
-                                                <img className="w-8 h-8 rounded-md ltr:mr-3 rtl:ml-3 object-cover" src="/assets/images/product-headphones.jpg" alt="avatar" />
-                                                <p className="whitespace-nowrap">
-                                                    Headphone
-                                                    <span className="text-primary block text-xs">Digital</span>
-                                                </p>
-                                            </div>
-                                        </td>
-                                        <td>$168.09</td>
-                                        <td>$60.09</td>
-                                        <td>170</td>
-                                        <td>
-                                            <Link className="text-danger flex items-center" to="/">
-                                                <IconMultipleForwardRight className="rtl:rotate-180 ltr:mr-1 rtl:ml-1" />
-                                                Direct
-                                            </Link>
-                                        </td>
-                                    </tr>
-                                    <tr className="text-white-dark hover:text-black dark:hover:text-white-light/90 group">
-                                        <td className="text-black dark:text-white">
-                                            <div className="flex">
-                                                <img className="w-8 h-8 rounded-md ltr:mr-3 rtl:ml-3 object-cover" src="/assets/images/product-shoes.jpg" alt="avatar" />
-                                                <p className="whitespace-nowrap">
-                                                    Shoes <span className="text-warning block text-xs">Faishon</span>
-                                                </p>
-                                            </div>
-                                        </td>
-                                        <td>$126.04</td>
-                                        <td>$47.09</td>
-                                        <td>130</td>
-                                        <td>
-                                            <Link className="text-success flex items-center" to="/">
-                                                <IconMultipleForwardRight className="rtl:rotate-180 ltr:mr-1 rtl:ml-1" />
-                                                Google
-                                            </Link>
-                                        </td>
-                                    </tr>
-                                    <tr className="text-white-dark hover:text-black dark:hover:text-white-light/90 group">
-                                        <td className="text-black dark:text-white">
-                                            <div className="flex">
-                                                <img className="w-8 h-8 rounded-md ltr:mr-3 rtl:ml-3 object-cover" src="/assets/images/product-watch.jpg" alt="avatar" />
-                                                <p className="whitespace-nowrap">
-                                                    Watch <span className="text-danger block text-xs">Accessories</span>
-                                                </p>
-                                            </div>
-                                        </td>
-                                        <td>$56.07</td>
-                                        <td>$20.00</td>
-                                        <td>66</td>
-                                        <td>
-                                            <Link className="text-warning flex items-center" to="/">
-                                                <IconMultipleForwardRight className="rtl:rotate-180 ltr:mr-1 rtl:ml-1" />
-                                                Ads
-                                            </Link>
-                                        </td>
-                                    </tr>
-                                    <tr className="text-white-dark hover:text-black dark:hover:text-white-light/90 group">
-                                        <td className="text-black dark:text-white">
-                                            <div className="flex">
-                                                <img className="w-8 h-8 rounded-md ltr:mr-3 rtl:ml-3 object-cover" src="/assets/images/product-laptop.jpg" alt="avatar" />
-                                                <p className="whitespace-nowrap">
-                                                    Laptop <span className="text-primary block text-xs">Digital</span>
-                                                </p>
-                                            </div>
-                                        </td>
-                                        <td>$110.00</td>
-                                        <td>$33.00</td>
-                                        <td>35</td>
-                                        <td>
-                                            <Link className="text-secondary flex items-center" to="/">
-                                                <IconMultipleForwardRight className="rtl:rotate-180 ltr:mr-1 rtl:ml-1" />
-                                                Email
-                                            </Link>
-                                        </td>
-                                    </tr>
-                                    <tr className="text-white-dark hover:text-black dark:hover:text-white-light/90 group">
-                                        <td className="text-black dark:text-white">
-                                            <div className="flex">
-                                                <img className="w-8 h-8 rounded-md ltr:mr-3 rtl:ml-3 object-cover" src="/assets/images/product-camera.jpg" alt="avatar" />
-                                                <p className="whitespace-nowrap">
-                                                    Camera <span className="text-primary block text-xs">Digital</span>
-                                                </p>
-                                            </div>
-                                        </td>
-                                        <td>$56.07</td>
-                                        <td>$26.04</td>
-                                        <td>30</td>
-                                        <td>
-                                            <Link className="text-primary flex items-center" to="/">
-                                                <IconMultipleForwardRight className="rtl:rotate-180 ltr:mr-1 rtl:ml-1" />
-                                                Referral
-                                            </Link>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+        {/* ================= SECOND ROW ================= */}
+        <div className="grid xl:grid-cols-3 gap-6 mb-6">
+          <div className="panel h-full sm:col-span-2 xl:col-span-1">
+            <div className="flex items-center mb-5">
+                <h5 className="font-semibold text-lg dark:text-white-light">
+                    Daily Orders
+                    <span className="block text-white-dark text-sm font-normal">Go to columns for details.</span>
+                </h5>
+                <div className="ltr:ml-auto rtl:mr-auto relative">
+                    <div className="w-11 h-11 text-warning bg-[#ffeccb] dark:bg-warning dark:text-[#ffeccb] grid place-content-center rounded-full">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 6V18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+                        <path d="M15 9.5C15 8.11929 13.6569 7 12 7C10.3431 7 9 8.11929 9 9.5C9 10.8807 10.3431 12 12 12C13.6569 12 15 13.1193 15 14.5C15 15.8807 13.6569 17 12 17C10.3431 17 9 15.8807 9 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+                        </svg>
                     </div>
                 </div>
             </div>
+            <div>
+                <div className="bg-white dark:bg-black rounded-lg overflow-hidden">
+                    <div style={{minHeight: "175px"}}>
+                         {!loading && (
+                            <ReactApexChart
+                                series={dailySales.series}
+                                options={dailySales.options}
+                                type="bar"
+                                height={180}
+                            />
+                            )}
+                    </div>
+                   
+                </div>
+            </div>
+           
+          </div>
+
+        
+
+          <div className="panel p-0">
+            <div className="p-5 flex justify-between">
+              <IconShoppingCart />
+              <h5 className="font-semibold text-2xl ltr:text-right rtl:text-left dark:text-white-light">{counts.payments}
+                <span className="block text-sm font-normal">Total Orders</span>
+              </h5>
+            </div>
+            {!loading && (
+              <ReactApexChart
+                series={totalOrders.series}
+                options={totalOrders.options}
+                type="area"
+                height={200}
+              />
+            )}
+          </div>
+         <div className="panel h-full">
+  <h5 className="font-semibold text-lg dark:text-white-light mb-5">
+    Recent Activities
+  </h5>
+
+  <PerfectScrollbar className="relative h-[320px] ltr:pr-3 rtl:pl-3 -mr-3 mb-4">
+    <ul className="space-y-3 text-sm">
+      {activities.map((item, i) => (
+        <li key={i} className="group flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className={`w-2 h-2 rounded-full ${item.color}`}></span>
+            <span>{item.text}</span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-white-dark">{item.time}</span>
+
+            {/* hover status */}
+            <span
+              className={`badge badge-outline-${
+                item.status === 'Completed' ? 'success' : 'primary'
+              } text-xs opacity-0 group-hover:opacity-100 transition`}
+            >
+              {item.status}
+            </span>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </PerfectScrollbar>
+
+  <div className="border-t border-white-light dark:border-white/10">
+    <Link to="/users-list" className="p-4 flex justify-center text-primary font-semibold">
+      View All →
+    </Link>
+  </div>
+</div>
+
         </div>
+
+        {/* ================= RECENT ACTIVITIES ================= */}
+        
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+            <div className="panel h-full">
+  <h5 className="font-semibold text-lg dark:text-white-light mb-5">
+    Recent Orders
+  </h5>
+
+  <div className="table-responsive">
+    <table className="table-hover">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Amount</th>
+          <th>Payment</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {orders.map((o, i) => (
+          <tr key={i}>
+            <td className="text-primary">{o.order_id}</td>
+            <td>₹{o.amount}</td>
+            <td>{o.payment_id || '—'}</td>
+            <td>
+              <span
+                className={`badge ${
+                  o.status === 'Success'
+                    ? 'bg-success'
+                    : 'bg-warning'
+                }`}
+              >
+                {o.status}
+              </span>
+            </td>
+            <td>{new Date(o.created_at).toLocaleDateString()}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+        </div>
+
+
+      </div>
+    </div>
   );
 };
 

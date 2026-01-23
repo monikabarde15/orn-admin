@@ -177,7 +177,7 @@ console.log('userIDnew=',userIDnew);
   navigate('/');
 }
 useEffect(() => {
-  const SESSION_TIME_MS = 15 * 60 * 1000; // 15 minutes
+  const SESSION_TIME_MS = 3 * 60 * 1000; // 15 minutes
   let idleTimer: ReturnType<typeof setTimeout>;
 
   const resetIdleTimer = () => {
@@ -559,6 +559,12 @@ const userID = JSON.parse(localStorage.getItem("userId") || "{}");
                                             Change Password
                                         </Link>
                                     </li>
+                                    {/* <li>
+                                        <Link to="/users/profile" className="dark:hover:text-white">
+                                            <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
+                                            Profile
+                                        </Link>
+                                    </li> */}
                                     {/*<li>
                                         <Link to="/users/profile" className="dark:hover:text-white">
                                             <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />

@@ -8,6 +8,7 @@
   "postCreateCommand": "npm install",
   // run below in terminal
   // npm install -g serve
+  // npm run build
   // serve -s build -l 3000
   "customizations": {
     "vscode": {

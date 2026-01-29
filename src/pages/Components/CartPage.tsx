@@ -421,47 +421,47 @@ const loaderTimerRef = useRef(null);
     }
   };
 
-  const handleCheckout = async () => {
-    if (!requireLogin()) return;
-    if (loading || processing || upgradeInProgress || isLaunching) return;
-    if (!cartItems.length) return notify("Cart empty", "info");
+  // const handleCheckout = async () => {
+  //   if (!requireLogin()) return;
+  //   if (loading || processing || upgradeInProgress || isLaunching) return;
+  //   if (!cartItems.length) return notify("Cart empty", "info");
 
-    setLoading(true);
-    setIsLaunching(true);
+  //   setLoading(true);
+  //   setIsLaunching(true);
 
-    try {
-      for (const item of cartItems) {
-        if (!item.subscription) {
-          const sub = await createSubscriptionOnBackend(item.planId);
-          item.subscription = sub;
-          notify(`Subscription created for ${item.name}`, "success");
-        }
+  //   try {
+  //     for (const item of cartItems) {
+  //       if (!item.subscription) {
+  //         const sub = await createSubscriptionOnBackend(item.planId);
+  //         item.subscription = sub;
+  //         notify(`Subscription created for ${item.name}`, "success");
+  //       }
 
-        const wallet = await checkWallet();
-        const remaining = Math.max(0, item.price - wallet);
+  //       const wallet = await checkWallet();
+  //       const remaining = Math.max(0, item.price - wallet);
 
-        if (remaining === 0) {
-          notify(
-            `₹${item.price} deducted from Wallet. Launching ${item.name}...`,
-            "success"
-          );
-          await launchSingle(item, "wallet");
-        } else {
-          notify(
-            `Wallet ₹${wallet} insufficient. Paying ₹${remaining} via Razorpay`,
-            "warning"
-          );
-          await openRazorpay(remaining);
-        }
-      }
+  //       if (remaining === 0) {
+  //         notify(
+  //           `₹${item.price} deducted from Wallet. Launching ${item.name}...`,
+  //           "success"
+  //         );
+  //         await launchSingle(item, "wallet");
+  //       } else {
+  //         notify(
+  //           `Wallet ₹${wallet} insufficient. Paying ₹${remaining} via Razorpay`,
+  //           "warning"
+  //         );
+  //         await openRazorpay(remaining);
+  //       }
+  //     }
 
-      pollForLaunchedInstances();
-    } catch (err) {
-      notify(err?.response?.data?.message || "Checkout failed", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     pollForLaunchedInstances();
+  //   } catch (err) {
+  //     notify(err?.response?.data?.message || "Checkout failed", "error");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   // const updateActiveStatus = async (item) => {
   //   try {
@@ -477,7 +477,57 @@ const loaderTimerRef = useRef(null);
   //   }
   // };
 
-  
+  const handleCheckout = async () => {
+  if (!requireLogin()) return;
+  if (loading || processing || upgradeInProgress || isLaunching) return;
+  if (!cartItems.length) return notify("Cart empty", "info");
+
+  setLoading(true);
+  setIsLaunching(true);
+
+  try {
+    // 1️⃣ Create subscriptions if missing
+    for (const item of cartItems) {
+      if (!item.subscription) {
+        const sub = await createSubscriptionOnBackend(item.planId);
+        if (!sub) return;
+        item.subscription = sub;
+        notify(`Subscription created for ${item.name}`, "success");
+      }
+    }
+
+    // 2️⃣ Wallet check (ONCE)
+    const walletBalance = await checkWallet();
+    const total = totalAmount;
+    const remaining = Math.max(0, total - walletBalance);
+
+    // 3️⃣ If wallet enough → direct launch
+    if (remaining === 0) {
+      notify("Paid from wallet. Launching instances...", "success");
+
+      await Promise.all(
+        cartItems.map((item) => launchSingle(item, "wallet"))
+      );
+
+      pollForLaunchedInstances();
+    } 
+    // 4️⃣ Wallet insufficient / 0 → Razorpay
+    else {
+      notify(
+        `Wallet ₹${walletBalance}. Paying ₹${remaining} via Razorpay`,
+        "warning"
+      );
+      await openRazorpay(remaining);
+      // 🔥 openRazorpay ke andar already launch + polling ho raha hai
+    }
+
+  } catch (err) {
+    notify(err?.response?.data?.message || "Checkout failed", "error");
+  } finally {
+    setLoading(false);
+  }
+};
+
   const updateActiveStatus = async () => {
   try {
     const res = await axios.post(
@@ -500,32 +550,32 @@ const loaderTimerRef = useRef(null);
     return null;
   }
 };
-const upgradeSubscription = async (subscriptionId, newPackageId) => {
-  try {
-    const res = await axios.post(
-      `${API_BASE}/users/subscriptions/${subscriptionId}/upgrade/`,
-      {
-        new_package_id: newPackageId, // ✅ curl ke jaisa
-      },
-      {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+// const upgradeSubscription = async (subscriptionId, newPackageId) => {
+//   try {
+//     const res = await axios.post(
+//       `${API_BASE}/users/subscriptions/${subscriptionId}/upgrade/`,
+//       {
+//         new_package_id: newPackageId, // ✅ curl ke jaisa
+//       },
+//       {
+//         headers: {
+//           Accept: "application/json",
+//           Authorization: `Bearer ${token}`,
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
 
-    return res.data;
-  } catch (error) {
-    console.error("upgrade API error 👉", error.response);
-    notify(
-      error?.response?.data?.message || "Subscription upgrade failed",
-      "error"
-    );
-    return null;
-  }
-};
+//     return res.data;
+//   } catch (error) {
+//     console.error("upgrade API error 👉", error.response);
+//     notify(
+//       error?.response?.data?.message || "Subscription upgrade failed",
+//       "error"
+//     );
+//     return null;
+//   }
+// };
 
   // const handleUpgrade = async (item) => {
   //   if (!requireLogin()) return;
@@ -564,6 +614,45 @@ const upgradeSubscription = async (subscriptionId, newPackageId) => {
   //   }
   // };
 
+  const upgradeSubscription = async (subscriptionId, newPackageId, item) => {
+  try {
+    const res = await axios.post(
+      `${API_BASE}/users/subscriptions/${subscriptionId}/upgrade/`,
+      { new_package_id: newPackageId },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return res.data;
+
+  } catch (error) {
+    const data = error?.response?.data;
+
+    // 🔥 WALLET INSUFFICIENT CASE
+    if (data?.error === "Insufficient wallet balance") {
+      const balance = data.balance || 0;
+      const required = data.required || item.price;
+      const remaining = required - balance;
+
+      notify(
+        `Wallet ₹${balance}. Paying ₹${remaining} via Razorpay`,
+        "warning"
+      );
+
+      // 🔥 Razorpay → payment success → launch
+      await openRazorpay(remaining);
+      return null;
+    }
+
+    notify(data?.error || "Subscription upgrade failed", "error");
+    return null;
+  }
+};
+
   const handleUpgrade = async (item) => {
   if (!requireLogin()) return;
   if (upgradeInProgress || isLaunching) return;
@@ -595,10 +684,28 @@ const upgradeSubscription = async (subscriptionId, newPackageId) => {
     }
 
     // 3️⃣ UPGRADE
-    const upgraded = await upgradeSubscription(
-      subscriptionId,
-      newPackageId
-    );
+    // const upgraded = await upgradeSubscription(
+    //   subscriptionId,
+    //   newPackageId
+    // );
+
+const upgraded = await upgradeSubscription(
+  subscriptionId,
+  newPackageId,
+  item
+);
+
+// Agar Razorpay open hua hai → launch already ho jayega
+if (!upgraded) return;
+
+notify("Subscription upgraded successfully!", "success");
+
+// local update
+item.subscription = upgraded;
+
+// direct launch
+await launchSingle(item, "wallet");
+pollForLaunchedInstances();
 
     if (!upgraded) return;
 

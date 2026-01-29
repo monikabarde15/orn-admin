@@ -20,23 +20,61 @@ interface Instance {
 
 /* ================= PACKAGE EXTRACTOR ================= */
 
+// const extractPackageFromName = (name?: string): string => {
+//   console.log('name=',name);
+//   if (!name) return "docker";
+
+//   const lower = name.toLowerCase();
+//    console.log('name=',name,'lower=',lower);
+
+//   if (lower.includes("kubernetes") || lower.includes("k8s")) return "kubernetes";
+//   if (lower.includes("docker")) return "docker";
+//   if (lower.includes("monika-terraform-lab")) return "terraform";
+//    if (lower.includes("monika-nodea")) return "redhat";
+//    if (lower.includes("python")) return "python";
+//    if (lower.includes("jenkins")) return "jenkins ";
+//   if (lower.includes("linux")) return "linux";
+//   if (lower.includes("iscsi")) return "iscsi";
+
+//   return "docker"; // fallback
+// };
+
 const extractPackageFromName = (name?: string): string => {
-  console.log('name=',name);
-  if (!name) return "docker";
+  if (!name) return "linux";
 
   const lower = name.toLowerCase();
-   console.log('name=',name,'lower=',lower);
 
-  if (lower.includes("kubernetes") || lower.includes("k8s")) return "kubernetes";
-  if (lower.includes("docker")) return "docker";
-  if (lower.includes("monika-terraform-lab")) return "terraform";
-   if (lower.includes("monika-nodea")) return "redhat";
-   if (lower.includes("python")) return "python";
-   if (lower.includes("jenkins")) return "jenkins ";
-  if (lower.includes("linux")) return "linux";
-  if (lower.includes("iscsi")) return "iscsi";
+  // 🔴 REDHAT NODES (nodea / nodeb / nodec)
+  if (
+    lower.includes("nodea") ||
+    lower.includes("nodeb") ||
+    lower.includes("nodec")
+  ) {
+    return "redhat";
+  }
 
-  return "docker"; // fallback
+  if (lower.includes("kubernetes") || lower.includes("k8s"))
+    return "kubernetes";
+
+  if (lower.includes("docker"))
+    return "docker";
+
+  if (lower.includes("terraform"))
+    return "terraform";
+
+  if (lower.includes("jenkins"))
+    return "jenkins"; // ✅ fixed (no space)
+
+  if (lower.includes("python"))
+    return "python";
+
+  if (lower.includes("iscsi"))
+    return "iscsi";
+
+  if (lower.includes("linux"))
+    return "linux";
+
+  return "linux"; // ✅ safe fallback
 };
 
 /* ================= DOC MAP ================= */

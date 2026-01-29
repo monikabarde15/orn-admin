@@ -1,0 +1,35 @@
+name: Tests & Coverage
+
+on:
+  # push:
+  #   branches: [main, dev]
+  pull_request:
+    branches:
+      - dev
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'   # or 'yarn' if you use yarn
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          # or: yarn install --frozen-lockfile
+
+      - name: Create .env file
+        run: |
+          printf '%b' "${{ github.ref_name == 'main' && secrets.ENV_FILE_PROD || secrets.ENV_FILE_DEV }}" > .env
+
+      - name: Run React tests with coverage
+        run: |
+          npm test -- --coverage --watch=false

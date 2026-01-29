@@ -10,7 +10,21 @@ export default defineConfig({
     },
   },
   build: {
-     outDir: 'build',
-    chunkSizeWarningLimit: 1600, // 500kb से बढ़ाकर 1.6mb कर दिया
+    outDir: 'build',
+    chunkSizeWarningLimit: 1600,
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    include: ['tests/unit_tests/**/*.ts?(x)'], // include all TS/TSX files
+    coverage: {
+      provider: 'c8',
+      reporter: ['text', 'lcov'],
+      lines: 70,
+      functions: 70,
+      branches: 70,
+      statements: 70,
+      all: true,
+    },
   },
 });

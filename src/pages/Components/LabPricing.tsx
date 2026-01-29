@@ -6,7 +6,10 @@ import { Check } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
+
+const API_BASE = `${VIT}/api/v1`;
 const notify = (msg, type = "info") => {
   toast[type](msg, { position: "top-center", autoClose: 2500 });
 };
@@ -15,7 +18,7 @@ const LabPricing = () => {
   const navigate = useNavigate();
 
   const [billingTypes, setBillingTypes] = useState([]);
-  const [billingType, setBillingType] = useState("hourly");
+  const [billingType, setBillingType] = useState("free");
   const [labs, setLabs] = useState([]);
   const [loadingLabs, setLoadingLabs] = useState(false);
   const [launchingLabId, setLaunchingLabId] = useState(null);
@@ -125,6 +128,7 @@ const LabPricing = () => {
             paidFeatures: ["Full Access", "SSH", "Support"],
             subscription: pkg.subscription || null,
             planId: null,
+            newdescription:pkg.description,
           };
         }
 
@@ -141,7 +145,7 @@ const LabPricing = () => {
           t.yearlyPackageId = pkg.package_id;
         }
 
-        if (cycle === "hourly" || cycle === "hour") {
+        if (cycle === "free" || cycle === "free") {
           t.payAsYouGo.hourlyRate = pkg.price;
           t.payAsYouGo.packageId = pkg.package_id;
           t.free.available = true;
@@ -170,8 +174,16 @@ const LabPricing = () => {
     }
   }, [billingType, allPackages]);
 
-  const getCurrentFeatures = (lab) =>
-    billingType === "free" ? lab.billing_cycle : lab.paidFeatures;
+  const getCurrentFeatures = (lab) => {
+  if (!lab) return [];
+
+  if (billingType === "free") {
+    return lab.freeFeatures || [];
+  }
+
+  return lab.paidFeatures || [];
+};
+
 
   const getFreeAction = (labName) => {
     const name = (labName || "").toLowerCase();
@@ -323,60 +335,116 @@ const LabPricing = () => {
     if (!lab) return;
 
     if (!token) {
+          console.log('ad=',lab)
+
       await addToCart(lab, billingType);
       return;
     }
 
-    if (billingType === "hourly") {
-      await launchFreeInstance(lab);
-      return;
-    }
+    // if (billingType === "hourly") {
+    //   await launchFreeInstance(lab);
+    //   return;
+    // }
 
     await addToCart(lab, billingType);
   };
 
+  // const addToCart = (lab, billingType) => {
+  //   if (!lab) return;
+
+  //   const savedCart = JSON.parse(
+  //     localStorage.getItem("orl_cart") || "[]"
+  //   );
+  //   console.log('savedCart=',savedCart.length);
+  //   if(savedCart.length>0){
+  //     toast.info("You can select only one plan at a time", { autoClose: 2000 });
+  //     return;
+  //   }
+  //   const subscription =
+  //     lab.subscription != null ? lab.subscription : "";
+
+  //   const price =
+  //     billingType === "monthly"
+  //       ? lab.monthlyPrice
+  //       : billingType === "yearly"
+  //       ? lab.yearlyPrice ?? lab.monthlyPrice
+  //       : 0;
+
+  //   const exists = savedCart.find(
+  //     (item) =>
+  //       item.planId === lab.planId &&
+  //       item.billingType === billingType
+  //   );
+
+  //   if (exists) {
+  //     toast.info("Already in cart", { autoClose: 2000 });
+  //     return;
+  //   }
+  //   console.log('lab=',lab);
+  //   savedCart.push({
+  //     planId: lab.planId,
+  //     name: lab.name,
+  //     billingType,
+  //     price,
+  //     subscription,
+  //   });
+
+  //   localStorage.setItem("orl_cart", JSON.stringify(savedCart));
+  //   setCartItems(savedCart);
+
+  //   toast.success("Added to cart", { autoClose: 2000 });
+  //   // setTimeout(() => window.location.reload(), 2500);
+  // };
+
+  
   const addToCart = (lab, billingType) => {
-    if (!lab) return;
+  if (!lab) return;
 
-    const savedCart = JSON.parse(
-      localStorage.getItem("orl_cart") || "[]"
-    );
+  const savedCart = JSON.parse(
+    localStorage.getItem("orl_cart") || "[]"
+  );
 
-    const subscription =
-      lab.subscription != null ? lab.subscription : "";
+  if(savedCart.length>0){
+    toast.info("You can select only one plan at a time", { autoClose: 2000 });
+    return;
+  }
+console.log('lab=',lab);
+  const subscription =
+    lab.subscription != null ? lab.subscription : "";
 
-    const price =
-      billingType === "monthly"
-        ? lab.monthlyPrice
-        : billingType === "yearly"
-        ? lab.yearlyPrice ?? lab.monthlyPrice
-        : 0;
+  const price =
+    billingType === "monthly"
+      ? lab.monthlyPrice
+      : billingType === "yearly"
+      ? lab.yearlyPrice ?? lab.monthlyPrice
+      : 0;
 
-    const exists = savedCart.find(
-      (item) =>
-        item.planId === lab.planId &&
-        item.billingType === billingType
-    );
+  const exists = savedCart.find(
+    (item) =>
+      item.planId === lab.planId &&
+      item.billingType === billingType
+  );
 
-    if (exists) {
-      toast.info("Already in cart", { autoClose: 2000 });
-      return;
-    }
+  if (exists) {
+    toast.info("Already in cart", { autoClose: 2000 });
+    return;
+  }
 
-    savedCart.push({
-      planId: lab.planId,
-      name: lab.name,
-      billingType,
-      price,
-      subscription,
-    });
+  // ⭐⭐⭐⭐⭐ SAVE FULL LAB OBJECT ⭐⭐⭐⭐⭐
+  savedCart.push({
+    ...lab,                // पूरा lab object
+    billingType,           // चुना हुआ billing type
+    price,                 // selected price
+    subscription,          // existing sub
+  });
 
-    localStorage.setItem("orl_cart", JSON.stringify(savedCart));
-    setCartItems(savedCart);
+  localStorage.setItem("orl_cart", JSON.stringify(savedCart));
+  setCartItems(savedCart);
 
-    toast.success("Added to cart", { autoClose: 2000 });
-    setTimeout(() => window.location.reload(), 2500);
-  };
+  toast.success("Added to cart", { autoClose: 2000 });
+      setTimeout(() => window.location.reload(), 2500);
+
+};
 
   useEffect(() => {
     try {
@@ -425,9 +493,9 @@ const LabPricing = () => {
 
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 to-blue-300 bg-clip-text text-transparent mb-4">
+          <h2 className="text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 to-blue-300 bg-clip-text text-transparent mb-4">
             Simple pricing. No surprise fees.
-          </h1>
+          </h2>
           <p className="text-gray-400 mt-6 text-xl max-w-2xl mx-auto">
             Choose the perfect lab for your learning journey and start
             practicing today
@@ -437,7 +505,7 @@ const LabPricing = () => {
         {/* BILLING TOGGLE */}
         <div className="flex justify-center mb-12">
           <div className="inline-flex items-center bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-1">
-            {["hourly", "monthly", "yearly"].map((type) => (
+            {["free", "monthly", "yearly"].map((type) => (
               <button
                 key={type}
                 onClick={() => setBillingType(type)}
@@ -473,7 +541,7 @@ const LabPricing = () => {
                       {lab.name}
                     </h3>
                     <p className="text-purple-300 text-sm font-medium">
-                      {lab.description}
+                      {lab.newdescription}
                     </p>
                   </div>
 
@@ -507,18 +575,17 @@ const LabPricing = () => {
                     </p>
 
                     <ul className="space-y-3">
-                      {getCurrentFeatures(lab).map(
-                        (feature, idx) => (
-                          <li
-                            key={idx}
-                            className="flex items-center gap-2 text-gray-300 text-sm"
-                          >
-                            <Check className="w-4 h-4 text-green-400" />
-                            {feature}
-                          </li>
-                        )
-                      )}
-                    </ul>
+  {(getCurrentFeatures(lab) || []).map((feature, idx) => (
+    <li
+      key={idx}
+      className="flex items-center gap-2 text-gray-300 text-sm"
+    >
+      <Check className="w-4 h-4 text-green-400" />
+      {feature}
+    </li>
+  ))}
+</ul>
+
                   </div>
 
                   <div className="flex flex-col gap-3">
@@ -527,7 +594,7 @@ const LabPricing = () => {
                       onClick={() => handlePlanClick(lab)}
                       disabled={launchingLabId === lab.planId}
                     >
-                      {billingType === "hourly"
+                      {billingType === "free"
                         ? launchingLabId === lab.planId
                           ? "Launching..."
                           : "Start Free Trial"

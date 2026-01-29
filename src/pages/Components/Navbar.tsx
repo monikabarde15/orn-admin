@@ -5,28 +5,56 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { Wallet, User, LogOut, Laptop, ShoppingCart, Lock, DollarSign } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
+          const navigate = useNavigate();
+  
   const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [walletBalance, setWalletBalance] = useState(null);
   const [loadingWallet, setLoadingWallet] = useState(false);
   const [profileMenu, setProfileMenu] = useState(false);
-  const [cartItems, setCartItems] = useState(
-    JSON.parse(localStorage.getItem("orl_cart") || "[]")
-  );
+  const [cartItems, setCartItems] = useState(JSON.parse(localStorage.getItem("orl_cart") || "[]"));
   const [cartOpen, setCartOpen] = useState(false);
+const logoutTimerRef = useRef<any>(null);
+
+  console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 
   const menuRef = useRef(null);
   const cartRef = useRef(null);
-  const API_BASE = "https://dev.backend.onrequestlab.com/api/v1";
+  const API_BASE = `${VIT}/api/v1`;
 
-  // Check login & fetch wallet
   useEffect(() => {
     const token = localStorage.getItem("jwt-auth");
     setIsLoggedIn(!!token);
     if (token) fetchWalletBalance(token);
   }, []);
+  const getCookie = (name) => {
+    if (typeof document === "undefined") return "";
+    const v = `; ${document.cookie}`;
+    const parts = v.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return "";
+  };
+
+const user = {
+    name: getCookie("username"),
+    email: getCookie("email"),
+  };
+  console.log('user=',user.name);
+  //   const is_superuser = getCookie("is_superuser") === "true";
+  // if (is_superuser) {
+  //   navigate("/index");
+  // }
+  const is_superuser = getCookie("is_superuser") === "true";
+
+  useEffect(() => {
+    if (is_superuser) {
+      navigate("/index", { replace: true });
+    }
+  }, [is_superuser, navigate]);
 
   const fetchWalletBalance = async (token) => {
     setLoadingWallet(true);
@@ -43,17 +71,13 @@ const Navbar = () => {
     }
   };
 
-  // Close menus on outside click & update cart from localStorage
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target))
-        setProfileMenu(false);
-      if (cartRef.current && !cartRef.current.contains(e.target))
-        setCartOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target)) setProfileMenu(false);
+      if (cartRef.current && !cartRef.current.contains(e.target)) setCartOpen(false);
     };
-    const handleStorageChange = () => {
-      setCartItems(JSON.parse(localStorage.getItem("orl_cart") || "[]"));
-    };
+    const handleStorageChange = () => setCartItems(JSON.parse(localStorage.getItem("orl_cart") || "[]"));
+
     document.addEventListener("mousedown", handleClickOutside);
     window.addEventListener("storage", handleStorageChange);
 
@@ -63,34 +87,93 @@ const Navbar = () => {
     };
   }, []);
 
-  const handleLogout = () => {
+  // const handleLogout = () => {
+  //   localStorage.removeItem("jwt-auth");
+  //   toast.info("You have been logged out!", { position: "top-center" });
+  //   setTimeout(() => (window.location.href = "/"), 800);
+  // };
+  
+useEffect(() => {
+  const SESSION_TIME_MS = 3 * 60 * 1000; // 15 min
 
+  const logout = () => {
+    // 🔴 Remove localStorage
+    localStorage.removeItem("jwt-auth");
+    localStorage.removeItem("access");
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("session_expiry");
+
+    // 🔴 Remove ALL accessible cookies
+    document.cookie.split(";").forEach(cookie => {
+      document.cookie = cookie
+        .replace(/^ +/, "")
+        .replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+    });
+
+    // 🔴 IMPORTANT: update UI
+    setIsLoggedIn(false);
+
+    toast.info("Session expired. Logged out!", {
+      position: "top-center",
+    });
+
+    setTimeout(() => {
+      window.location.href = "/";
+    }, 800);
+  };
+
+  const resetTimer = () => {
+    if (logoutTimerRef.current) {
+      clearTimeout(logoutTimerRef.current);
+    }
+
+    logoutTimerRef.current = setTimeout(logout, SESSION_TIME_MS);
+  };
+
+  // 🧠 user activity detect
+  const events = ["click", "mousemove", "keydown", "scroll", "touchstart"];
+  events.forEach(event =>
+    window.addEventListener(event, resetTimer)
+  );
+
+  // start countdown
+  resetTimer();
+
+  return () => {
+    if (logoutTimerRef.current) {
+      clearTimeout(logoutTimerRef.current);
+    }
+    events.forEach(event =>
+      window.removeEventListener(event, resetTimer)
+    );
+  };
+}, []);
+
+   const handleLogout = () => {
     // localStorage.removeItem("jwt-auth");
     // localStorage.removeItem("user_id");
     // toast.info("You have been logged out!", { position: "top-center" });
     // setTimeout(() => (window.location.href = "/"), 800);
     // Remove localStorage items
-    
-    localStorage.removeItem("jwt-auth");
-    localStorage.removeItem("access");
-    localStorage.removeItem("user_id");
+localStorage.removeItem("jwt-auth");
+localStorage.removeItem("access");
+localStorage.removeItem("user_id");
 
 
-    // Remove cookies
-    document.cookie = "access=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie = "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+// Remove cookies
+document.cookie = "access=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+document.cookie = "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
 
-    toast.info("You have been logged out!", { position: "top-center" });
-    setTimeout(() => (window.location.href = "/"), 800);
+toast.info("You have been logged out!", { position: "top-center" });
+setTimeout(() => (window.location.href = "/"), 800);
   };
 
   const navigateTo = (path) => (window.location.href = path);
 
-  // Links for nav
   const links = isLoggedIn
-    ? ["/", "/contact-us"] // only Home & Contact Us when logged in
-    : ["/", "/about-us", "/pricing", "/process", "/blog-all", "/contact-us"]; // full links when logged out
+    ? ["/", "/about-us", "/labs", "/blogs","/contact-us"]
+    : ["/", "/about-us", "/labs", "/blogs", "/contact-us"];
 
   return (
     <>
@@ -98,22 +181,21 @@ const Navbar = () => {
 
       <nav className="navbar">
         {/* Logo */}
-        <div className="navbar-logo bg-white rounded-xl flex items-center justify-center shadow-md">
-          <img src={logoimg} alt="logo" width="150" />
+        <div className="navbar-logo">
+          <span className="logo-icon">
+            <img src={logoimg} alt="logo" width="200" height="100" />
+          </span>
         </div>
 
-        {/* Hamburger for mobile */}
+        {/* Hamburger */}
         <div className="navbar-toggle" onClick={() => setMenuOpen(!menuOpen)}>
-          <span></span>
-          <span></span>
-          <span></span>
+          <div></div>
+          <div></div>
+          <div></div>
         </div>
 
         {/* Mobile menu backdrop */}
-        <div
-          className={`menu-backdrop ${menuOpen ? "show" : ""}`}
-          onClick={() => setMenuOpen(false)}
-        ></div>
+        <div className={`menu-backdrop ${menuOpen ? "show" : ""}`} onClick={() => setMenuOpen(false)} />
 
         {/* Mobile Menu */}
         <div className={`mobile-menu ${menuOpen ? "open" : ""}`}>
@@ -138,19 +220,23 @@ const Navbar = () => {
             </div>
             {cartOpen && (
               <div className="cart-dropdown-mobile">
-                {cartItems.length === 0 ? (
-                  <p>No items added</p>
-                ) : (
-                  cartItems.map((item, index) => (
-                    <div key={index} className="cart-item-row">
-                      <span>{item.name}</span>
-                      <strong>₹{item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0}</strong>
-                    </div>
-                  ))
-                )}
-                <button className="blue-btn w-full" onClick={() => navigateTo("/cart")}>
-                  Go to Cart
-                </button>
+                {cartItems.length === 0 ? <p>No items added</p> : cartItems.map((item, idx) => (
+                  <div key={idx} className="cart-item-row">
+                    <span>{item.name}</span>
+                    <strong> ₹ {item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0}</strong>
+                  </div>
+                ))}
+                <div className="cart-total-row">
+                  <span className="cart-total-label">Total</span>
+                  <div className="vertical-line"></div>
+                  <strong className="cart-total-amount">
+                    ₹ {cartItems.reduce((total, item) => {
+                      return total + (item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0);
+                    }, 0).toFixed(2)}
+                  </strong>
+                </div>
+
+                <button className="blue-btn w-full" onClick={() => navigateTo("/cart")}>Go to Cart</button>
               </div>
             )}
           </div>
@@ -158,16 +244,24 @@ const Navbar = () => {
           {/* Mobile Profile */}
           {isLoggedIn ? (
             <div className="mobile-profile">
+            <div className="blue-btn">
+              <p>{(user?.name || "").slice(0, 5) + (user?.name?.length > 2 ? "..." : "")}</p>
+            </div>
+
+                  
               <p className="wallet-line">
                 <Wallet size={16} /> {loadingWallet ? "Loading..." : `₹${walletBalance}`}
-              </p>
-              <button className="blue-btn" onClick={() => navigateTo("/wallet-history")}>Wallet History</button>
-              <button className="blue-btn" onClick={() => navigateTo("/instances")}>Your Instances</button>
+              </p> 
+              {/* <button className="blue-btn" onClick={() => navigateTo("/wallet-history")}>Wallet History</button> */}
+               <button className="blue-btn" onClick={() => navigateTo("/my-subscrption")}>My Subscrption</button>
+                <button className="blue-btn" onClick={() => navigateTo("/certificate")}>My Certificatons</button>
+              
+              <button className="blue-btn" onClick={() => navigateTo("/your-instances")}>My Instances</button>
               <button className="red-btn" onClick={handleLogout}>Logout</button>
             </div>
           ) : (
             <button className="navbar-btn mobile-login-btn">
-              <a href="/login">Login</a> / <a href="/auth/boxed-signup">Signup</a>
+              <a href="/login">Login</a> / <a href="/register">Signup</a>
             </button>
           )}
         </div>
@@ -192,19 +286,23 @@ const Navbar = () => {
             </div>
             {cartOpen && (
               <div className="cart-dropdown clean-card">
-                {cartItems.length === 0 ? (
-                  <p>No items added</p>
-                ) : (
-                  cartItems.map((item, index) => (
-                    <div key={index} className="cart-item-row">
-                      <span>{item.name}</span>
-                      <strong>₹{item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0}</strong>
-                    </div>
-                  ))
-                )}
-                <button className="blue-btn w-full" onClick={() => navigateTo("/cart")}>
-                  Go to Cart
-                </button>
+                {cartItems.length === 0 ? <p>No items added</p> : cartItems.map((item, idx) => (
+                  <div key={idx} className="cart-item-row">
+                    <span>{item.name}</span>
+                    <strong> ₹ {item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0}</strong>
+                  </div>
+                ))}
+                <hr />
+                <div className="cart-total-row">
+                  <span className="cart-total-label">Total</span>
+                 &nbsp;&nbsp; <strong className="cart-total-amount">
+                      ₹ {cartItems.reduce((total, item) => {
+                      return total + (item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0);
+                    }, 0).toFixed(2)}
+                  </strong>
+                </div>
+
+                <button className="blue-btn w-full" onClick={() => navigateTo("/cart")}>Go to Cart</button>
               </div>
             )}
           </div>
@@ -218,18 +316,30 @@ const Navbar = () => {
               {profileMenu && (
                 <div className="profile-dropdown clean-card">
                   <div className="dropdown-wallet">
+                    {/* <p>{user.name||''}</p> */}
+                     <p onClick={() => navigateTo("/users/user-profile")} >{(user?.name || "").slice(0, 5) + (user?.name?.length > 4 ? "..." : "")}</p>
+                  </div>
+                  
+                  <div className="dropdown-wallet">
                     <Wallet size={16} /> <span>{loadingWallet ? "Loading..." : `₹${walletBalance}`}</span>
                   </div>
-                  <div className="dropdown-item" onClick={() => navigateTo("/wallet-history")}>
+                 
+                  {/* <div className="dropdown-item" onClick={() => navigateTo("/wallet-history")}>
                     <Wallet size={16} /> <span>Wallet History</span>
-                  </div>
+                  </div> */}
                   <div className="dropdown-item" onClick={() => navigateTo("/your-instances")}>
-                    <Laptop size={16} /> <span>Your Instances</span>
+                    <Laptop size={16} /> <span>My Instances</span>
+                  </div>
+                   <div className="dropdown-item" onClick={() => navigateTo("/my-subscrption")}>
+                    <Laptop size={16} /> <span>My Subscrption</span>
+                  </div>
+                   <div className="dropdown-item" onClick={() => navigateTo("/certificate")}>
+                    <Laptop size={16} /> <span>My Certificatons</span>
                   </div>
                   <div className="dropdown-item" onClick={() => navigateTo("/change-password")}>
                     <Lock size={16} /> <span>Change Password</span>
                   </div>
-                  <div className="dropdown-item" onClick={() => navigateTo("/apps/PaymentListNormal")}>
+                  <div className="dropdown-item" onClick={() => navigateTo("/payment-list")}>
                     <DollarSign size={16} /> <span>My Payments</span>
                   </div>
                   <div className="dropdown-item logout" onClick={handleLogout}>
@@ -240,7 +350,7 @@ const Navbar = () => {
             </div>
           ) : (
             <button className="navbar-btn">
-              <a href="/login">Login</a> / <a href="/auth/boxed-signup">Signup</a>
+              <a href="/login">Login</a> / <a href="/register">Signup</a>
             </button>
           )}
         </div>

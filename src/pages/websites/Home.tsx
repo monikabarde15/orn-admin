@@ -12,10 +12,13 @@ import Footer from '../Components/Footer';
 import FAQ from '../Components/FAQ';
 import HeroVideo from '../Components/HeroVideo';
 import LabPricing from '../Components/LabPricing';
-// import Faq from '../Pages/Faq';
+import { HomeMetaTags } from '../../pages/Pages/HomeMetaTags';
+
+// import HomeMetaTag from '../../pages/Pages/HomeMetaTags';
 
 const HomePage = () => (
   <div style={{ minHeight: '100vh', background: '#140f1c' }}>
+     <HomeMetaTags />
     <Navbar  />
     <HeroSection />
     <HeroVideo />

@@ -79,11 +79,11 @@ const Footer = () => {
               </a>
             </li>
            
-            <li>
+            {/* <li>
              <a href="#process" className="hover:text-white">
                 Process
               </a>
-            </li>
+            </li> */}
             <li>
               <a href="/our-services" className="hover:text-white">
                 Our Services
@@ -106,19 +106,24 @@ const Footer = () => {
         <div>
           <h3 className="font-semibold mb-4 text-white">Resources</h3>
           <ul className="space-y-2 text-gray-400 text-sm">
-          <li>
+          {/* <li>
              <a href="pricing" className="hover:text-white">
                 Pricing
               </a>
-            </li>
+            </li> */}
             <li>
               <a href="process" className="hover:text-white">
                 Process
               </a>
             </li>
             <li>
-              <a href="blog-all" className="hover:text-white">
+              <a href="blogs" className="hover:text-white">
                 Blog
+              </a>
+            </li>
+             <li>
+              <a href="/assets/pdf/Red Hat Linux Cluster_Glossary.pdf" target="_blank" className="hover:text-white">
+                Document
               </a>
             </li>
           </ul>

@@ -8,6 +8,7 @@ const BlogAdmin = lazy(() => import('../pages/BlogAdmin'));
 
 
 const ChangePasswordPortal = lazy(() => import('../pages/ChangePassword'));
+const AdminChangePassword = lazy(() => import('../pages/AdminChangePassword'));
 
 
 const Analytics = lazy(() => import('../pages/Analytics'));
@@ -102,6 +103,8 @@ const RangeSearch = lazy(() => import('../pages/DataTables/RangeSearch'));
 const Export = lazy(() => import('../pages/DataTables/Export'));
 const ColumnChooser = lazy(() => import('../pages/DataTables/ColumnChooser'));
 const Profile = lazy(() => import('../pages/Users/Profile'));
+const UserProfile = lazy(() => import('../pages/Users/UserProfile'));
+
 const AccountSetting = lazy(() => import('../pages/Users/AccountSetting'));
 const KnowledgeBase = lazy(() => import('../pages/Pages/KnowledgeBase'));
 const ContactUsBoxed = lazy(() => import('../pages/Pages/ContactUsBoxed'));
@@ -143,6 +146,12 @@ const Otp = lazy(() => import('../pages/Authentication/Otp'));
 
 const Home = lazy(() => import('../pages/websites/Home'));
 const Pricing = lazy(() => import('../pages/Components/Pricing'));
+const Courses = lazy(() => import('../pages/Components/Courses'));
+const MySubscription = lazy(() => import('../pages/Components/MySubscription'));
+
+const CertificatePage = lazy(() => import('../pages/Components/CertificatePage'));
+
+
 const PrivacyPolicy = lazy(() => import('../pages/Components/PrivacyPolicy'));
 const ContactPage = lazy(() => import('../pages/Components/ContactPage'));
 const TermsCondition = lazy(() => import('../pages/Components/TermsCondition'));
@@ -159,7 +168,20 @@ const WalletHistory = lazy(() => import('../pages/Components/WalletHistory'));
 
 const UserInstances = lazy(() => import('../pages/Components/UserInstances'));
 
+const CourseEnrollment = lazy(() => import('../pages/Components/CourseEnrollment'));
+const CreateCourseForm = lazy(() =>
+  import('../pages/Components/CreateCourse').then((module) => ({
+    default: module.CreateCourseForm,
+  }))
+)
+const CoursesListPage = lazy(() => import('../pages/Components/CoursesListPage'));
+const VideoPlayer = lazy(() => import('../pages/Components/VideoPlayer'));
 
+const EditCoursePage = lazy(() =>
+  import("../pages/Components/EditCoursePage")
+)
+
+const CertificateView = lazy(() => import('../pages/Components/CertificateView'));
 
 const routes = [
     // dashboard
@@ -168,24 +190,75 @@ const routes = [
         element: <Home />,
         layout:'web',
     },
+    {
+            path: '/your-instances',
+            element: <UserInstances />,
+            layout:'web',
+        },
+        {
+            path: '/certificate-view/:certificateId',
+            element: <CertificateView />,
+            layout:'web',
+        },
+         {
+            path: '/my-subscrption',
+            element: <MySubscription />,
+            layout:'web',
+        },
+          {
+            path: '/certificate',
+            element: <CertificatePage />,
+            layout:'web',
+        },
+    {
+        path: '/course-preview/:id',
+        element: <CourseEnrollment />,
+        layout: 'web',
+    },
      {
         path: '/wallet-history',
         element: <WalletHistory />,
         layout:'web',
     },
     {
-        path: '/your-instances',
-        element: <UserInstances />,
+        path: '/courses-list',
+        element: <Courses />,
         layout:'web',
     },
+    {
+        path: '/course/:id',
+        element: <VideoPlayer />,
+        layout: 'web',
+    },
+    {
+        path: '/create-course',
+        element: <CreateCourseForm />,
+        // layout: 'web',
+    },
+     
+     {
+        path: '/courses/edit/:id',
+        element: <EditCoursePage />,
+        // layout: 'web',
+    },
+    {
+        path: '/courses',
+        element: <CoursesListPage />,
+    },
+    
      {
         path: '/change-password',
         element: <ChangePasswordPortal />,
         layout:'web',
 
     },
+     {
+        path: '/admin-change-password',
+        element: <AdminChangePassword />,
+
+    },
     {
-        path: '/apps/PaymentListNormal',
+        path: '/payment-list',
         element: <PaymentListNormal />,
         layout:'web',
 
@@ -240,7 +313,7 @@ const routes = [
         layout:'web',
     },
      {
-        path: '/pricing',
+        path: '/labs',
         element: <Pricing />,
         layout:'web',
     },
@@ -255,7 +328,7 @@ const routes = [
         layout:'web',
     },
     {
-        path: '/blog-all',
+        path: '/blogs',
         element: <BlogList />,
         layout:'web',
     },
@@ -283,11 +356,11 @@ const routes = [
          element: <MessagesList />,
     },
     {
-        path: '/AdminMessages',
+        path: '/admin-messages',
          element: <AdminMessages />,
     },
      {
-        path: '/blogs',
+        path: '/admin-blog',
          element: <BlogAdmin />,
     },
    
@@ -320,11 +393,11 @@ const routes = [
         element: <Notes />,
     },
     {
-        path: '/apps/FeedbackList',
+        path: '/admin-feedback-list',
         element: <FeedbackListNew />,
     },
     {
-        path: '/apps/LabList',
+        path: '/lab-list',
         element: <LabList />,
     },
     {
@@ -333,16 +406,16 @@ const routes = [
     },
     
      {
-        path: '/apps/PaymentList',
+        path: '/admin-payment-list',
         element: <PaymentList />,
     },
     {
-        path: '/apps/UsersList',
+        path: '/users-list',
         element: <UsersList />,
     },
     
     {
-        path: '/apps/contacts',
+        path: '/admin-contacts',
         element: <Contacts />,
     },
     {
@@ -631,6 +704,11 @@ const routes = [
         element: <Profile />,
     },
     {
+        path: '/users/user-profile',
+        element: <UserProfile />,
+        layout: 'web',
+    },
+    {
         path: '/users/user-account-settings',
         element: <AccountSetting />,
     },
@@ -690,7 +768,7 @@ const routes = [
         layout: 'web',
     },
     {
-        path: '/auth/boxed-signup',
+        path: '/register',
         element: <RegisterBoxed />,
         layout: 'blank',
     },

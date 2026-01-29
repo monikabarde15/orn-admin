@@ -1,6 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Target, Users, Award, Rocket, Server, CheckCircle } from 'lucide-react';
+import Navbar from "../../pages/Components/Navbar";
+import Footer from "../Components/Footer";
+import { AboutMetaTags } from '../Pages/AboutMetaTags';
+import { Link } from "react-router-dom";
+
 
 const AboutUs = () => {
   const features = [
@@ -54,6 +59,9 @@ const AboutUs = () => {
   };
 
   return (
+    <>
+    <AboutMetaTags />
+     <Navbar />
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-16 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -210,6 +218,8 @@ const AboutUs = () => {
             <p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
               Join thousands of professionals who have enhanced their skills with OnRequestLab
             </p>
+           <Link to="/register">
+
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -217,10 +227,14 @@ const AboutUs = () => {
             >
               Get Started Now
             </motion.button>
+            </Link>
           </div>
         </motion.div>
       </div>
     </div>
+     <Footer />
+    </>
+    
   );
 };
 

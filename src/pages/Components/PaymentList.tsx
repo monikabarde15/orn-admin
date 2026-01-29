@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import html2pdf from "html2pdf.js";
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
 
-const API_URL = "https://dev.backend.onrequestlab.com/api/v1/admin/payments/";
+const API_URL = `${VIT}/api/v1/admin/payments/`;
 const ROWS_PER_PAGE = 5;
 
 const PaymentList = () => {

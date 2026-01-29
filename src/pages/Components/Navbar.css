@@ -17,7 +17,6 @@
   color: #fff;
 }
 
-.navbar-logo img { height: 45px; }
 
 /* Desktop menu */
 .navbar-actions { display: flex; align-items: center; gap: 32px; }
@@ -74,7 +73,20 @@
 .cart-dropdown { position: absolute; top: 44px; right: 0; background: #231b39; width: 250px; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; z-index: 200; }
 .cart-dropdown-mobile { margin-top: 8px; background: #231b39; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; max-height: 250px; overflow-y: auto; z-index: 1500; }
 .mobile-cart-icon { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-
+.logo-icon {
+    background: linear-gradient(135deg, #f0eef7, #f6f6fa);
+    color: #fff;
+    padding: 5px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 22px;
+    box-shadow: 0 3px 16px rgba(139, 92, 246, 0.4);
+}
+.navbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 /* Responsive */
 @media (max-width: 900px) {
   .navbar-actions { display: none; }
@@ -202,3 +214,70 @@
   .navbar-actions { display: none; }
 }
 
+/* Mobile menu sliding with transform */
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 290px;
+  max-width: 100%;
+  height: 100vh;
+  background: #17122A;
+  padding: 28px 22px;
+  transform: translateX(100%);
+  transition: transform 0.35s ease;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-menu.open {
+  transform: translateX(0);
+}
+
+/* Backdrop */
+.menu-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 1000;
+}
+
+.menu-backdrop.show {
+  display: block;
+}
+
+/* Hamburger toggle */
+.navbar-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.navbar-toggle div {
+  width: 28px;
+  height: 3px;
+  background: #fff;
+}
+
+@media (max-width: 900px) {
+  .navbar-toggle { display: flex; }
+  .navbar-actions { display: none; }
+}
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  background: linear-gradient(135deg, #f0eef7, #f6f6fa);
+  color: #fff;
+  padding: 5px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 22px;
+  box-shadow: 0 3px 16px rgba(139, 92, 246, 0.4);
+}

@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
 import "../Components/PrivacyPolicy.css";
+import { TermsMetatage } from "../Pages/TermsMetatage";
+
 
 export default function TermsCondition() {
   const cardVariants = {
@@ -17,6 +19,7 @@ export default function TermsCondition() {
 
   return (
     <>
+    <TermsMetatage />
       <Navbar />
       <section className="refundp-bg-section">
 
@@ -24,7 +27,7 @@ export default function TermsCondition() {
         <div className="refundp-root">
           <section className="refundp-root">
             <div className="refundp-headerbar">
-              <h1 className="refundp-title">Terms Condition</h1>
+              <h2 className="refundp-title">Terms Condition</h2>
               <div className="refundp-actions">
                 <button className="refundp-btn"><Download size={16}/> Download PDF</button>
                 <button className="refundp-btn"><Printer size={16}/> Print Policy</button>

@@ -17,15 +17,18 @@ import router from './router/index';
 // Redux
 import { Provider } from 'react-redux';
 import store from './store/index';
+import { HelmetProvider } from "react-helmet-async";
 
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <React.StrictMode>
-        <Suspense>
-            <Provider store={store}>
-                <RouterProvider router={router} />
-            </Provider>
-        </Suspense>
+         <HelmetProvider>
+            <Suspense>
+                <Provider store={store}>
+                    <RouterProvider router={router} />
+                </Provider>
+            </Suspense>
+         </HelmetProvider>
     </React.StrictMode>
 );
 

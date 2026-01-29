@@ -6,9 +6,19 @@ import axios from "axios";
 import { setPageTitle } from "../../store/themeConfigSlice";
 import i18next from "i18next";
 import { toast, ToastContainer } from "react-toastify";
+
 import "react-toastify/dist/ReactToastify.css";
 import IconMail from "../../components/Icon/IconMail";
 import IconLockDots from "../../components/Icon/IconLockDots";
+import Navbar from "../../pages/Components/Navbar";
+import Footer from "../Components/Footer";
+// import { SingupMetaTags } from "../Pages/SingupMetaTags";
+
+
+console.log(import.meta.env.VITE_API_URL);
+const VIT=import.meta.env.VITE_API_URL;
+const SESSION_TIME = 15 * 60;
+const SESSION_TIME_MS = 15 * 60 * 1000;
 
 const LoginBoxed = () => {
   const dispatch = useDispatch();
@@ -28,80 +38,156 @@ const LoginBoxed = () => {
     dispatch(setPageTitle("Login Boxed"));
   }, [dispatch]);
 
-  // ✅ LOGIN HANDLER
-  const submitForm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  // // ✅ LOGIN HANDLER
+  // const submitForm = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setError("");
+  //   setLoading(true);
 
-    if (!username.trim() || !password.trim()) {
-      toast.error("Please fill in all fields.", { position: "top-center" });
-      setLoading(false);
-      return;
+  //   if (!username.trim() || !password.trim()) {
+  //     toast.error("Please fill in all fields.", { position: "top-center" });
+  //     setLoading(false);
+  //     return;
+  //   }
+
+  //   try {
+  //     const response = await axios.post(
+  //       `${VIT}/api/v1/users/login/`,
+  //       { "login":username, password },
+  //       { headers: { "Content-Type": "application/json" }, withCredentials: true }
+  //     );
+
+  //     const data = response.data;
+  //     if (data.user) {
+  //       // Save cookies
+  //       document.cookie = `username=${encodeURIComponent(data.user.username)}; path=/; max-age=86400`;
+  //       document.cookie = `user_id=${encodeURIComponent(data.user.id)}; path=/; max-age=86400`;
+  //       document.cookie = `email=${encodeURIComponent(data.user.email)}; path=/; max-age=86400`;
+  //       document.cookie = `is_superuser=${data.user.is_superuser}; path=/; max-age=86400`;
+  //       document.cookie = `access=${data.access}; path=/; max-age=86400`;
+
+  //       // Save localStorage
+  //       localStorage.setItem("jwt-auth", data.access);
+  //       localStorage.setItem("userId", data.user.id);
+  //       localStorage.setItem("email", data.user.email);
+  //       localStorage.setItem("username", data.user.username);
+
+  //       toast.success("Login successful!", { position: "top-center" });
+  //       console.log('use====',data.user.is_superuser);
+  //       // setTimeout(() => {
+  //       //   if (data.user.is_superuser == true) {
+  //       //     window.location.href = "/index";
+  //       //   } else {
+  //       //     window.location.href = "/";
+  //       //   }
+  //       // }, 1200);
+  //       console.log('use====', data.user.is_superuser);
+
+  //         setTimeout(() => {
+  //           if (data.user.is_superuser === true) {
+  //             window.location.href = "/index";
+  //           } else {
+  //             window.location.href = "/";
+  //           }
+  //         }, 1200);
+
+
+  //     }
+  //   } catch (err: any) {
+  //     let msg = "Invalid username or password.";
+
+  //     if (err.response?.data) {
+  //       const data = err.response.data;
+
+  //       // ✅ Handle email verification error
+  //       if (data.non_field_errors && data.non_field_errors[0]?.includes("verify your email")) {
+  //         msg = (
+  //           <span>
+  //             {data.non_field_errors[0]}{" "}
+  //             <Link to="/otp" className="text-blue-500 underline">
+  //               Verify OTP
+  //             </Link>
+  //           </span>
+  //         );
+  //       } else if (data.detail) msg = data.detail;
+  //       else if (data.error) msg = data.error;
+  //       else if (typeof data === "object") {
+  //         const firstKey = Object.keys(data)[0];
+  //         if (Array.isArray(data[firstKey])) msg = data[firstKey][0];
+  //       }
+  //     }
+
+  //     setError(msg as string);
+  //     toast.error(msg, { position: "top-center", autoClose: 4000 });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+// ✅ LOGIN HANDLER
+const submitForm = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError("");
+  setLoading(true);
+
+  if (!username.trim() || !password.trim()) {
+    toast.error("Please fill in all fields.", { position: "top-center" });
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const response = await axios.post(
+      `${VIT}/api/v1/users/login/`,
+      { login: username, password },
+      { headers: { "Content-Type": "application/json" }, withCredentials: true }
+    );
+
+    const data = response.data;
+
+    if (data.user && data.access) {
+
+      // ✅ SAVE SESSION EXPIRY TIME
+      const expiryTime = Date.now() + SESSION_TIME_MS;
+      localStorage.setItem("session_expiry", expiryTime.toString());
+
+      // ✅ COOKIES (SHORT LIVED)
+      document.cookie = `username=${encodeURIComponent(data.user.username)}; path=/; max-age=${SESSION_TIME}`;
+      document.cookie = `user_id=${data.user.id}; path=/; max-age=${SESSION_TIME}`;
+      document.cookie = `email=${encodeURIComponent(data.user.email)}; path=/; max-age=${SESSION_TIME}`;
+      document.cookie = `is_superuser=${data.user.is_superuser}; path=/; max-age=${SESSION_TIME}`;
+      document.cookie = `access=${data.access}; path=/; max-age=${SESSION_TIME}`;
+
+      // ✅ LOCAL STORAGE
+      localStorage.setItem("jwt-auth", data.access);
+      localStorage.setItem("userId", data.user.id);
+      localStorage.setItem("email", data.user.email);
+      localStorage.setItem("username", data.user.username);
+
+      toast.success("Login successful!", { position: "top-center" });
+
+      setTimeout(() => {
+        window.location.href = data.user.is_superuser ? "/index" : "/";
+      }, 1000);
     }
 
-    try {
-      const response = await axios.post(
-        "https://dev.backend.onrequestlab.com/api/v1/users/auth/login",
-        { username, password },
-        { headers: { "Content-Type": "application/json" }, withCredentials: true }
-      );
+  }  catch (err: any) {
+  let msg = "Invalid username or password.";
 
-      const data = response.data;
-      if (data.user) {
-        // Save cookies
-        document.cookie = `username=${encodeURIComponent(data.user.username)}; path=/; max-age=86400`;
-        document.cookie = `user_id=${encodeURIComponent(data.user.id)}; path=/; max-age=86400`;
-        document.cookie = `email=${encodeURIComponent(data.user.email)}; path=/; max-age=86400`;
-        document.cookie = `is_staff=${data.user.is_staff}; path=/; max-age=86400`;
-        document.cookie = `access=${data.access}; path=/; max-age=86400`;
+  if (err.response?.data) {
+    const data = err.response.data;
 
-        // Save localStorage
-        localStorage.setItem("jwt-auth", data.access);
-        localStorage.setItem("userId", data.user.id);
-        localStorage.setItem("email", data.user.email);
-        localStorage.setItem("username", data.user.username);
+    if (data.message) msg = data.message;   // ✅ your case
+    else if (data.error) msg = data.error;
+    else if (data.detail) msg = data.detail;
+  }
 
-        toast.success("Login successful!", { position: "top-center" });
-
-        setTimeout(() => {
-          if (data.user.id < 2) {
-            window.location.href = "/index";
-          } else {
-            window.location.href = "/";
-          }
-        }, 1200);
-      }
-    } catch (err: any) {
-      let msg = "Invalid username or password.";
-
-      if (err.response?.data) {
-        const data = err.response.data;
-
-        // ✅ Handle email verification error
-        if (data.non_field_errors && data.non_field_errors[0]?.includes("verify your email")) {
-          msg = (
-            <span>
-              {data.non_field_errors[0]}{" "}
-              <Link to="/otp" className="text-blue-500 underline">
-                Verify OTP
-              </Link>
-            </span>
-          );
-        } else if (data.detail) msg = data.detail;
-        else if (data.error) msg = data.error;
-        else if (typeof data === "object") {
-          const firstKey = Object.keys(data)[0];
-          if (Array.isArray(data[firstKey])) msg = data[firstKey][0];
-        }
-      }
-
-      setError(msg as string);
-      toast.error(msg, { position: "top-center", autoClose: 4000 });
-    } finally {
-      setLoading(false);
-    }
-  };
+  setError(msg); // ✅ frontend ke liye
+  toast.error(msg, { position: "top-center" }); // optional
+}
+ finally {
+    setLoading(false);
+  }
+};
 
   // ✅ FORGOT PASSWORD HANDLER
   const handleForgotSubmit = async () => {
@@ -112,8 +198,8 @@ const LoginBoxed = () => {
 
     setResetLoading(true);
     try {
-      const response = await axios.post(
-        "https://dev.backend.onrequestlab.com/api/v1/users/auth/password/reset/",
+      const response = await axios.post( 
+        `${VIT}/api/v1/users/password/reset/`,
         { email: resetEmail },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -136,7 +222,9 @@ const LoginBoxed = () => {
   };
 
   return (
-    <div>
+    <>
+    <Navbar />
+      <div>
       <div className="absolute inset-0">
         <img
           src="/assets/images/auth/bg-gradient.png"
@@ -151,22 +239,22 @@ const LoginBoxed = () => {
             <div className="mx-auto w-full max-w-[440px]">
               <div className="mb-10 text-center">
                 <h1 className="text-3xl font-extrabold uppercase text-primary md:text-4xl">
-                  {i18next.t("Sign in")}
+                  {i18next.t("Sign in")} 
                 </h1>
                 <p className="text-base font-bold text-white-dark">
                   {i18next.t("Enter your credentials to log in")}
                 </p>
               </div>
-
+             
               {/* LOGIN FORM */}
               {!showForgotModal && (
                 <form className="space-y-5 dark:text-white" onSubmit={submitForm}>
                   <div>
-                    <label>{i18next.t("Username or Email")}</label>
+                    <label>{i18next.t("Username")}</label>
                     <div className="relative text-white-dark">
                       <input
                         type="text"
-                        placeholder={i18next.t("Enter username or email")}
+                        placeholder={i18next.t("Enter username")}
                         className={`form-input ps-10 placeholder:text-white-dark`}
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
@@ -246,7 +334,7 @@ const LoginBoxed = () => {
             <div className="text-center mt-6 dark:text-white">
               {i18next.t("Don't have an account?")}{" "}
               <Link
-                to="/auth/boxed-signup"
+                to="/register"
                 className="uppercase text-primary underline transition hover:text-black dark:hover:text-white"
               >
                 {i18next.t("Register here")}
@@ -258,6 +346,9 @@ const LoginBoxed = () => {
 
       <ToastContainer autoClose={2000} theme="colored" />
     </div>
+     <Footer />
+    </>
+    
   );
 };
 

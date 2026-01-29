@@ -22,8 +22,7 @@ jobs:
           cache: 'npm'   # or 'yarn' if you use yarn
 
       - name: Install dependencies
-        run: |
-          run: npm ci --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
 
       - name: Create .env file
         run: |

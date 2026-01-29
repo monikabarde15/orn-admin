@@ -101,14 +101,27 @@ const LabDashboard: React.FC = () => {
   const [leftWidth, setLeftWidth] = useState(70);
 
   const isResizing = useRef(false);
-
-  const query = new URLSearchParams(location.search);
-  const userId = query.get("user");
+const getCookie = (name) => {
+    if (typeof document === "undefined") return "";
+    const v = `; ${document.cookie}`;
+    const parts = v.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return "";
+  };
 
   const token =
-    localStorage.getItem("jwt-auth") ||
-    localStorage.getItem("access") ||
-    "";
+    (getCookie("access") ||
+      localStorage.getItem("access") ||
+      localStorage.getItem("jwt-auth"))?.trim();
+  const userId = getCookie("user_id");
+
+  //const query = new URLSearchParams(location.search);
+  //const userId = query.get("user");
+
+  // const token =
+  //   localStorage.getItem("jwt-auth") ||
+  //   localStorage.getItem("access") ||
+  //   "";
 
   /* ================= FETCH INSTANCE ================= */
 

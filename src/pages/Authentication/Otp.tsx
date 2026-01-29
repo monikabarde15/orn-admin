@@ -164,9 +164,9 @@ console.log('cookieEmail1',cookieEmailnew);
 
       toast.success("OTP Verified Successfully!", { position: "top-center" });
 
-      // setTimeout(() => {
-      //   window.location.href = data.user.id < 2 ? "/index" : "/";
-      // }, 1200);
+      setTimeout(() => {
+        window.location.href = data.user.id < 2 ? "/index" : "/login";
+      }, 1200);
     }
 
   } catch (err: any) {

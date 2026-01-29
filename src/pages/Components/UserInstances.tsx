@@ -172,7 +172,7 @@ const formatDateTime = (dateStr) => {
                 <button
                   disabled={!isActionAllowed(inst)}
                   onClick={() =>
-                    window.open(`/lab?user=${userId}`, "_blank")
+                    window.open(`/lab`, "_blank")
                   }
                   className="px-3 py-1 bg-blue-600 rounded disabled:opacity-40"
                 >

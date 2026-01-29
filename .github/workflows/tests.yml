@@ -31,4 +31,4 @@ jobs:
 
       - name: Run React tests with coverage
         run: |
-          npm test
+          npx vitest run

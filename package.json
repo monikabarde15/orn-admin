@@ -19,6 +19,10 @@
         "@mantine/hooks": "^5.10.5",
         "@popperjs/core": "^2.11.6",
         "@radix-ui/react-accordion": "^1.2.12",
+<<<<<<< HEAD
+=======
+        "@react-oauth/google": "^0.12.2",
+>>>>>>> 63c87e4920c012cc3298a2ef9fb6b8c1f2be0e4f
         "@reduxjs/toolkit": "^1.8.5",
         "@testing-library/jest-dom": "^5.16.5",
         "@testing-library/react": "^13.4.0",
@@ -34,14 +38,19 @@
         "axios": "^1.11.0",
         "class-variance-authority": "^0.7.1",
         "country-list-with-dial-code-and-flag": "^5.1.1",
+<<<<<<< HEAD
+=======
+        "country-telephone-data": "^0.6.3",
+>>>>>>> 63c87e4920c012cc3298a2ef9fb6b8c1f2be0e4f
         "easymde": "^2.18.0",
         "formik": "^2.2.9",
         "framer-motion": "^12.23.24",
         "highlight.js": "^11.6.0",
         "html2canvas": "^1.4.1",
         "html2pdf.js": "^0.12.1",
-        "jspdf": "^3.0.3",
+        "jspdf": "^3.0.4",
         "jspdf-autotable": "^5.0.2",
+        "jwt-decode": "^3.1.2",
         "lucide-react": "^0.545.0",
         "mantine-datatable": "^1.7.17",
         "nouislider-react": "^3.4.1",
@@ -55,10 +64,15 @@
         "react-dom": "^18.2.0",
         "react-export-table-to-excel": "^1.0.6",
         "react-flatpickr": "^3.10.13",
+        "react-helmet-async": "^2.0.5",
         "react-hot-toast": "^2.6.0",
         "react-icons": "^5.5.0",
         "react-images-uploading": "^3.1.7",
         "react-intersection-observer": "^10.0.0",
+<<<<<<< HEAD
+=======
+        "react-player": "^3.4.0",
+>>>>>>> 63c87e4920c012cc3298a2ef9fb6b8c1f2be0e4f
         "react-popper": "^2.3.0",
         "react-quill": "^2.0.0",
         "react-redux": "^8.1.3",
@@ -73,6 +87,7 @@
         "sweetalert2-react-content": "^5.0.7",
         "swiper": "^8.4.4",
         "typescript": "^4.8.4",
+        "vite-plugin-sitemap": "^0.8.2",
         "web-vitals": "^2.1.4",
         "yup": "^0.32.11"
     },

@@ -1,0 +1,22 @@
+// vite.config.ts
+import { defineConfig } from "file:///D:/onrequestreact/version2/Onrequestreactjs/Onrequestreactjs/node_modules/vite/dist/node/index.js";
+import react from "file:///D:/onrequestreact/version2/Onrequestreactjs/Onrequestreactjs/node_modules/@vitejs/plugin-react/dist/index.mjs";
+import path from "path";
+var __vite_injected_original_dirname = "D:\\onrequestreact\\version2\\Onrequestreactjs\\Onrequestreactjs";
+var vite_config_default = defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__vite_injected_original_dirname, "./src")
+    }
+  },
+  build: {
+    outDir: "build",
+    chunkSizeWarningLimit: 1600
+    // 500kb से बढ़ाकर 1.6mb कर दिया
+  }
+});
+export {
+  vite_config_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsidml0ZS5jb25maWcudHMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImNvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9kaXJuYW1lID0gXCJEOlxcXFxvbnJlcXVlc3RyZWFjdFxcXFx2ZXJzaW9uMlxcXFxPbnJlcXVlc3RyZWFjdGpzXFxcXE9ucmVxdWVzdHJlYWN0anNcIjtjb25zdCBfX3ZpdGVfaW5qZWN0ZWRfb3JpZ2luYWxfZmlsZW5hbWUgPSBcIkQ6XFxcXG9ucmVxdWVzdHJlYWN0XFxcXHZlcnNpb24yXFxcXE9ucmVxdWVzdHJlYWN0anNcXFxcT25yZXF1ZXN0cmVhY3Rqc1xcXFx2aXRlLmNvbmZpZy50c1wiO2NvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9pbXBvcnRfbWV0YV91cmwgPSBcImZpbGU6Ly8vRDovb25yZXF1ZXN0cmVhY3QvdmVyc2lvbjIvT25yZXF1ZXN0cmVhY3Rqcy9PbnJlcXVlc3RyZWFjdGpzL3ZpdGUuY29uZmlnLnRzXCI7aW1wb3J0IHsgZGVmaW5lQ29uZmlnIH0gZnJvbSAndml0ZSc7XG5pbXBvcnQgcmVhY3QgZnJvbSAnQHZpdGVqcy9wbHVnaW4tcmVhY3QnO1xuaW1wb3J0IHBhdGggZnJvbSAncGF0aCc7XG5cbmV4cG9ydCBkZWZhdWx0IGRlZmluZUNvbmZpZyh7XG4gIHBsdWdpbnM6IFtyZWFjdCgpXSxcbiAgcmVzb2x2ZToge1xuICAgIGFsaWFzOiB7XG4gICAgICAnQCc6IHBhdGgucmVzb2x2ZShfX2Rpcm5hbWUsICcuL3NyYycpLFxuICAgIH0sXG4gIH0sXG4gIGJ1aWxkOiB7XG4gICAgIG91dERpcjogJ2J1aWxkJyxcbiAgICBjaHVua1NpemVXYXJuaW5nTGltaXQ6IDE2MDAsIC8vIDUwMGtiIFx1MDkzOFx1MDk0NyBcdTA5MkNcdTA5MjJcdTA5M0NcdTA5M0VcdTA5MTVcdTA5MzAgMS42bWIgXHUwOTE1XHUwOTMwIFx1MDkyNlx1MDkzRlx1MDkyRlx1MDkzRVxuICB9LFxufSk7XG4iXSwKICAibWFwcGluZ3MiOiAiO0FBQWdYLFNBQVMsb0JBQW9CO0FBQzdZLE9BQU8sV0FBVztBQUNsQixPQUFPLFVBQVU7QUFGakIsSUFBTSxtQ0FBbUM7QUFJekMsSUFBTyxzQkFBUSxhQUFhO0FBQUEsRUFDMUIsU0FBUyxDQUFDLE1BQU0sQ0FBQztBQUFBLEVBQ2pCLFNBQVM7QUFBQSxJQUNQLE9BQU87QUFBQSxNQUNMLEtBQUssS0FBSyxRQUFRLGtDQUFXLE9BQU87QUFBQSxJQUN0QztBQUFBLEVBQ0Y7QUFBQSxFQUNBLE9BQU87QUFBQSxJQUNKLFFBQVE7QUFBQSxJQUNULHVCQUF1QjtBQUFBO0FBQUEsRUFDekI7QUFDRixDQUFDOyIsCiAgIm5hbWVzIjogW10KfQo=

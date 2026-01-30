@@ -194,7 +194,7 @@ const Support: React.FC = () => {
                     <p className="text-gray-400">
                       Contact our support team at{" "}
                       <span className="text-green-300 font-semibold">
-                        support@onrequestlab.com
+                        support@onrequestlab.com, onrequestlab@gmail.com
                       </span>
                     </p>
                   </div>

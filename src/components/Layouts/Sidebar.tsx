@@ -49,7 +49,22 @@ const Sidebar = () => {
   const dispatch = useDispatch();
   const { t } = useTranslation();
 const userID = JSON.parse(localStorage.getItem("userId") || "{}");
-console.log('userID=',userID);
+
+const getCookie = (name) => {
+    if (typeof document === "undefined") return "";
+    const v = `; ${document.cookie}`;
+    const parts = v.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return "";
+  };
+
+  const token =
+    (getCookie("access") ||
+      localStorage.getItem("access") ||
+      localStorage.getItem("jwt-auth"))?.trim();
+ const is_superuser = getCookie("is_superuser");
+
+console.log('userID=',userID,'is_superuser=',is_superuser);
   // Fetch employee details and permissions
   const fetchEmployeeDetails = async () => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -104,7 +119,7 @@ const menuItems: MenuItem[] = [
     icon: IconMenuDashboard,
     subMenu: [
       { 
-        path: userID < 2 ? "/index" : "/index/overview", 
+        path: is_superuser ? "/index" : "/index/overview", 
         label: "dashboard", 
         permission: "sales" 
       },
@@ -112,7 +127,7 @@ const menuItems: MenuItem[] = [
   },
 
   // Conditional "User management" section
-  ...(userID < 2
+  ...(is_superuser
     ? [
         {
           sectionLabel: "User management",
@@ -130,7 +145,7 @@ const menuItems: MenuItem[] = [
     sectionLabel: "lab management",
     items: [
       { 
-        path: userID < 2 ? "/lab-list" : "/apps/LabListNormal",
+        path: is_superuser  ? "/lab-list" : "/apps/LabListNormal",
         label: "Lab List", 
         icon: IconMenuContacts, 
         permission: "LabList" 
@@ -142,7 +157,7 @@ const menuItems: MenuItem[] = [
     sectionLabel: "Payment management",
     items: [
       { 
-        path: userID < 2 ? "/admin-payment-list" : "/apps/PaymentListNormal",
+        path: is_superuser  ? "/admin-payment-list" : "/apps/PaymentListNormal",
         label: "PaymentList", 
         icon: IconMenuContacts, 
         permission: "PaymentList" 
@@ -152,7 +167,7 @@ const menuItems: MenuItem[] = [
   
 ];
 
-if (userID < 2) {
+if (is_superuser) {
   menuItems.push({
     sectionLabel: "Blog Management",
     items: [
@@ -161,7 +176,7 @@ if (userID < 2) {
   });
 }
 
-if (userID < 2) {
+if (is_superuser) {
   menuItems.push({
     sectionLabel: "Courses Management",
     items: [
@@ -171,7 +186,7 @@ if (userID < 2) {
 }
 
 // Conditional support section
-if (userID < 2) {
+if (is_superuser) {
   menuItems.push({
     sectionLabel: "user support",
     items: [

@@ -250,7 +250,7 @@ const ContactUs = () => {
             </div>
             <div>
               <div className="contactus-info-label">Email</div>
-              <div className="contactus-info-text">support@onrequestlab.com</div>
+              <div className="contactus-info-text">support@onrequestlab.com, onrequestlab@gmail.com</div>
             </div>
           </div>
 

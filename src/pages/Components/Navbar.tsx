@@ -94,7 +94,7 @@ const user = {
   // };
   
 useEffect(() => {
-  const SESSION_TIME_MS = 3 * 60 * 1000; // 15 min
+  const SESSION_TIME_MS = 15 * 60 * 1000; // 15 min
 
   const logout = () => {
     // 🔴 Remove localStorage

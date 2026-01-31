@@ -323,12 +323,10 @@ interface QuizOption {
   is_correct: boolean
 }
 interface QuizQuestion {
-  id?: number          // ✅ ADD THIS
   chapter: number
   question: string
   options: QuizOption[]
 }
-
 // interface Lesson {
 //   id: string
 //   title: string
@@ -346,8 +344,7 @@ interface Lesson {
   content: string
   quiz?: QuizQuestion
   videoFile?: File | null
-  attachmentFile?: File | null,
-  quizzes?: QuizQuestion[]   
+  attachmentFile?: File | null
 }
 
 interface Module {
@@ -875,22 +872,6 @@ function ModuleEditor({
   const [editingModule, setEditingModule] = useState<Module | null>(null)
   const [editingLesson, setEditingLesson] = useState<{ moduleId: string; lesson: Lesson } | null>(null)
   const [moduleForm, setModuleForm] = useState({ title: "", description: "" })
-const [showMCQForm, setShowMCQForm] = useState(false)   // ✅ FIXED
-
-const [showAddMCQ, setShowAddMCQ] = useState(false)
-
-  const [activeMCQLesson, setActiveMCQLesson] = useState<Lesson | null>(null)
-
-const [mcqForm, setMcqForm] = useState({
-  question: "",
-  options: [
-    { text: "", is_correct: true },
-    { text: "", is_correct: false },
-    { text: "", is_correct: false },
-    { text: "", is_correct: false },
-  ],
-})
-
   const [lessonForm, setLessonForm] = useState<Omit<Lesson, "id">>({
   title: "",
   type: "video",
@@ -946,108 +927,8 @@ const [mcqForm, setMcqForm] = useState({
   }
 
   return (
-    
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        {activeMCQLesson && (
-  <div className="mt-10 border rounded-lg bg-white p-6">
-
-    <div className="flex justify-between items-center mb-4">
-      <h3 className="text-lg font-semibold">
-        MCQs for "{activeMCQLesson.title}"
-      </h3>
-      <button
-        className="text-blue-600 underline"
-        onClick={() => {
-          setActiveMCQLesson(null)
-          setShowAddMCQ(false)
-        }}
-      >
-        Close
-      </button>
-    </div>
-
-    <div className="flex justify-between items-center mb-6">
-      <h4 className="text-xl font-semibold">MCQ Management</h4>
-      <Button
-        className="bg-teal-700 text-white"
-        onClick={() => setShowAddMCQ(true)}
-      >
-        + Add MCQ
-      </Button>
-    </div>
-
-    {showAddMCQ && (
-      <div className="space-y-4 mb-6">
-        <Input
-          placeholder="Question"
-          value={mcqForm.question}
-          onChange={(e) =>
-            setMcqForm({ ...mcqForm, question: e.target.value })
-          }
-        />
-
-        {mcqForm.options.map((opt, i) => (
-          <div key={i} className="flex gap-2 items-center">
-            <input
-              type="radio"
-              checked={opt.is_correct}
-              onChange={() => {
-                const options = mcqForm.options.map((o, idx) => ({
-                  ...o,
-                  is_correct: idx === i,
-                }))
-                setMcqForm({ ...mcqForm, options })
-              }}
-            />
-            <Input
-              placeholder={`Option ${i + 1}`}
-              value={opt.text}
-              onChange={(e) => {
-                const options = [...mcqForm.options]
-                options[i].text = e.target.value
-                setMcqForm({ ...mcqForm, options })
-              }}
-            />
-          </div>
-        ))}
-
-        <div className="flex gap-4">
-          <Button
-            onClick={async () => {
-              await mockApi.addQuiz({
-                chapter: Number(activeMCQLesson.id),
-                question: mcqForm.question,
-                options: mcqForm.options,
-              })
-              setShowAddMCQ(false)
-            }}
-          >
-            Create MCQ
-          </Button>
-
-          <Button variant="outline" onClick={() => setShowAddMCQ(false)}>
-            Cancel
-          </Button>
-        </div>
-      </div>
-    )}
-
-    {activeMCQLesson.quiz && (
-      <div className="border p-4 rounded">
-        <strong>{activeMCQLesson.quiz.question}</strong>
-        <ul className="mt-2">
-          {activeMCQLesson.quiz.options.map((o, i) => (
-            <li key={i}>
-              {o.is_correct ? "✔️" : "❌"} {o.text}
-            </li>
-          ))}
-        </ul>
-      </div>
-    )}
-  </div>
-)}
-
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Course Modules</h3>
           <p className="text-sm text-gray-500">Organize your course content into modules and lessons</p>
@@ -1125,7 +1006,6 @@ const [mcqForm, setMcqForm] = useState({
                   </div>
                 </div>
                 <div className="flex gap-1">
-                  
                   <Button
                     variant="ghost"
                     size="icon"
@@ -1171,25 +1051,6 @@ const [mcqForm, setMcqForm] = useState({
                   </div>
           
                   <div className="flex gap-1">
-                   {lesson.type === "quiz" && (
-  <Button
-    size="sm"
-    className="bg-teal-600 text-white"
-    onClick={() => {
-      setActiveMCQLesson(lesson)
-      setShowMCQForm(true)
-    }}
-  >
-    Manage MCQs
-    {lesson.quizzes && lesson.quizzes.length > 0 && (
-      <span className="ml-2 text-xs bg-white text-teal-700 px-2 py-0.5 rounded">
-        {lesson.quizzes.length}
-      </span>
-    )}
-  </Button>
-)}
-
-
                     <Button
                       variant="ghost"
                       size="icon"
@@ -1231,293 +1092,209 @@ const [mcqForm, setMcqForm] = useState({
             </div>
           
             {/* ================= LESSON FORM ================= */}
-          {/* ================= LESSON FORM (SCREENSHOT STYLE) ================= */}
-          {/* ================= MCQ MANAGEMENT ================= */}
-{showMCQForm && activeMCQLesson && (
-  <Card className="mt-6 border-teal-200 bg-teal-50">
-    <CardHeader className="flex justify-between items-center">
-      <CardTitle>
-        MCQs for "{activeMCQLesson.title}"
-      </CardTitle>
-
-      <Button
-        variant="ghost"
-        onClick={() => {
-          setShowMCQForm(false)
-          setActiveMCQLesson(null)
-        }}
-      >
-        Close
-      </Button>
-    </CardHeader>
-
-    <CardContent className="space-y-4">
-      {/* ADD MCQ BUTTON */}
-      <Button
-        onClick={() => setShowAddMCQ(true)}
-        className="bg-teal-700 text-white"
-      >
-        + Add MCQ
-      </Button>
-
-      {/* ADD MCQ FORM */}
-      {showAddMCQ && (
-        <div className="border rounded-lg p-4 bg-white space-y-3">
-          <Label>Question</Label>
-          <Input
-            value={mcqForm.question}
-            onChange={(e) =>
-              setMcqForm({ ...mcqForm, question: e.target.value })
-            }
-          />
-
-          {mcqForm.options.map((opt, i) => (
-            <div key={i} className="flex gap-2 items-center">
-              <Input
-                value={opt.text}
-                placeholder={`Option ${i + 1}`}
-                onChange={(e) => {
-                  const options = [...mcqForm.options]
-                  options[i].text = e.target.value
-                  setMcqForm({ ...mcqForm, options })
-                }}
-              />
-              <input
-                type="radio"
-                checked={opt.is_correct}
-                onChange={() => {
-                  const options = mcqForm.options.map((o, idx) => ({
-                    ...o,
-                    is_correct: idx === i,
-                  }))
-                  setMcqForm({ ...mcqForm, options })
-                }}
-              />
-            </div>
-          ))}
-
-          <div className="flex gap-2">
-            <Button
-              onClick={async () => {
-                await mockApi.addQuiz({
-                  chapter: Number(activeMCQLesson.id),
-                  question: mcqForm.question,
-                  options: mcqForm.options,
-                })
-                setShowAddMCQ(false)
-              }}
-            >
-              Save MCQ
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={() => setShowAddMCQ(false)}
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
-    </CardContent>
-  </Card>
-)}
-
-{(showLessonForm === module.id ||
-  (editingLesson && editingLesson.moduleId === module.id)) && (
-  <div className="mt-6 border border-gray-300 rounded-lg p-6 bg-white max-w-2xl">
-
-    <h2 className="text-lg font-semibold mb-6">
-      {editingLesson ? "Editing Lecture" : "Add Lecture"}
-    </h2>
-
-    {/* ================= VIDEO ================= */}
-    {lessonForm.type !== "quiz" && (
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-blue-600 mb-1">
-          Lecture Video (Optional) *
-        </label>
-
-        <div className="border-2 border-dotted border-gray-400 rounded-lg p-4 text-center">
-          <input
-            type="file"
-            accept="video/*"
-            onChange={(e) =>
-              setLessonForm({
-                ...lessonForm,
-                videoFile: e.target.files?.[0] || null,
-              })
-            }
-          />
-
-          {lessonForm.videoFile && (
-            <>
-              <p className="text-sm text-blue-600 mt-2">
-                Video File Selected
-              </p>
-              <button
-                className="text-blue-600 underline text-sm"
-                onClick={() =>
-                  setLessonForm({ ...lessonForm, videoFile: null })
-                }
-              >
-                Cancel
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    )}
-
-    {/* ================= PDF ================= */}
-    {lessonForm.type !== "quiz" && (
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-blue-600 mb-1">
-          Lecture PDF (Optional) *
-        </label>
-
-        <div className="border-2 border-dotted border-gray-400 rounded-lg p-4 text-center">
-          <input
-            type="file"
-            accept="application/pdf"
-            onChange={(e) =>
-              setLessonForm({
-                ...lessonForm,
-                attachmentFile: e.target.files?.[0] || null,
-              })
-            }
-          />
-
-          {lessonForm.attachmentFile && (
-            <>
-              <div className="text-2xl mt-2">📄</div>
-              <p className="text-sm text-blue-600">PDF File Selected</p>
-              <button
-                className="text-blue-600 underline text-sm"
-                onClick={() =>
-                  setLessonForm({ ...lessonForm, attachmentFile: null })
-                }
-              >
-                Cancel
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    )}
-
-    {/* ================= TITLE ================= */}
-    <div className="mb-4">
-      <label className="block text-sm font-medium text-blue-600 mb-1">
-        Lecture Title *
-      </label>
-      <input
-        type="text"
-        required
-        value={lessonForm.title}
-        onChange={(e) =>
-          setLessonForm({ ...lessonForm, title: e.target.value })
-        }
-        className="w-full border border-gray-400 rounded-md px-3 py-2"
-      />
-    </div>
-
-    {/* ================= DESCRIPTION ================= */}
-    <div className="mb-6">
-      <label className="block text-sm font-medium text-blue-600 mb-1">
-        Lecture Description *
-      </label>
-      <textarea
-        required
-        rows={4}
-        value={lessonForm.content}
-        onChange={(e) =>
-          setLessonForm({ ...lessonForm, content: e.target.value })
-        }
-        className="w-full border border-gray-400 rounded-md px-3 py-2"
-      />
-    </div>
-
-    {/* ================= QUIZ ================= */}
-    {lessonForm.type === "quiz" && (
-      <div className="space-y-4 mb-6">
-        <label className="block text-sm font-medium text-blue-600">
-          Question *
-        </label>
-
-        <input
-          value={lessonForm.quiz.question}
-          onChange={(e) =>
-            setLessonForm({
-              ...lessonForm,
-              quiz: {
-                ...lessonForm.quiz,
-                question: e.target.value,
-              },
-            })
-          }
-          className="w-full border border-gray-400 rounded-md px-3 py-2"
-        />
-
-        {lessonForm.quiz.options.map((opt, i) => (
-          <div key={i} className="flex gap-2 items-center">
-            <input
-              className="flex-1 border border-gray-400 rounded-md px-2 py-1"
-              placeholder={`Option ${i + 1}`}
-              value={opt.text}
-              onChange={(e) => {
-                const options = [...lessonForm.quiz.options]
-                options[i].text = e.target.value
-                setLessonForm({
-                  ...lessonForm,
-                  quiz: { ...lessonForm.quiz, options },
-                })
-              }}
-            />
-            <input
-              type="checkbox"
-              checked={opt.is_correct}
-              onChange={(e) => {
-                const options = [...lessonForm.quiz.options]
-                options[i].is_correct = e.target.checked
-                setLessonForm({
-                  ...lessonForm,
-                  quiz: { ...lessonForm.quiz, options },
-                })
-              }}
-            />
-            <span className="text-sm">Correct</span>
-          </div>
-        ))}
-      </div>
-    )}
-
-    {/* ================= ACTION ================= */}
-    <div className="flex justify-end gap-3">
-      <button
-        className="px-4 py-2 border rounded-md"
-        onClick={() => {
-          setShowLessonForm(null)
-          setEditingLesson(null)
-        }}
-      >
-        Cancel
-      </button>
-
-      <button
-        className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md"
-        onClick={() =>
-          editingLesson
-            ? handleUpdateLesson()
-            : handleAddLesson(module.id)
-        }
-      >
-        Save Changes
-      </button>
-    </div>
-  </div>
-)}
-
+            {(showLessonForm === module.id ||
+              (editingLesson && editingLesson.moduleId === module.id)) && (
+              <Card className="mb-4 border-blue-200 bg-blue-50/30">
+                <CardContent className="pt-4 space-y-4">
+                  {/* Title + Type */}
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label>Lesson Title *</Label>
+                      <Input
+                        value={lessonForm.title}
+                        onChange={(e) =>
+                          setLessonForm({ ...lessonForm, title: e.target.value })
+                        }
+                      />
+                    </div>
+          
+                    <div>
+                      <Label>Lesson Type</Label>
+                      <Select
+                        value={lessonForm.type}
+                        onChange={(value) =>
+                          setLessonForm({
+                            ...lessonForm,
+                            type: value as Lesson["type"],
+                          })
+                        }
+                        options={[
+                          { value: "video", label: "Video" },
+                          { value: "pdf", label: "PDF Document" }, // ✅ NEW
+                          { value: "text", label: "Text / Article" },
+                          { value: "quiz", label: "Quiz" },
+                        ]}
+                      />
+                    </div>
+                  </div>
+          
+                  {/* VIDEO */}
+                  {lessonForm.type === "video" && (
+                    <>
+                      <Label>Video File *</Label>
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) =>
+                          setLessonForm({
+                            ...lessonForm,
+                            videoFile: e.target.files?.[0] || null,
+                          })
+                        }
+                      />
+                    </>
+                  )}
+                   {/* PDF UPLOAD */}
+                  {lessonForm.type === "pdf" && (
+                    <>
+                      <Label>Attach PDF *</Label>
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        onChange={(e) =>
+                          setLessonForm({
+                            ...lessonForm,
+                            attachmentFile: e.target.files?.[0] || null,
+                          })
+                        }
+                      />
+                    </>
+                  )}
+          
+                  {/* TEXT + VIDEO */}
+                  {lessonForm.type !== "quiz" && (
+                    <>
+                      <Label>Duration</Label>
+                      <Input
+                        value={lessonForm.duration}
+                        onChange={(e) =>
+                          setLessonForm({
+                            ...lessonForm,
+                            duration: e.target.value,
+                          })
+                        }
+                      />
+          
+                      <Label>Content / Description</Label>
+                      <Textarea
+                        value={lessonForm.content}
+                        onChange={(e) =>
+                          setLessonForm({
+                            ...lessonForm,
+                            content: e.target.value,
+                          })
+                        }
+                        rows={3}
+                      />
+                    </>
+                  )}
+          
+                  {/* ================= QUIZ ================= */}
+                  {lessonForm.type === "quiz" && (
+                    <div className="space-y-4">
+                      <Label>Question</Label>
+                      <Input
+                        value={lessonForm.quiz.question}
+                        onChange={(e) =>
+                          setLessonForm({
+                            ...lessonForm,
+                            quiz: {
+                              ...lessonForm.quiz,
+                              question: e.target.value,
+                            },
+                          })
+                        }
+                      />
+          
+                      {lessonForm.quiz.options.map((opt, i) => (
+                        <div key={i} className="flex gap-2 items-center">
+                          <Input
+                            placeholder={`Option ${i + 1}`}
+                            value={opt.text}
+                            onChange={(e) => {
+                              const options = [...lessonForm.quiz.options]
+                              options[i].text = e.target.value
+                              setLessonForm({
+                                ...lessonForm,
+                                quiz: { ...lessonForm.quiz, options },
+                              })
+                            }}
+                          />
+                          <input
+                            type="checkbox"
+                            checked={opt.is_correct}
+                            onChange={(e) => {
+                              const options = [...lessonForm.quiz.options]
+                              options[i].is_correct = e.target.checked
+                              setLessonForm({
+                                ...lessonForm,
+                                quiz: { ...lessonForm.quiz, options },
+                              })
+                            }}
+                          />
+                          <span className="text-sm">Correct</span>
+                        </div>
+                      ))}
+          
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          setLessonForm({
+                            ...lessonForm,
+                            quiz: {
+                              ...lessonForm.quiz,
+                              options: [
+                                ...lessonForm.quiz.options,
+                                { text: "", is_correct: false },
+                              ],
+                            },
+                          })
+                        }
+                      >
+                        + Add Option
+                      </Button>
+                    </div>
+                  )}
+          
+                  {/* ACTION BUTTONS */}
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowLessonForm(null)
+                        setEditingLesson(null)
+                        setLessonForm({
+                          title: "",
+                          type: "video",
+                          duration: "",
+                          content: "",
+                          videoFile: null,
+                          attachmentFile: null,
+                          quiz: {
+                            chapter: module.id,
+                            question: "",
+                            options: [{ text: "", is_correct: false }],
+                          },
+                        })
+                      }}
+                    >
+                      Cancel
+                    </Button>
+          
+                    <Button
+                      onClick={
+                        editingLesson
+                          ? handleUpdateLesson
+                          : () => handleAddLesson(module.id)
+                      }
+                    >
+                      {editingLesson ? "Update Lesson" : "Add Lesson"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           
             {/* ================= ADD LESSON BUTTON ================= */}
             {showLessonForm !== module.id && !editingLesson && (
@@ -1773,11 +1550,6 @@ export default function EditCoursePage() {
   const [published, setPublished] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-const [activeMCQLesson, setActiveMCQLesson] = useState<Lesson | null>(null)
-const [showMCQForm, setShowMCQForm] = useState(false)   // ✅ FIXED
-
-const [showAddMCQ, setShowAddMCQ] = useState(false)
-
 
   const steps = ["Course Details", "Modules & Chapter", "Thumbnail & Publish"]
 
@@ -1804,36 +1576,15 @@ const [showAddMCQ, setShowAddMCQ] = useState(false)
     })
 
     setModules(
-  (d.modules || []).map((m: any) => ({
-    id: String(m.id),
-    title: m.title,
-    description: m.description,
-    lessons: (m.chapters || []).map((c: any) => ({
-      id: String(c.id),
-      title: c.title,
-      type: c.quizzes?.length
-        ? "quiz"
-        : c.video
-        ? "video"
-        : c.file
-        ? "pdf"
-        : "text",
-      duration: "",
-      content: c.description || "",
-      quizzes: c.quizzes?.map((q: any) => ({
-        id: q.id,
-        chapter: c.id,
-        question: q.question,
-        options: q.options,
-      })) || [],
-    })),
-  }))
-)
+      (d.modules || []).map((m: any) => ({
+        ...m,
+        lessons: Array.isArray(m.lessons) ? m.lessons : [],
+      }))
+    )
 
     setThumbnail(d.thumbnail || null)
   })
 }, [id])
-
 
 
   /* ================= UPDATE COURSE ================= */
@@ -1978,37 +1729,25 @@ const handleUpdateLesson = async (
   try {
     // 🔥 QUIZ UPDATE
     if (data.type === "quiz" && data.quiz) {
-      await mockApi.updateQuiz(
-  String(data.quiz.id), // ✅ correct quiz ID
-  {
-    question: data.quiz.question,
-    options: data.quiz.options,
-  }
-)
+      const res = await mockApi.updateQuiz(lessonId, {
+        question: data.quiz.question,
+        options: data.quiz.options,
+      })
 
-      
-
-    await mockApi.updateQuiz(
-  String(data.quiz.id),
-  {
-    question: data.quiz.question,
-    options: data.quiz.options,
-  }
-)
-
-setModules(
-  modules.map((m) =>
-    m.id === moduleId
-      ? {
-          ...m,
-          lessons: m.lessons.map((l) =>
-            l.id === lessonId ? { ...l, ...data } : l
+      if (res.success) {
+        setModules(
+          modules.map((m) =>
+            m.id === moduleId
+              ? {
+                  ...m,
+                  lessons: m.lessons.map((l) =>
+                    l.id === lessonId ? { ...l, ...data } : l,
+                  ),
+                }
+              : m,
           ),
-        }
-      : m
-  )
-)
-
+        )
+      }
 
       return
     }
@@ -2034,21 +1773,13 @@ setModules(
         : "text",
       duration: "",
       content: c.description || "",
-      lessons: (m.chapters || []).map((c: any) => ({
-  id: String(c.id),
-  title: c.title,
-  type: c.quizzes?.length ? "quiz" : c.video ? "video" : c.file ? "pdf" : "text",
-  duration: "",
-  content: c.description || "",
-  quizzes: c.quizzes?.map((q: any) => ({
-    id: q.id,
-    chapter: c.id,
-    question: q.question,
-    options: q.options,
-  })) || [],
-}))
-
-
+      quiz: c.quizzes?.[0]
+        ? {
+            chapter: c.id,
+            question: c.quizzes[0].question,
+            options: c.quizzes[0].options,
+          }
+        : undefined,
     })),
   }))
 )
@@ -2067,17 +1798,13 @@ const handleDeleteLesson = async (
     const module = modules.find((m) => m.id === moduleId)
     const lesson = module?.lessons.find((l) => l.id === lessonId)
 
-    // if (lesson?.type === "quiz") {
-    //   // 🔥 QUIZ DELETE API
-    //   await mockApi.deleteQuiz(lessonId)
-    // } else {
-    //   // 🔵 VIDEO / TEXT DELETE API
-    //   await mockApi.deleteLesson(lessonId)
-    // }
-    if (lesson?.type === "quiz" && lesson.quiz?.id) {
-  await mockApi.deleteQuiz(String(lesson.quiz.id))
-}
-
+    if (lesson?.type === "quiz") {
+      // 🔥 QUIZ DELETE API
+      await mockApi.deleteQuiz(lessonId)
+    } else {
+      // 🔵 VIDEO / TEXT DELETE API
+      await mockApi.deleteLesson(lessonId)
+    }
 
     // ✅ Update UI
     setModules(

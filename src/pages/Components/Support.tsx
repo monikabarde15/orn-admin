@@ -11,6 +11,7 @@ import {
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
 import { SupportMetatage } from "../Pages/SupportMetatage";
+import { Link } from "react-router-dom";
 
 const Support: React.FC = () => {
   const fadeUp = {
@@ -193,7 +194,7 @@ const Support: React.FC = () => {
                     <p className="text-gray-400">
                       Contact our support team at{" "}
                       <span className="text-green-300 font-semibold">
-                        support@onrequestlab.com
+                        support@onrequestlab.com, onrequestlab@gmail.com
                       </span>
                     </p>
                   </div>
@@ -236,15 +237,17 @@ const Support: React.FC = () => {
                   Begin your learning journey by understanding how our lab system
                   works from the ground up.
                 </p>
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-8 py-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2 mx-auto"
-                >
-                  Start Learning
-                  <ArrowRight className="w-5 h-5" />
-                </motion.button>
+                <Link to="/register">
+                  <motion.button
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  className="px-8 py-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2 mx-auto"
+                                >
+                                  Start Learning
+                                  <ArrowRight className="w-5 h-5" />
+                                </motion.button>
+                </Link>
+               
               </div>
             </motion.div>
           </div>

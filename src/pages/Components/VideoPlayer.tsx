@@ -72,6 +72,8 @@ const CourseTestFinal: React.FC = () => {
     if (parts.length === 2) return parts.pop()?.split(";").shift() || "";
     return "";
   };
+  const VIT = import.meta.env.VITE_API_URL;
+const API_V1 = `${VIT}/api/v1`;
 // ⏱ TIMER STATE
 const [timeLeft, setTimeLeft] = useState(0);
 
@@ -86,7 +88,7 @@ const [timeLeft, setTimeLeft] = useState(0);
   const userId = getCookie("user_id");
 
   const api = axios.create({
-    baseURL: "https://dev.backend.onrequestlab.com",
+    baseURL: `${VIT}`,
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",

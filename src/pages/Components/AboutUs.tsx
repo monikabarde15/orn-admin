@@ -4,6 +4,7 @@ import { Target, Users, Award, Rocket, Server, CheckCircle } from 'lucide-react'
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
 import { AboutMetaTags } from '../Pages/AboutMetaTags';
+import { Link } from "react-router-dom";
 
 
 const AboutUs = () => {
@@ -217,6 +218,8 @@ const AboutUs = () => {
             <p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
               Join thousands of professionals who have enhanced their skills with OnRequestLab
             </p>
+           <Link to="/register">
+
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -224,6 +227,7 @@ const AboutUs = () => {
             >
               Get Started Now
             </motion.button>
+            </Link>
           </div>
         </motion.div>
       </div>

@@ -7,9 +7,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
 
-console.log(import.meta.env.VITE_API_URL);
-const VIT=import.meta.env.VITE_API_URL;
-
+const VIT = import.meta.env.VITE_API_URL;
 const API_BASE = `${VIT}/api/v1`;
 const ITEMS_PER_PAGE = 5;
 
@@ -19,6 +17,7 @@ const notify = (msg, type = "info") =>
 export default function LabPricing() {
   const navigate = useNavigate();
 
+  
   /* ================= AUTH ================= */
   const getCookie = (name) => {
     const v = `; ${document.cookie}`;
@@ -38,37 +37,11 @@ export default function LabPricing() {
   /* ================= STATE ================= */
   const [subscriptions, setSubscriptions] = useState([]);
   const [instances, setInstances] = useState([]);
-  const [launching, setLaunching] = useState(false);
-  const [showInstances, setShowInstances] = useState(false);
-
-  const [expiredQueue, setExpiredQueue] = useState([]);
-  const [currentExpired, setCurrentExpired] = useState(null);
-  const [showUpgradePopup, setShowUpgradePopup] = useState(false);
-
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
 
   /* ================= HELPERS ================= */
-  const isPlanActive = (plan) =>
-    plan.expires_at && new Date(plan.expires_at) > new Date();
-
-  const getActionByPackageName = (name) => {
-    if (!name) return "";
-    const n = name.toLowerCase();
-    if (n.includes("docker")) return "docker";
-    if (n.includes("kubernetes")) return "kubernetes";
-    if (n.includes("linux")) return "linux";
-    if (n.includes("terraform")) return "iscsi";
-    if (n.includes("python")) return "python";
-    if (n.includes("jenkins")) return "jenkins";
-    return "";
-  };
-
-  const copyText = (label, value) => {
-    if (!value) return notify(`${label} not available`, "error");
-    navigator.clipboard.writeText(value);
-    notify(`${label} copied`, "success");
-  };
+  const isActionAllowed = (inst) => inst.status === "Launched";
 
   /* ================= FETCH ================= */
   const fetchSubscriptions = async () => {
@@ -78,6 +51,17 @@ export default function LabPricing() {
     );
     setSubscriptions(res.data || []);
   };
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return "N/A";
+  const d = new Date(dateStr);
+  return d.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
   const fetchInstances = async () => {
     const res = await axios.get(
@@ -92,62 +76,7 @@ export default function LabPricing() {
     fetchInstances();
   }, [token]);
 
-  /* ================= EXPIRED PLAN QUEUE ================= */
-  useEffect(() => {
-    if (!subscriptions.length) return;
-    const expired = subscriptions.filter((p) => !isPlanActive(p));
-    if (expired.length) {
-      setExpiredQueue(expired);
-      setCurrentExpired(expired[0]);
-      setShowUpgradePopup(true);
-    }
-  }, [subscriptions]);
-
-  const skipCurrentPlan = () => {
-    const rest = expiredQueue.slice(1);
-    if (rest.length) {
-      setExpiredQueue(rest);
-      setCurrentExpired(rest[0]);
-    } else {
-      setShowUpgradePopup(false);
-      setCurrentExpired(null);
-    }
-  };
-
-  /* ================= LAUNCH ================= */
-  const launchInstance = async (plan) => {
-    if (!isPlanActive(plan)) {
-      notify("Please upgrade plan first", "warning");
-      return;
-    }
-
-    setLaunching(true);
-    const action = getActionByPackageName(plan.name);
-
-    try {
-      await axios.post(
-        `${API_BASE}/users/deploy/${action}/`,
-        { user_id: userId, action, payment_id: plan.subscription_id },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      navigate(`/lab?user=${userId}`);
-    } catch {
-      notify("Launch failed", "error");
-    } finally {
-      setLaunching(false);
-    }
-  };
-
-  const upgradeAndLaunch = async () => {
-    notify("Payment successful. Plan upgraded.", "success");
-    await fetchSubscriptions();
-    if (currentExpired) await launchInstance(currentExpired);
-    skipCurrentPlan();
-  };
-
   /* ================= INSTANCE ACTIONS ================= */
-  const isActionAllowed = (inst) => inst.status === "Launched";
-
   const rebootInstance = async (id) => {
     await axios.post(
       `${API_BASE}/users/reboot/${id}/`,
@@ -171,14 +100,23 @@ export default function LabPricing() {
     }
   };
 
-  /* ================= SEARCH + PAGINATION ================= */
-  const filteredInstances = instances.filter((i) =>
+  /* ================= SORT + SEARCH + PAGINATION ================= */
+
+  // 👉 Launched instances top par
+  const sortedInstances = [...instances].sort((a, b) => {
+    if (a.status === "Launched" && b.status !== "Launched") return -1;
+    if (a.status !== "Launched" && b.status === "Launched") return 1;
+    return 0;
+  });
+
+  const filteredInstances = sortedInstances.filter((i) =>
     (i.instance_name || "")
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredInstances.length / ITEMS_PER_PAGE);
+
   const paginatedInstances = filteredInstances.slice(
     (page - 1) * ITEMS_PER_PAGE,
     page * ITEMS_PER_PAGE
@@ -195,90 +133,119 @@ export default function LabPricing() {
           My Labs
         </h1>
 
+        <div className="max-w-5xl mx-auto bg-white/5 p-6 rounded-xl">
+          <input
+            className="w-full mb-4 px-3 py-2 rounded bg-white/10 text-white"
+            placeholder="Search instance..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setPage(1);
+            }}
+          />
+
+          {paginatedInstances.map((inst) => (
+            <div
+              key={inst.user_instance_id}
+              className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-3 p-3 bg-white/5 rounded"
+            >
+              <div>
+                <div className="text-white font-semibold">
+                  {inst.instance_name}
+                </div>
+                <div
+                  className={`text-sm ${
+                    inst.status === "Launched"
+                      ? "text-green-400"
+                      : "text-red-400"
+                  }`}
+                >
+                  Status: {inst.status}
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+              Time: {formatDateTime(inst.rentDate || inst.timestamp)}
+            </div>
+              </div>
               
 
-        {/* ===== INSTANCE LIST ===== */}
-          <div className="max-w-5xl mx-auto bg-white/5 p-6 rounded-xl">
-            <input
-              className="w-full mb-4 px-3 py-2 rounded bg-white/10 text-white"
-              placeholder="Search instance..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+              <div className="flex gap-2">
+                <button
+                  disabled={!isActionAllowed(inst)}
+                  onClick={() =>
+                    window.open(`/lab`, "_blank")
+                  }
+                  className="px-3 py-1 bg-blue-600 rounded disabled:opacity-40"
+                >
+                  WebSSH
+                </button>
 
-            {paginatedInstances.map((inst) => (
-              <div
-                key={inst.user_instance_id}
-                className="flex justify-between items-center mb-3 p-3 bg-white/5 rounded"
-              >
-                <div>
-                  <div className="text-white font-semibold">
-                    {inst.instance_name}
-                  </div>
-                  <div
-                    className={`text-sm ${
-                      inst.status === "Launched"
-                        ? "text-green-400"
-                        : "text-red-400"
-                    }`}
-                  >
-                    Status: {inst.status}
-                  </div>
-                </div>
+                <button
+                  disabled={!isActionAllowed(inst)}
+                  onClick={() =>
+                    rebootInstance(inst.user_instance_id)
+                  }
+                  className="px-3 py-1 bg-yellow-600 rounded disabled:opacity-40"
+                >
+                  Reboot
+                </button>
 
-                <div className="flex gap-2">
-                  <button
-                    disabled={!isActionAllowed(inst)}
-                    onClick={() =>
-                      window.open(`/lab?user=${inst.userId}`, "_blank")
-                    }
-                    className="px-3 py-1 bg-blue-600 rounded disabled:opacity-40"
-                  >
-                    WebSSH
-                  </button>
-                  <button
-                    disabled={!isActionAllowed(inst)}
-                    onClick={() =>
-                      rebootInstance(inst.user_instance_id)
-                    }
-                    className="px-3 py-1 bg-yellow-600 rounded disabled:opacity-40"
-                  >
-                    Reboot
-                  </button>
-                  <button
-                    disabled={!isActionAllowed(inst)}
-                    onClick={() => destroyInstance(inst)}
-                    className="px-3 py-1 bg-red-600 rounded disabled:opacity-40"
-                  >
-                    Destroy
-                  </button>
-                </div>
+                <button
+                  disabled={!isActionAllowed(inst)}
+                  onClick={() => destroyInstance(inst)}
+                  className="px-3 py-1 bg-red-600 rounded disabled:opacity-40"
+                >
+                  Destroy
+                </button>
               </div>
-            ))}
+            </div>
+          ))}
 
-            {totalPages > 1 && (
-              <div className="flex justify-center gap-2 mt-4">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (p) => (
+          {/* ===== CLEAN PAGINATION ===== */}
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-6">
+              <div className="flex gap-2 bg-white/5 px-4 py-2 rounded-lg">
+                <button
+                  disabled={page === 1}
+                  onClick={() => setPage(page - 1)}
+                  className="px-3 py-1 rounded bg-white/10 disabled:opacity-40"
+                >
+                  Prev
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(
+                    (p) =>
+                      p === 1 ||
+                      p === totalPages ||
+                      Math.abs(p - page) <= 1
+                  )
+                  .map((p) => (
                     <button
                       key={p}
                       onClick={() => setPage(p)}
                       className={`px-3 py-1 rounded ${
                         p === page
-                          ? "bg-blue-600"
-                          : "bg-white/10"
+                          ? "bg-blue-600 text-white"
+                          : "bg-white/10 text-white"
                       }`}
                     >
                       {p}
                     </button>
-                  )
-                )}
+                  ))}
+
+                <button
+                  disabled={page === totalPages}
+                  onClick={() => setPage(page + 1)}
+                  className="px-3 py-1 rounded bg-white/10 disabled:opacity-40"
+                >
+                  Next
+                </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+        </div>
       </div>
 
-     
       <Footer />
     </>
   );

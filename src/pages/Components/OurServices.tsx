@@ -1,5 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import Navbar from "../../pages/Components/Navbar";
+import Footer from "../Components/Footer";
+
 import { 
   GraduationCap, 
   Server, 
@@ -12,6 +15,7 @@ import {
   Award,
   RefreshCw
 } from 'lucide-react';
+import { Link } from "react-router-dom";
 
 const OurServices = () => {
   const services = [
@@ -122,6 +126,8 @@ const OurServices = () => {
   };
 
   return (
+    <>
+    <Navbar />
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-16 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -256,6 +262,7 @@ const OurServices = () => {
                 Start your hands-on learning journey today with our comprehensive lab environment
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link to="/register">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -263,6 +270,9 @@ const OurServices = () => {
                 >
                   Get Started Now
                 </motion.button>
+                </Link>
+                 <Link to="/process">
+                 
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -270,12 +280,16 @@ const OurServices = () => {
                 >
                   View Pricing
                 </motion.button>
+                </Link>
               </div>
             </div>
           </div>
         </motion.div>
       </div>
     </div>
+    <Footer />
+    </>
+    
   );
 };
 

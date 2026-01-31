@@ -20,23 +20,61 @@ interface Instance {
 
 /* ================= PACKAGE EXTRACTOR ================= */
 
+// const extractPackageFromName = (name?: string): string => {
+//   console.log('name=',name);
+//   if (!name) return "docker";
+
+//   const lower = name.toLowerCase();
+//    console.log('name=',name,'lower=',lower);
+
+//   if (lower.includes("kubernetes") || lower.includes("k8s")) return "kubernetes";
+//   if (lower.includes("docker")) return "docker";
+//   if (lower.includes("monika-terraform-lab")) return "terraform";
+//    if (lower.includes("monika-nodea")) return "redhat";
+//    if (lower.includes("python")) return "python";
+//    if (lower.includes("jenkins")) return "jenkins ";
+//   if (lower.includes("linux")) return "linux";
+//   if (lower.includes("iscsi")) return "iscsi";
+
+//   return "docker"; // fallback
+// };
+
 const extractPackageFromName = (name?: string): string => {
-  console.log('name=',name);
-  if (!name) return "docker";
+  if (!name) return "linux";
 
   const lower = name.toLowerCase();
-   console.log('name=',name,'lower=',lower);
 
-  if (lower.includes("kubernetes") || lower.includes("k8s")) return "kubernetes";
-  if (lower.includes("docker")) return "docker";
-  if (lower.includes("monika-terraform-lab")) return "terraform";
-   if (lower.includes("monika-nodea")) return "redhat";
-   if (lower.includes("python")) return "python";
-   if (lower.includes("jenkins")) return "jenkins ";
-  if (lower.includes("linux")) return "linux";
-  if (lower.includes("iscsi")) return "iscsi";
+  // 🔴 REDHAT NODES (nodea / nodeb / nodec)
+  if (
+    lower.includes("nodea") ||
+    lower.includes("nodeb") ||
+    lower.includes("nodec")
+  ) {
+    return "redhat";
+  }
 
-  return "docker"; // fallback
+  if (lower.includes("kubernetes") || lower.includes("k8s"))
+    return "kubernetes";
+
+  if (lower.includes("docker"))
+    return "docker";
+
+  if (lower.includes("terraform"))
+    return "terraform";
+
+  if (lower.includes("jenkins"))
+    return "jenkins"; // ✅ fixed (no space)
+
+  if (lower.includes("python"))
+    return "python";
+
+  if (lower.includes("iscsi"))
+    return "iscsi";
+
+  if (lower.includes("linux"))
+    return "linux";
+
+  return "linux"; // ✅ safe fallback
 };
 
 /* ================= DOC MAP ================= */
@@ -63,14 +101,27 @@ const LabDashboard: React.FC = () => {
   const [leftWidth, setLeftWidth] = useState(70);
 
   const isResizing = useRef(false);
-
-  const query = new URLSearchParams(location.search);
-  const userId = query.get("user");
+const getCookie = (name) => {
+    if (typeof document === "undefined") return "";
+    const v = `; ${document.cookie}`;
+    const parts = v.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return "";
+  };
 
   const token =
-    localStorage.getItem("jwt-auth") ||
-    localStorage.getItem("access") ||
-    "";
+    (getCookie("access") ||
+      localStorage.getItem("access") ||
+      localStorage.getItem("jwt-auth"))?.trim();
+  const userId = getCookie("user_id");
+
+  //const query = new URLSearchParams(location.search);
+  //const userId = query.get("user");
+
+  // const token =
+  //   localStorage.getItem("jwt-auth") ||
+  //   localStorage.getItem("access") ||
+  //   "";
 
   /* ================= FETCH INSTANCE ================= */
 

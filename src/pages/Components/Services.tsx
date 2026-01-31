@@ -129,11 +129,12 @@ const Services = () => {
                 <p className="text-gray-400 text-sm mb-4 leading-relaxed">
                   {services[0].description}
                 </p>
-
+                  <a href="/labs">
                 <button className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-sm font-semibold hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 group/btn">
                   <span>Explore Lab</span>
                   <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                 </button>
+                </a>
               </div>
 
               <div className="bg-[#0E0A1F]/50 backdrop-blur-sm rounded-xl p-5 border border-purple-500/10">

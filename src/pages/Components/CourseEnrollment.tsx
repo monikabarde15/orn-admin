@@ -307,7 +307,7 @@ const CourseEnrollment: React.FC = () => {
       await waitForLatestInstanceReady();
 
       // ✅ Redirect ONLY when launched
-      window.location.href = `/lab?user=${userId}`;
+      window.location.href = `/lab`;
     } catch (err) {
       console.error("Launch failed", err);
       alert("Lab launch failed");

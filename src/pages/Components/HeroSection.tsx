@@ -79,9 +79,11 @@ export default function HeroSection() {
             </p>
 
             <div className="mt-8 flex justify-center lg:justify-start">
+              <a href="/register">
               <button className="px-8 py-3 bg-[#8b5cf6] rounded-xl font-semibold hover:bg-[#7c3aed] transition-all duration-300">
                 Book Your Lab Now →
               </button>
+              </a>
             </div>
 
           </div>

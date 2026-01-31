@@ -177,7 +177,7 @@ console.log('userIDnew=',userIDnew);
   navigate('/');
 }
 useEffect(() => {
-  const SESSION_TIME_MS = 3 * 60 * 1000; // 15 minutes
+  const SESSION_TIME_MS = 15 * 60 * 1000; // 15 minutes
   let idleTimer: ReturnType<typeof setTimeout>;
 
   const resetIdleTimer = () => {

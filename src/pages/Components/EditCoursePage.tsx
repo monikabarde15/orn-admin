@@ -273,10 +273,16 @@ api.interceptors.request.use((config) => {
 })
 
 /* ================= TYPES ================= */
+// interface Subscription {
+//   id: number
+//   name: string
+// }
 interface Subscription {
   id: number
   name: string
+  billing_cycle: string
 }
+
 // interface CourseFormData {
 //   title: string
 //   description: string
@@ -289,6 +295,17 @@ interface Subscription {
 //   prerequisites: string[]
 // }
 
+// interface CourseFormData {
+//   title: string
+//   description: string
+//   category: string
+//   difficulty: string
+//   duration: string
+//   instructor: string
+//   subscription_name: string
+//   learningOutcomes: string[]
+//   prerequisites: string[]
+// }
 interface CourseFormData {
   title: string
   description: string
@@ -296,10 +313,11 @@ interface CourseFormData {
   difficulty: string
   duration: string
   instructor: string
-  subscription_name: string
+  subscription_name: string | null
   learningOutcomes: string[]
   prerequisites: string[]
 }
+
 interface QuizOption {
   text: string
   is_correct: boolean
@@ -604,19 +622,57 @@ function CourseForm({
 }) {
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
 
-  const [formData, setFormData] = useState<CourseFormData>(
-    initialData || {
-      title: "",
-      description: "",
-      category: "",
-      difficulty: "beginner",
-      duration: "",
-      instructor: "",
-      subscription_name: "",
-      learningOutcomes: [""],
-      prerequisites: [""],
-    },
-  )
+  // const [formData, setFormData] = useState<CourseFormData>(
+  //   initialData || {
+  //     title: "",
+  //     description: "",
+  //     category: "",
+  //     difficulty: "beginner",
+  //     duration: "",
+  //     instructor: "",
+  //     subscription_name: "",
+  //     learningOutcomes: [""],
+  //     prerequisites: [""],
+  //   },
+  // )
+
+  useEffect(() => {
+  if (
+    initialData?.subscription_name &&
+    subscriptions.length > 0
+  ) {
+    setFormData((prev) => ({
+      ...prev,
+      subscription_name: initialData.subscription_name,
+    }))
+  }
+}, [subscriptions, initialData])
+
+console.log("API subscription:", initialData?.subscription_name)
+console.log(
+  "Options:",
+  subscriptions.map(s => `${s.name} (${s.billing_cycle})`)
+)
+
+ const [formData, setFormData] = useState<CourseFormData>({
+  title: "",
+  description: "",
+  category: "",
+  difficulty: "beginner",
+  duration: "",
+  instructor: "",
+  subscription_name: "",
+  learningOutcomes: [""],
+  prerequisites: [""],
+})
+
+useEffect(() => {
+  if (initialData) {
+    setFormData(initialData)
+  }
+}, [initialData])
+
+
 useEffect(() => {
     fetchSubscriptions().then(setSubscriptions)
   }, [])
@@ -645,15 +701,20 @@ useEffect(() => {
       <div>
         <Label>Subscription *</Label>
         <Select
-          value={formData.subscription_name}
-          onChange={(value) =>
-            setFormData({ ...formData, subscription_name: value })
-          } 
-          options={subscriptions.map((s) => ({
-            value: `${s.name} (${s.billing_cycle})`,
-            label: `${s.name} (${s.billing_cycle})`,
-          }))}
-        />
+  value={formData.subscription_name || ""}
+  onChange={(value) =>
+    setFormData({
+      ...formData,
+      subscription_name: value,
+    })
+  }
+  options={subscriptions.map((s) => ({
+    value: `${s.name} (${s.billing_cycle})`,
+    label: `${s.name} (${s.billing_cycle})`,
+  }))}
+/>
+
+
       </div>
       <div className="grid gap-6 md:grid-cols-2">
         <div className="md:col-span-2">
@@ -702,7 +763,7 @@ useEffect(() => {
         </div>
 
 
-        <div className="md:col-span-2">
+        {/* <div className="md:col-span-2">
           <Label htmlFor="price">Price (USD)</Label>
           <Input
             id="price"
@@ -711,7 +772,7 @@ useEffect(() => {
             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
             placeholder="e.g., 49.99"
           />
-        </div>
+        </div> */}
       </div>
 
       {/* Learning Outcomes */}
@@ -1499,16 +1560,17 @@ export default function EditCoursePage() {
 
   api.get(`/course/courses/${id}/`).then((res) => {
     const d = res.data
-
+   // console.log('d=',d.subscription_name);
     setCourseId(String(d.id))
     setCourseData({
+    subscription_name: d.subscription_name ?? "",
+     // subscription_name:d.subscription_name,
       title: d.title,
       description: d.description,
       category: d.category,
       difficulty: d.difficulty,
       duration: d.duration,
       instructor: d.instructor,
-      price: String(d.price),
       learningOutcomes: d.learningOutcomes?.split("\n") || [""],
       prerequisites: d.prerequisites?.split("\n") || [""],
     })
@@ -1695,17 +1757,33 @@ const handleUpdateLesson = async (
 
     if (result.success) {
       setModules(
-        modules.map((m) =>
-          m.id === moduleId
-            ? {
-                ...m,
-                lessons: m.lessons.map((l) =>
-                  l.id === lessonId ? { ...l, ...data } : l,
-                ),
-              }
-            : m,
-        ),
-      )
+  (d.modules || []).map((m: any) => ({
+    id: String(m.id),
+    title: m.title,
+    description: m.description,
+    lessons: (m.chapters || []).map((c: any) => ({
+      id: String(c.id),
+      title: c.title,
+      type: c.quizzes?.length
+        ? "quiz"
+        : c.file
+        ? "pdf"
+        : c.video
+        ? "video"
+        : "text",
+      duration: "",
+      content: c.description || "",
+      quiz: c.quizzes?.[0]
+        ? {
+            chapter: c.id,
+            question: c.quizzes[0].question,
+            options: c.quizzes[0].options,
+          }
+        : undefined,
+    })),
+  }))
+)
+
     }
   } finally {
   }

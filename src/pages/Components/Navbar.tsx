@@ -181,7 +181,9 @@ useEffect(() => {
       console.log("✅ PROFILE API SUCCESS:", res.data);
     })
     .catch((err) => {
-    console.log("❌ PROFILE API ERROR:", err?.response?.data || err);
+    console.log("❌ PROFILE API ERROR:", err?.response?.data.code || err.code);
+            logout();
+
   });
 }, []); // 👈 EMPTY = ONLY ONCE
 const logout = () => {

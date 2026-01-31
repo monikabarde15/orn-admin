@@ -182,33 +182,40 @@ console.log('userIDnew=',userIDnew);
   navigate('/');
 }
 useEffect(() => {
-  const token =
-    localStorage.getItem("jwt-auth") ||
-    getCookie("access") ||
-    getCookie("jwt-auth");
+  const checkAuth = () => {
+    const token =
+      localStorage.getItem("jwt-auth") ||
+      getCookie("access") ||
+      getCookie("jwt-auth");
 
-  // 🔴 token hi nahi hai → logout
-  if (!token) {
-    logout();
-    return;
-  }
-  axios
-    .get(
-      `${API_BASE}/users/profile/`,
-      {
+    if (!token) {
+      logout();
+      return;
+    }
+
+    axios
+      .get(`${API_BASE}/users/profile/`, {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
-      }
-    )
-    .then((res) => {
-      console.log("✅ Background profile check success");
-    }).catch((err) => {
-    console.log("❌ PROFILE API ERROR:", err?.response?.data || err);
-  });
-    
+      })
+      .then((res) => {
+        console.log("✅ Auth OK", res.data);
+      })
+      .catch((err) => {
+        console.log("❌ PROFILE API ERROR:", err?.response?.data || err);
+        logout();
+      });
+  };
+
+  checkAuth(); // 🔥 immediate check
+
+  const interval = setInterval(checkAuth, 30 * 1000); // every 30 sec
+
+  return () => clearInterval(interval);
 }, []);
+
 const logout = () => {
   localStorage.removeItem("jwt-auth");
   localStorage.removeItem("access");

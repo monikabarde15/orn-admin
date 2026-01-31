@@ -36,9 +36,6 @@ import { useNavigate } from "react-router-dom";
 
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import axios from "axios";
-
-const VIT=import.meta.env.VITE_API_URL;
 
 const Header = () => {
 <ToastContainer
@@ -50,8 +47,6 @@ const Header = () => {
         pauseOnHover
         theme="colored"
       />
-        const API_BASE = `${VIT}/api/v1`;
-
     //   const navigate = useNavigate();
       const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -182,56 +177,100 @@ console.log('userIDnew=',userIDnew);
   navigate('/');
 }
 useEffect(() => {
-  const token =
-    localStorage.getItem("jwt-auth") ||
-    getCookie("access") ||
-    getCookie("jwt-auth");
+  const SESSION_TIME_MS = 15 * 60 * 1000; // 15 minutes
+  let idleTimer: ReturnType<typeof setTimeout>;
 
-  // 🔴 token hi nahi hai → logout
-  if (!token) {
-    logout();
-    return;
-  }
-  axios
-    .get(
-      `${API_BASE}/users/profile/`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      }
-    )
-    .then((res) => {
-      console.log("✅ Background profile check success");
-    }).catch((err) => {
-    console.log("❌ PROFILE API ERROR:", err?.response?.data || err);
-  });
-    
+  const resetIdleTimer = () => {
+    clearTimeout(idleTimer);
+
+    idleTimer = setTimeout(() => {
+      logout(); // <-- YOUR logout function
+    }, SESSION_TIME_MS);
+  };
+
+  // User activity events
+  const events = [
+    "mousemove",
+    "mousedown",
+    "click",
+    "keydown",
+    "scroll",
+    "touchstart"
+  ];
+
+  events.forEach(event =>
+    window.addEventListener(event, resetIdleTimer)
+  );
+
+  resetIdleTimer(); // start timer on load
+
+  return () => {
+    clearTimeout(idleTimer);
+    events.forEach(event =>
+      window.removeEventListener(event, resetIdleTimer)
+    );
+  };
 }, []);
-const logout = () => {
-  localStorage.removeItem("jwt-auth");
-  localStorage.removeItem("access");
+const clearSession = () => {
+  // remove token from storage
+  localStorage.removeItem("token");
   localStorage.removeItem("user");
-  localStorage.removeItem("userId");
 
-  document.cookie.split(";").forEach((cookie) => {
-    const eqPos = cookie.indexOf("=");
-    const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-    document.cookie =
-      name.trim() +
-      "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+  sessionStorage.clear();
+
+  // remove all cookies
+  document.cookie.split(";").forEach(cookie => {
+    document.cookie = cookie
+      .replace(/^ +/, "")
+      .replace(/=.*/, "=;expires=" + new Date(0).toUTCString() + ";path=/");
   });
 
-  setIsLoggedIn(false);
+  logout(); // tumhara existing logout function
+};
+const fetchProfile = async () => {
+  try {
+    setLoading(true);
 
-  toast.info("Session expired. Please login again.", {
-    position: "top-center",
-  });
+    const response = await axios.get(`${VIT}/api/v1/users/profile/`, {
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${rawToken}`,
+      },
+    });
 
-  setTimeout(() => {
-    window.location.replace("/");
-  }, 1200);
+    setProfile(prev => ({ ...prev, ...response.data }));
+    setLoading(false);
+
+  } catch (error: any) {
+    setLoading(false);
+
+    console.error("Failed to fetch profile:", error);
+
+    // 🔥 TOKEN EXPIRED / UNAUTHORIZED
+    if (
+      error.response &&
+      (error.response.status === 401 || error.response.status === 403)
+    ) {
+      clearSession();
+    }
+  }
+};
+
+const logout = () => {
+            localStorage.removeItem("jwt-auth");
+            // Clear all cookies
+            document.cookie.split(";").forEach((cookie) => {
+            const eqPos = cookie.indexOf("=");
+            const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+            });
+
+            setIsLoggedIn(false);
+            toast.info("You have been logged out!", { position: "top-center" });
+
+            setTimeout(() => {
+            window.location.href = "/";
+            }, 1500);
 };
 
 const userID = JSON.parse(localStorage.getItem("userId") || "{}");
@@ -564,12 +603,12 @@ const userID = JSON.parse(localStorage.getItem("userId") || "{}");
                                             Change Password
                                         </Link>
                                     </li>
-                                    <li>
+                                    {/* <li>
                                         <Link to="/users/profile" className="dark:hover:text-white">
                                             <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
                                             Profile
                                         </Link>
-                                    </li>
+                                    </li> */}
                                     {/*<li>
                                         <Link to="/users/profile" className="dark:hover:text-white">
                                             <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />

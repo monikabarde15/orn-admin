@@ -6,6 +6,20 @@ import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { Wallet, User, LogOut, Laptop, ShoppingCart, Lock, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+const getCookie = (name) => {
+    if (typeof document === "undefined") return "";
+    const v = `; ${document.cookie}`;
+    const parts = v.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return "";
+  };
+
+  const token =
+    (getCookie("access") ||
+      localStorage.getItem("access") ||
+      localStorage.getItem("jwt-auth"))?.trim();
+const TOKEN_KEY = token;//"jwt-auth";
+const API_BASE = import.meta.env.VITE_API_URL;
 
 const Navbar = () => {
           const navigate = useNavigate();
@@ -93,62 +107,99 @@ const user = {
   //   setTimeout(() => (window.location.href = "/"), 800);
   // };
   
+// useEffect(() => {
+//   const SESSION_TIME_MS = 15 * 60 * 1000; // 15 min
+
+//   const logout = () => {
+//     // 🔴 Remove localStorage
+//     localStorage.removeItem("jwt-auth");
+//     localStorage.removeItem("access");
+//     localStorage.removeItem("user_id");
+//     localStorage.removeItem("session_expiry");
+
+//     // 🔴 Remove ALL accessible cookies
+//     document.cookie.split(";").forEach(cookie => {
+//       document.cookie = cookie
+//         .replace(/^ +/, "")
+//         .replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+//     });
+
+//     // 🔴 IMPORTANT: update UI
+//     setIsLoggedIn(false);
+
+//     toast.info("Session expired. Logged out!", {
+//       position: "top-center",
+//     });
+
+//     setTimeout(() => {
+//       window.location.href = "/";
+//     }, 800);
+//   };
+
+//   const resetTimer = () => {
+//     if (logoutTimerRef.current) {
+//       clearTimeout(logoutTimerRef.current);
+//     }
+
+//     logoutTimerRef.current = setTimeout(logout, SESSION_TIME_MS);
+//   };
+
+//   // 🧠 user activity detect
+//   const events = ["click", "mousemove", "keydown", "scroll", "touchstart"];
+//   events.forEach(event =>
+//     window.addEventListener(event, resetTimer)
+//   );
+
+//   // start countdown
+//   resetTimer();
+
+//   return () => {
+//     if (logoutTimerRef.current) {
+//       clearTimeout(logoutTimerRef.current);
+//     }
+//     events.forEach(event =>
+//       window.removeEventListener(event, resetTimer)
+//     );
+//   };
+// }, []);
+
 useEffect(() => {
-  const SESSION_TIME_MS = 15 * 60 * 1000; // 15 min
+  const token = TOKEN_KEY;
 
-  const logout = () => {
-    // 🔴 Remove localStorage
-    localStorage.removeItem("jwt-auth");
-    localStorage.removeItem("access");
-    localStorage.removeItem("user_id");
-    localStorage.removeItem("session_expiry");
+  console.log("🔥 Profile effect fired, token =", token);
 
-    // 🔴 Remove ALL accessible cookies
-    document.cookie.split(";").forEach(cookie => {
-      document.cookie = cookie
-        .replace(/^ +/, "")
-        .replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
-    });
+  if (!token) return;
 
-    // 🔴 IMPORTANT: update UI
-    setIsLoggedIn(false);
+  axios
+    .get(`${API_BASE}/users/profile`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+    })
+    .then((res) => {
+      console.log("✅ PROFILE API SUCCESS:", res.data);
+    })
+    .catch((err) => {
+    console.log("❌ PROFILE API ERROR:", err?.response?.data || err);
+  });
+}, []); // 👈 EMPTY = ONLY ONCE
+const logout = () => {
+            localStorage.removeItem("jwt-auth");
+            // Clear all cookies
+            document.cookie.split(";").forEach((cookie) => {
+            const eqPos = cookie.indexOf("=");
+            const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+            });
 
-    toast.info("Session expired. Logged out!", {
-      position: "top-center",
-    });
+            setIsLoggedIn(false);
+            toast.info("You have been logged out!", { position: "top-center" });
 
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 800);
-  };
-
-  const resetTimer = () => {
-    if (logoutTimerRef.current) {
-      clearTimeout(logoutTimerRef.current);
-    }
-
-    logoutTimerRef.current = setTimeout(logout, SESSION_TIME_MS);
-  };
-
-  // 🧠 user activity detect
-  const events = ["click", "mousemove", "keydown", "scroll", "touchstart"];
-  events.forEach(event =>
-    window.addEventListener(event, resetTimer)
-  );
-
-  // start countdown
-  resetTimer();
-
-  return () => {
-    if (logoutTimerRef.current) {
-      clearTimeout(logoutTimerRef.current);
-    }
-    events.forEach(event =>
-      window.removeEventListener(event, resetTimer)
-    );
-  };
-}, []);
-
+            setTimeout(() => {
+            window.location.href = "/";
+            }, 1500);
+};
    const handleLogout = () => {
     // localStorage.removeItem("jwt-auth");
     // localStorage.removeItem("user_id");

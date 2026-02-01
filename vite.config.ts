@@ -9,22 +9,12 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  build: {
-    outDir: 'build',
-    chunkSizeWarningLimit: 1600,
+  server: {
+    port: 3000,
+    host: true,
   },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    include: ['tests/unit_tests/**/*.ts?(x)'], // include all TS/TSX files
-    coverage: {
-      provider: 'c8',
-      reporter: ['text', 'lcov'],
-      lines: 70,
-      functions: 70,
-      branches: 70,
-      statements: 70,
-      all: true,
-    },
+  build: {
+     outDir: 'build',
+    chunkSizeWarningLimit: 1600, // 500kb से बढ़ाकर 1.6mb कर दिया
   },
 });

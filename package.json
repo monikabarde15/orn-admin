@@ -6,7 +6,15 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "test": "vitest",
+        "test:ui": "vitest --ui",
+        "test:run": "vitest run",
+        "test:coverage": "vitest run --coverage",
+        "selenium:test": "node tests/selenium_browser_test.js",
+        "selenium:demo": "node tests/demo_selenium_test.js",
+        "selenium:quick": "./run_selenium_tests.sh",
+        "daily:test": "daily_selenium_tests.bat"
     },
     "dependencies": {
         "@emotion/react": "^11.10.6",
@@ -83,6 +91,7 @@
         "@headlessui/react": "^1.7.3",
         "@tailwindcss/forms": "^0.5.3",
         "@tailwindcss/typography": "^0.5.7",
+        "@types/node": "^20.0.0",
         "@types/react": "^18.0.27",
         "@types/react-copy-to-clipboard": "^5.0.4",
         "@types/react-dom": "^18.0.10",
@@ -91,16 +100,22 @@
         "@types/sortablejs": "^1.15.0",
         "@types/styled-components": "^5.1.26",
         "@vitejs/plugin-react": "^3.1.0",
+        "@vitest/coverage-v8": "^0.34.6",
+        "@vitest/ui": "^0.34.6",
         "autoprefixer": "^10.4.17",
+        "chromedriver": "^144.0.1",
         "i18next": "^21.10.0",
         "i18next-browser-languagedetector": "^6.1.8",
         "i18next-http-backend": "^1.4.4",
+        "jsdom": "^22.1.0",
         "postcss": "^8.4.35",
         "react-animate-height": "^3.0.4",
         "react-i18next": "^11.18.6",
         "react-perfect-scrollbar": "^1.5.8",
+        "selenium-webdriver": "^4.15.0",
         "tailwindcss": "^3.4.1",
         "typescript": "^4.9.3",
-        "vite": "^4.1.0"
+        "vite": "^4.1.0",
+        "vitest": "^0.34.6"
     }
 }

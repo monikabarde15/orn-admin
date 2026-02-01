@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 COPY . .
 
@@ -23,4 +23,8 @@ EXPOSE 3000
 
 CMD ["serve", "-s", "build", "-l", "3000"]
 
-RUN npm test
+# just for unit tests or all tests
+RUN npm tests
+
+# Just for selenium tests
+RUN npm run selenium:test

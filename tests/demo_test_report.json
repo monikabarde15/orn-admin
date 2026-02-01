@@ -1,0 +1,15 @@
+{
+  "totalTests": 9,
+  "passedTests": 8,
+  "failedTests": 1,
+  "errors": [
+    {
+      "test": "Application server responding",
+      "status": "FAIL",
+      "details": "Server not accessible",
+      "timestamp": "2026-02-01T06:55:30.990Z"
+    }
+  ],
+  "startTime": "2026-02-01T06:55:30.930Z",
+  "endTime": "2026-02-01T06:55:32.301Z"
+}

@@ -9,6 +9,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    port: 3000,
+    host: true,
+  },
   build: {
      outDir: 'build',
     chunkSizeWarningLimit: 1600, // 500kb से बढ़ाकर 1.6mb कर दिया

@@ -1,0 +1,27 @@
+{
+  "totalTests": 15,
+  "passedTests": 12,
+  "failedTests": 3,
+  "errors": [
+    {
+      "test": "Navigate to http://localhost:3000",
+      "status": "FAIL",
+      "details": "unknown error: net::ERR_CONNECTION_REFUSED\n  (Session info: chrome=144.0.7559.109)",
+      "timestamp": "2026-02-01T07:16:32.529Z"
+    },
+    {
+      "test": "Critical application health check",
+      "status": "FAIL",
+      "details": "unknown error: net::ERR_CONNECTION_REFUSED\n  (Session info: chrome=144.0.7559.109)",
+      "timestamp": "2026-02-01T07:16:32.531Z"
+    },
+    {
+      "test": "Home page loads",
+      "status": "FAIL",
+      "details": "",
+      "timestamp": "2026-02-01T07:17:48.007Z"
+    }
+  ],
+  "startTime": "2026-02-01T07:16:17.540Z",
+  "endTime": "2026-02-01T07:18:04.285Z"
+}

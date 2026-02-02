@@ -123,9 +123,9 @@ export default function CoursesList() {
                 </div>
 
                 <div className="mt-4 flex justify-between items-center">
-                  <span className="text-white font-bold">
+                  {/* <span className="text-white font-bold">
                     ₹{course.price}
-                  </span>
+                  </span> */}
 
                   <button
                     onClick={() =>

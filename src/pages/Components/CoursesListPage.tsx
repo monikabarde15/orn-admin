@@ -136,9 +136,9 @@ export default function CoursesListPage() {
               <p className="text-sm text-gray-500">
                 Category: {course.category || "—"}
               </p>
-              <p className="text-sm font-medium">
+              {/* <p className="text-sm font-medium">
                 Price: ${course.price || 0}
-              </p>
+              </p> */}
 
               {course.isPublished ? (
                 <span className="flex items-center gap-1 text-green-600 text-sm mt-1">

@@ -151,11 +151,11 @@ const submitForm = async (e: React.FormEvent) => {
       localStorage.setItem("session_expiry", expiryTime.toString());
 
       // ✅ COOKIES (SHORT LIVED)
-      document.cookie = `username=${encodeURIComponent(data.user.username)}; path=/; max-age=${SESSION_TIME}`;
-      document.cookie = `user_id=${data.user.id}; path=/; max-age=${SESSION_TIME}`;
-      document.cookie = `email=${encodeURIComponent(data.user.email)}; path=/; max-age=${SESSION_TIME}`;
-      document.cookie = `is_superuser=${data.user.is_superuser}; path=/; max-age=${SESSION_TIME}`;
-      document.cookie = `access=${data.access}; path=/; max-age=${SESSION_TIME}`;
+      document.cookie = `username=${encodeURIComponent(data.user.username)}; path=/;`;
+      document.cookie = `user_id=${data.user.id}; path=/;`;
+      document.cookie = `email=${encodeURIComponent(data.user.email)}; path=/;`;
+      document.cookie = `is_superuser=${data.user.is_superuser}; path=/;`;
+      document.cookie = `access=${data.access}; path=/;`;
 
       // ✅ LOCAL STORAGE
       localStorage.setItem("jwt-auth", data.access);

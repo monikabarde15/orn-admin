@@ -1348,6 +1348,33 @@ const confirmDeleteMCQ = async (mcqId: number, lessonId: string) => {
           >
             Manage MCQs ({lesson.mcqCount})
           </Button>
+          <Button
+  variant="ghost"
+  size="icon"
+  onClick={() => {
+    setEditingLesson({
+      moduleId: module.id,
+      lesson: lesson,
+    })
+
+    setLessonForm({
+      title: lesson.title,
+      duration: lesson.duration || "",
+      content: lesson.content || "",
+      videoFile: null,
+      pdfFile: null,
+      videoProgress: 0,
+      pdfProgress: 0,
+      videoStatus: "idle",
+      pdfStatus: "idle",
+    })
+
+    setShowLessonForm(module.id) // 🔥 same form open
+  }}
+>
+  <Edit className="h-4 w-4 text-blue-600" />
+</Button>
+
 
           <Button
             variant="ghost"
@@ -1631,8 +1658,27 @@ const confirmDeleteMCQ = async (mcqId: number, lessonId: string) => {
           Cancel
         </Button>
 
-        <Button onClick={() => onAddLesson(module.id)}>
+        {/* <Button onClick={() => onAddLesson(module.id)}>
   Save Lecture
+</Button> */}
+<Button
+  onClick={() => {
+    if (editingLesson) {
+      onUpdateLesson(
+        editingLesson.moduleId,
+        editingLesson.lesson.id,
+        lessonForm
+      )
+
+      setEditingLesson(null)
+    } else {
+      onAddLesson(module.id)
+    }
+
+    setShowLessonForm(null)
+  }}
+>
+  {editingLesson ? "Update Lecture" : "Save Lecture"}
 </Button>
 
 

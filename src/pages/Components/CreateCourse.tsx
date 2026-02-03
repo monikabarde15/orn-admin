@@ -946,116 +946,7 @@ const fetchMCQs = async (lessonId: string) => {
   }))
 }
 
-const handleAddLesson = async (moduleId: string) => {
-  if (!lessonForm.title) {
-    toast.error("Lecture title required")
-    return
-  }
 
-  // 🔥 TEMP LESSON ID (for progress tracking)
-  const tempId = `temp-${Date.now()}`
-
-  // ✅ STEP 1: UI me turant temp lesson add
-  setModules((prev) =>
-    prev.map((m) =>
-      m.id === moduleId
-        ? {
-            ...m,
-            lessons: [
-  ...(m.lessons || []),
-              {
-                id: tempId,
-                title: lessonForm.title,
-                content: lessonForm.content,
-                quizzes: [],
-                mcqCount: 0,
-                uploadStatus: "uploading",
-                uploadProgress: 0,
-              },
-            ],
-          }
-        : m
-    )
-  )
-
-  try {
-    // ✅ STEP 2: API CALL + PROGRESS
-    const res = await mockApi.addLesson(
-      moduleId,
-      lessonForm,
-      (_type, percent) => {
-        setModules((prev) =>
-          prev.map((m) =>
-            m.id === moduleId
-              ? {
-                  ...m,
-                  lessons: (m.lessons || []).map((l) =>
-                    l.id === tempId
-                      ? { ...l, uploadProgress: percent }
-                      : l
-                  ),
-                }
-              : m
-          )
-        )
-      }
-    )
-
-    // ✅ STEP 3: TEMP → REAL LESSON (SUCCESS)
-    setModules((prev) =>
-      prev.map((m) =>
-        m.id === moduleId
-          ? {
-              ...m,
-              lessons: (m.lessons || []).map((l) =>
-                l.id === tempId
-                  ? {
-                      ...l,
-                      id: res.id, // backend id
-                      uploadStatus: "success",
-                      uploadProgress: 100,
-                    }
-                  : l
-              ),
-            }
-          : m
-      )
-    )
-
-    toast.success("Lecture uploaded")
-
-    // ✅ reset form
-    setLessonForm({
-      title: "",
-      duration: "",
-      content: "",
-      videoFile: null,
-      pdfFile: null,
-      videoProgress: 0,
-      pdfProgress: 0,
-      videoStatus: "idle",
-      pdfStatus: "idle",
-    })
-  } catch (err) {
-    // ❌ STEP 4: ERROR STATE
-    setModules((prev) =>
-      prev.map((m) =>
-        m.id === moduleId
-          ? {
-              ...m,
-              lessons: (m.lessons || []).map((l) =>
-                l.id === tempId
-                  ? { ...l, uploadStatus: "error" }
-                  : l
-              ),
-            }
-          : m
-      )
-    )
-
-    toast.error("Upload failed")
-  }
-}
 
 
 
@@ -1595,7 +1486,7 @@ const handleEditModule = (module: Module) => {
         {/* <Button onClick={() => onAddLesson(module.id)}>
   Save Lecture
 </Button> */}
-<Button
+{/* <Button
   onClick={() => {
     if (editingLesson) {
       onUpdateLesson(
@@ -1606,6 +1497,32 @@ const handleEditModule = (module: Module) => {
 
       setEditingLesson(null)
     } else {
+      onAddLesson(module.id)
+    }
+
+    setShowLessonForm(null)
+  }}
+>
+  {editingLesson ? "Update Lecture" : "Save Lecture"}
+</Button> */}
+<Button
+  onClick={() => {
+    if (editingLesson) {
+      // ✅ UPDATE MODE
+      onUpdateLesson(
+        editingLesson.moduleId,
+        editingLesson.lesson.id,
+        {
+          title: lessonForm.title,
+          duration: lessonForm.duration,
+          content: lessonForm.content,
+          videoFile: lessonForm.videoFile ?? undefined,
+          attachmentFile: lessonForm.pdfFile ?? undefined,
+        }
+      )
+      setEditingLesson(null)
+    } else {
+      // ✅ ADD MODE
       onAddLesson(module.id)
     }
 
@@ -1800,13 +1717,18 @@ function SuccessView({ courseTitle, onCreateAnother }: { courseTitle: string; on
         Your course &quot;{courseTitle}&quot; has been successfully published and is now available for students.
       </p>
       <div className="flex gap-4 justify-center">
-        <Button variant="outline" onClick={onCreateAnother}>
+        <a href="/create-course">
+        <Button variant="outline">
           Create Another Course
         </Button>
-        <Button>
-          View Course
+        </a>
+        <a href="/courses">
+          <Button>
+          View Course List
           <ChevronRight className="ml-2 h-4 w-4" />
         </Button>
+        </a>
+        
       </div>
     </div>
   )
@@ -1905,46 +1827,26 @@ const updateMcqCount = (lessonId: string, count: number) => {
     toast.error("Failed to delete module")
   }
 }
+const handleAddLesson = async (moduleId: string) => {
+  if (!lessonForm.title) {
+    toast.error("Lecture title required")
+    return
+  }
 
-  const handleAddLesson = async (moduleId: string) => {
-    const tempId = `temp-${Date.now()}`
-  
-    if (!lessonForm.title) {
-      toast.error("Lecture title required")
-      return
-    }
-  
-    try {
-      console.log("🔥 ADD LESSON API CALL START")
-  
-      const res = await mockApi.addLesson(
-        moduleId,
-        lessonForm,
-        (type, percent) => {
-    console.log("🔥 PROGRESS CALLBACK", type, percent)
-  
-    // setModules((prev) =>
-    //   prev.map((m) => ({
-    //     ...m,
-    //     lessons: m.lessons.map((l) =>
-    //       l.id === tempId
-    //         ? { ...l, uploadProgress: percent }
-    //         : l
-    //     ),
-    //   }))
-    // )
-  setModules((prev) =>
-    prev.map((m) =>
+  const tempId = `temp-${Date.now()}`
+
+  // ✅ TEMP LESSON — ONLY ONCE
+  setModules(prev =>
+    prev.map(m =>
       m.id === moduleId
         ? {
             ...m,
             lessons: [
-              ...(m.lessons || []), // 🔥 SAFE GUARD
+              ...(m.lessons || []),
               {
                 id: tempId,
                 title: lessonForm.title,
                 content: lessonForm.content,
-                quizzes: [],
                 mcqCount: 0,
                 uploadStatus: "uploading",
                 uploadProgress: 0,
@@ -1954,74 +1856,97 @@ const updateMcqCount = (lessonId: string, count: number) => {
         : m
     )
   )
-  
-  
-  }
-  
-      )
-  
-      console.log("✅ API RESPONSE:", res)
-  
-      setModules((prev) =>
-        prev.map((m) =>
-          m.id === moduleId
-            ? {
-                ...m,
-                lessons: [
-                  ...m.lessons,
-                  {
-                    id: res.id,
-                    title: lessonForm.title,
-                    content: lessonForm.content,
-                    video: lessonForm.videoFile ? "uploaded" : null,
-                    file: lessonForm.pdfFile ? "uploaded" : null,
-                    quizzes: [],
-                    mcqCount: 0,
-                  },
-                ],
-              }
-            : m
+
+  try {
+    const res = await mockApi.addLesson(
+      moduleId,
+      lessonForm,
+      (_type, percent) => {
+        // ✅ ONLY UPDATE PROGRESS
+        setModules(prev =>
+          prev.map(m =>
+            m.id === moduleId
+              ? {
+                  ...m,
+                  lessons: m.lessons.map(l =>
+                    l.id === tempId
+                      ? { ...l, uploadProgress: percent }
+                      : l
+                  ),
+                }
+              : m
+          )
         )
+      }
+    )
+
+    // ✅ TEMP → REAL
+    setModules(prev =>
+      prev.map(m =>
+        m.id === moduleId
+          ? {
+              ...m,
+              lessons: m.lessons.map(l =>
+                l.id === tempId
+                  ? {
+                      ...l,
+                      id: res.id,
+                      uploadStatus: "success",
+                      uploadProgress: 100,
+                    }
+                  : l
+              ),
+            }
+          : m
       )
-  
-      toast.success("Lecture added")
-  
-      setLessonForm({
-        title: "",
-        duration: "",
-        content: "",
-        videoFile: null,
-        pdfFile: null,
-        progress: 0,
-      })
-    } catch (e) {
-      console.error("❌ ADD LESSON ERROR", e)
-      toast.error("Lecture upload failed")
-    }
+    )
+
+    toast.success("Lecture uploaded")
+
+  } catch {
+    setModules(prev =>
+      prev.map(m =>
+        m.id === moduleId
+          ? {
+              ...m,
+              lessons: m.lessons.map(l =>
+                l.id === tempId
+                  ? { ...l, uploadStatus: "error" }
+                  : l
+              ),
+            }
+          : m
+      )
+    )
+    toast.error("Upload failed")
   }
-  
+}
+
   const handleUpdateLesson = async (
-    moduleId: string,
-    lessonId: string,
-    data: Partial<Lesson>
-  ) => {
-    const res = await mockApi.updateLesson(lessonId, data)
-  
-    if (res.success) {
-      setModules(
-        modules.map((m) =>
-          m.id === moduleId
-            ? {
-                ...m,
-                lessons: (m.lessons || []).map((l) =>
-                  l.id === lessonId ? { ...l, ...data } : l
-                ),
-              }
-            : m
-        )
+  moduleId: string,
+  lessonId: string,
+  data: Partial<Lesson>
+) => {
+  const res = await mockApi.updateLesson(lessonId, data)
+
+  if (res.success) {
+    setModules(prev =>
+      prev.map(m =>
+        m.id === moduleId
+          ? {
+              ...m,
+              lessons: m.lessons.map(l =>
+                l.id === lessonId ? { ...l, ...data } : l
+              ),
+            }
+          : m
       )
-    }
+    )
+
+    toast.success("Lecture updated")
   }
+}
+
   const handleDeleteLesson = async (
     moduleId: string,
     lessonId: string

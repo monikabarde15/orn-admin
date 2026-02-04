@@ -2204,38 +2204,78 @@ const handleDeleteLesson = async (
     )
   }
 }
+const getThumbnailId = async () => {
+  if (!courseId) return null
+
+  try {
+    const res = await api.get(`/course/thumbnail/?course=${courseId}`)
+
+    // agar ek hi thumbnail hai
+    if (res.data.length > 0) {
+      return res.data[0].id   // 👈 thumbnail ID
+    }
+
+    return null
+  } catch (error) {
+    console.error("Failed to fetch thumbnail", error)
+    return null
+  }
+}
 
   /* ================= THUMBNAIL ================= */
-const token =
-    getCookie("access") || localStorage.getItem("access")
-      const userId = getCookie("user_id")
 
-  const handleThumbnailUpload = async (file: File) => {
-    if (!courseId) return
+  // const handleThumbnailUpload = async (file: File) => {
+  //   if (!courseId) return
 
-    setLoading(true)
+  //   setLoading(true)
 
-    const formData = new FormData()
-    formData.append("image_url", file)
-    formData.append("course", courseId)
-    formData.append("user", userId)
+  //   const formData = new FormData()
+  //   formData.append("image_url", file)
+  //   formData.append("course", courseId)
+  //   formData.append("user", userId)
 
-    // await api.PATCH(`/course/thumbnail/${courseId}/`, formData, {
-    //   headers: { "Content-Type": "multipart/form-data" },
-    // })
-    await api.patch(
-  `/course/thumbnail/${courseId}/`,
-  formData,
-  {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }
-);
+  //   await api.put(`/course/thumbnail/${courseId}/`, formData, {
+  //     headers: { "Content-Type": "multipart/form-data" },
+  //   })
 
+  //   setThumbnail(URL.createObjectURL(file))
+  //   setLoading(false)
+  // }
+const handleThumbnailUpload = async (file: File) => {
+  if (!courseId || !userId) return
+
+  setLoading(true)
+
+  try {
+    // 1️⃣ get thumbnail ID
+    const thumbnailId = await getThumbnailId()
+
+    if (!thumbnailId) {
+      alert("Thumbnail not found")
+      return
+    }
+
+    // 2️⃣ prepare form data
+   const formData = new FormData()
+formData.append("image_url", file)
+formData.append("course", String(courseId)) // 👈 REQUIRED
+
+
+    // 3️⃣ update thumbnail
+    await api.put(`/course/thumbnail/${thumbnailId}/`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    })
+
+    // 4️⃣ preview update
     setThumbnail(URL.createObjectURL(file))
+  } catch (error) {
+    console.error("Thumbnail update failed", error)
+  } finally {
     setLoading(false)
   }
+}
 
   /* ================= PUBLISH ================= */
 

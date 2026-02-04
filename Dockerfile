@@ -31,11 +31,11 @@ FROM node:22-alpine
 WORKDIR /app
 
 # Copy built assets only
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/build ./build
 
 # Static file server
 RUN npm install -g serve
 
 EXPOSE 3000
 
-CMD ["serve", "-s", "dist", "-l", "3000"]
+CMD ["serve", "-s", "build", "-l", "3000"]

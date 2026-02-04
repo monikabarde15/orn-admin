@@ -48,19 +48,6 @@ type Step = "learning" | "review" | "certificate";
 export default function CourseTestFinal() {
   const { id: courseId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-
-  /* ================= AUTH ================= */
-  const token =
-    localStorage.getItem("access") ||
-    document.cookie
-      .split("; ")
-      .find((r) => r.startsWith("access="))
-      ?.split("=")[1];
-
-  const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
 const getCookie = (name: string) => {
     const v = `; ${document.cookie}`;
     const parts = v.split(`; ${name}=`);
@@ -73,14 +60,21 @@ const token =
     getCookie("access") || localStorage.getItem("access") || "";
 
   const userId = getCookie("user_id");
+  /* ================= AUTH ================= */
+  // const token =
+  //   localStorage.getItem("access") ||
+  //   document.cookie
+  //     .split("; ")
+  //     .find((r) => r.startsWith("access="))
+  //     ?.split("=")[1];
+
+  // const userId = localStorage.getItem("user_id");
 
   const api = axios.create({
-    baseURL: `${VIT}`,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+    baseURL: import.meta.env.VITE_API_URL,
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
+
   /* ================= STATE ================= */
   const [modules, setModules] = useState<Module[]>([]);
   const [flow, setFlow] = useState<FlowItem[]>([]);
@@ -90,121 +84,58 @@ const token =
   const [timeLeft, setTimeLeft] = useState(60);
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
+const [progressId, setProgressId] = useState<number | null>(null);
+const [loadingProgress, setLoadingProgress] = useState(true);
 
   const current = flow[flowIndex];
-
   const isActive = (idx: number) => idx === flowIndex;
   const isCompleted = (idx: number) => idx < flowIndex;
 
-  /* ================= FLOW BUILDER ================= */
+  /* ================= FLOW ================= */
   const buildFlow = (modules: Module[]): FlowItem[] => {
-  const result: FlowItem[] = [];
+    const items: FlowItem[] = [];
 
-  modules.forEach((m) => {
-    m.chapters.forEach((c) => {
+    modules.forEach((m) => {
+      m.chapters.forEach((c) => {
+        if (c.video?.endsWith(".mp4")) {
+          items.push({
+            type: "video",
+            data: "https://" + c.video,
+            moduleId: m.id,
+          });
+        }
 
-      // 1️⃣ VIDEO (sabse pehle)
-      if (c.video && c.video.endsWith(".mp4")) {
-        result.push({
-          type: "video",
-          data: "https://" + c.video,
-          moduleId: m.id,
-        });
-      }
+        if (c.file?.endsWith(".pdf")) {
+          items.push({
+            type: "pdf",
+            data: "https://" + c.file,
+            moduleId: m.id,
+          });
+        }
 
-      // 2️⃣ PDF
-      if (c.file && c.file.endsWith(".pdf")) {
-        result.push({
-          type: "pdf",
-          data: "https://" + c.file,
-          moduleId: m.id,
-        });
-      }
-
-      // 3️⃣ QUIZ
-      c.quizzes?.forEach((q) => {
-        result.push({
-          type: "quiz",
-          data: q,
-          moduleId: m.id,
+        c.quizzes?.forEach((q) => {
+          items.push({
+            type: "quiz",
+            data: q,
+            moduleId: m.id,
+          });
         });
       });
-
-    });
-  });
-
-  return result;
-};
-const sortModulesForVideoFirst = (modules: Module[]) => {
-  return [...modules].sort((a, b) => {
-    const aHasVideo = a.chapters.some(
-      (c) => c.video && c.video.endsWith(".mp4")
-    );
-    const bHasVideo = b.chapters.some(
-      (c) => c.video && c.video.endsWith(".mp4")
-    );
-
-    if (aHasVideo && !bHasVideo) return -1; // a first
-    if (!aHasVideo && bHasVideo) return 1;  // b first
-    return 0; // same → backend order
-  });
-};
-const submitFeedback = async () => {
-  if (!feedback.trim()) {
-    alert("Please write feedback");
-    return;
-  }
-
-  try {
-    await api.post("/api/feedback/feedback_vc/", {
-      course: courseId,
-      rating,
-      description: feedback.trim(),
-      user: localStorage.getItem("user_id"),
     });
 
-    // feedback ke baad certificate step
-    setStep("certificate");
-  } catch (err) {
-    console.error("Feedback error", err);
-    alert("Feedback submit nahi hua");
-  }
-};
+    return items;
+  };
 
-function CertificateDetail() {
-  const { id } = useParams();
-  const [certificate, setCertificate] = useState<any>(null);
-
-  useEffect(() => {
-    api.get(`/course/certificates/${id}/`).then((res) => {
-      setCertificate(res.data);
+  const sortModulesForVideoFirst = (modules: Module[]) =>
+    [...modules].sort((a, b) => {
+      const aHasVideo = a.chapters.some((c) => c.video?.endsWith(".mp4"));
+      const bHasVideo = b.chapters.some((c) => c.video?.endsWith(".mp4"));
+      if (aHasVideo && !bHasVideo) return -1;
+      if (!aHasVideo && bHasVideo) return 1;
+      return 0;
     });
-  }, [id]);
 
-  if (!certificate) return <p>Loading...</p>;
-
-  return (
-    <div className="min-h-screen p-10 text-white">
-      <h1 className="text-3xl font-bold mb-4">
-        🎓 Certificate of Completion
-      </h1>
-
-      <p><b>Course:</b> {certificate.course_name}</p>
-      <p><b>User:</b> {certificate.user_name}</p>
-      <p><b>Issued On:</b> {certificate.issued_at}</p>
-
-      <a
-        href={certificate.pdf}
-        target="_blank"
-        className="inline-block mt-4 bg-green-600 px-6 py-2 rounded"
-      >
-        Download Certificate
-      </a>
-    </div>
-  );
-}
-
-  /* ================= FETCH ================= */
+  /* ================= FETCH COURSE ================= */
   useEffect(() => {
     api.get(`/course/courses/${courseId}/`).then((res) => {
       const mapped: Module[] = res.data.modules.map((m: any) => ({
@@ -213,13 +144,9 @@ function CertificateDetail() {
         chapters: m.chapters,
       }));
 
-      const sortedModules = sortModulesForVideoFirst(mapped);
-const builtFlow = buildFlow(sortedModules);
-
-setModules(sortedModules);
-setFlow(builtFlow);
-
-      setFlow(builtFlow);
+      const sorted = sortModulesForVideoFirst(mapped);
+      setModules(sorted);
+      setFlow(buildFlow(sorted));
       setFlowIndex(0);
       setStep("learning");
     });
@@ -245,18 +172,94 @@ setFlow(builtFlow);
   }, [flowIndex, step]);
 
   /* ================= NAV ================= */
-  const handleNext = () => {
-    if (flowIndex < flow.length - 1) {
-      setFlowIndex((p) => p + 1);
-    } else {
-      setStep("review");
+  const handleNext = async () => {
+  const nextIndex = flowIndex + 1;
+
+  if (nextIndex < flow.length) {
+    setFlowIndex(nextIndex);
+    await saveProgress(nextIndex, false);
+  } else {
+    await saveProgress(flowIndex, true);
+    setStep("review");
+  }
+};
+
+useEffect(() => {
+  if (!courseId || !userId) return;
+
+  const loadProgress = async () => {
+    try {
+      const res = await api.get(
+        `/course/progress/?course=${courseId}&user=${userId}`
+      );
+
+      if (res.data.length > 0) {
+        const p = res.data[0];
+        setProgressId(p.id);
+        setFlowIndex(p.current_index || 0);
+      }
+    } catch (err) {
+      console.error("Progress fetch error", err);
+    } finally {
+      setLoadingProgress(false);
     }
   };
-const generateCertificateFile = async () => {
-  const element = document.getElementById("certificate-html");
-  if (!element) throw new Error("Certificate HTML not found");
 
-  const canvas = await html2canvas(element, { scale: 2 });
+  loadProgress();
+}, [courseId, userId]);
+const saveProgress = async (index: number, completed = false) => {
+  if (!userId || !courseId) return;
+
+  const payload = {
+    course: courseId,
+    user: userId,
+    current_index: index,
+    completed,
+  };
+
+  try {
+    if (progressId) {
+      await api.patch(`/course/progress/${progressId}/`, payload);
+    } else {
+      const res = await api.post(`/course/progress/`, payload);
+      setProgressId(res.data.id);
+    }
+  } catch (err) {
+    console.error("Progress save error", err);
+  }
+};
+
+  /* ================= FEEDBACK ================= */
+  const submitFeedback = async () => {
+    if (!feedback.trim()) return alert("Please write feedback");
+    if (!userId) return alert("User not logged in");
+
+    await api.post("/api/feedback/feedback_vc/", {
+      course: courseId,
+      rating,
+      description: feedback.trim(),
+      user: userId,
+    });
+
+    setStep("certificate");
+    await saveProgress(flow.length - 1, true);
+
+  };
+
+  /* ================= CERTIFICATE ================= */
+  const generateCertificateFile = async () => {
+  const el = document.getElementById("certificate-html");
+
+  if (!el) {
+    console.error("Certificate HTML missing");
+    throw new Error("Certificate HTML not found");
+  }
+
+  const canvas = await html2canvas(el, {
+    scale: 2,
+    useCORS: true,
+  });
+
   const imgData = canvas.toDataURL("image/png");
 
   const pdf = new jsPDF("landscape", "px", "a4");
@@ -269,55 +272,93 @@ const generateCertificateFile = async () => {
     pdf.internal.pageSize.getHeight()
   );
 
-  const blob = pdf.output("blob");
-
-  return new File([blob], "certificate.pdf", {
+  return new File([pdf.output("blob")], "certificate.pdf", {
     type: "application/pdf",
   });
 };
-
-
 const generateCertificate = async () => {
   try {
+    console.log("Generate Certificate START");
+
+    if (!userId) {
+      alert("User not logged in");
+      return;
+    }
+
+    const file = await generateCertificateFile();
+    console.log("PDF GENERATED", file);
+
     const today = new Date().toISOString().split("T")[0];
 
-    // 1️⃣ PDF FILE
-    const certificateFile = await generateCertificateFile();
-
-    // 2️⃣ FORM DATA
     const formData = new FormData();
-    formData.append("certificate", certificateFile); // FILE
+    formData.append("certificate", file);
     formData.append("title", "Certificate of Completion");
     formData.append("issue_date", today);
-    formData.append("expiry_date", today);
     formData.append("is_active", "true");
     formData.append("course", String(courseId));
-    formData.append("user", localStorage.getItem("user_id") || "");
+    formData.append("user", userId);
 
-    // 3️⃣ API CALL
     const res = await axios.post(
       "https://dev.backend.onrequestlab.com/certificate/certificate/",
       formData,
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          // ❗ content-type mat do (browser set karega)
         },
       }
     );
 
-    const certificateId = res.data.id;
+    console.log("CERTIFICATE API SUCCESS", res.data);
 
-    // 4️⃣ REDIRECT TO DETAIL PAGE
-    navigate(`/certificate-view/${certificateId}`);
+    navigate(`/certificate-view/${res.data.id}`);
   } catch (error: any) {
-    console.error("Certificate error:", error.response?.data || error);
-    alert("Certificate generate nahi ho paaya");
+    console.error("CERTIFICATE ERROR", error);
+    alert("Certificate generate nahi ho paya");
+  }
+};
+const handlePrev = () => {
+  if (flowIndex > 0) {
+    setFlowIndex((p) => p - 1);
+    setStep("learning");
   }
 };
 
 
 
+const SidebarItem = ({
+  label,
+  target,
+}: {
+  label: string;
+  target: (item: FlowItem) => boolean;
+}) => {
+  const idx = flow.findIndex(target);
+  if (idx === -1) return null;
+
+  return (
+    <button
+      onClick={async () => {
+        setFlowIndex(idx);
+        setStep("learning");
+        await saveProgress(idx, false);
+      }}
+      className={`w-full text-left px-3 py-2 rounded-md text-sm flex justify-between
+        ${
+          isActive(idx)
+            ? "bg-purple-700 text-white"
+            : isCompleted(idx)
+            ? "text-green-400"
+            : "text-slate-400 hover:bg-slate-800"
+        }`}
+    >
+      <span>{label}</span>
+      <span>
+        {isCompleted(idx) && "✔"}
+        {isActive(idx) && "➜"}
+      </span>
+    </button>
+  );
+};
 
   /* ================= UI ================= */
   return (
@@ -334,105 +375,172 @@ const generateCertificate = async () => {
             </h3>
 
             {modules.map((module) => (
-              <div key={module.id} className="mb-6">
-                <p className="font-bold mb-2">📦 {module.title}</p>
+  <div key={module.id} className="mb-6">
+    <p className="font-bold mb-2">📦 {module.title}</p>
 
-                {flow
-                  .map((item, idx) => ({ ...item, idx }))
-                  .filter((f) => f.moduleId === module.id)
-                  .map((item) => (
-                    <button
-                      key={item.idx}
-                      onClick={() => setFlowIndex(item.idx)}
-                      className={`w-full text-left px-3 py-2 rounded-md text-sm flex justify-between
-                        ${
-                          isActive(item.idx)
-                            ? "bg-purple-700 text-white"
-                            : isCompleted(item.idx)
-                            ? "text-green-400"
-                            : "text-slate-400 hover:bg-slate-800"
-                        }`}
-                    >
-                      <span>
-                        {item.type === "video" && "🎥 Video"}
-                        {item.type === "pdf" && "📄 PDF"}
-                        {item.type === "quiz" && "❓ Quiz"}
-                      </span>
-                      <span>
-                        {isCompleted(item.idx) && "✔"}
-                        {isActive(item.idx) && "➜"}
-                      </span>
-                    </button>
-                  ))}
-              </div>
-            ))}
+    {module.chapters.map((chapter, cIdx) => (
+      <div key={chapter.id} className="ml-2 mb-4">
+
+        {/* CHAPTER TITLE */}
+        <p className="text-sm font-semibold text-purple-300 mb-2">
+          📘 {chapter.title}
+        </p>
+
+        {/* VIDEO */}
+        {chapter.video && (
+          <SidebarItem
+            label="🎥 Video"
+            target={(f) =>
+              f.type === "video" && f.data.includes(chapter.video!)
+            }
+          />
+        )}
+
+        {/* PDF */}
+        {chapter.file && (
+          <SidebarItem
+            label="📄 PDF"
+            target={(f) =>
+              f.type === "pdf" && f.data.includes(chapter.file!)
+            }
+          />
+        )}
+
+        {/* QUIZZES */}
+        {chapter.quizzes?.map((quiz, qIdx) => (
+          <SidebarItem
+            key={quiz.id}
+            label={`❓ Quiz ${qIdx + 1}`}
+            target={(f) =>
+              f.type === "quiz" && f.data.id === quiz.id
+            }
+          />
+        ))}
+      </div>
+    ))}
+  </div>
+))}
+
           </div>
 
           {/* MAIN */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
 
-            {/* QUIZ TIMER */}
             {current?.type === "quiz" && step === "learning" && (
               <div className="flex justify-end mb-4 text-purple-300">
                 ⏱ {timeLeft}s
               </div>
             )}
 
-            {/* VIDEO */}
-            {current?.type === "video" && step === "learning" && (
-              <>
-                <video src={current.data} controls className="w-full rounded-lg" />
-                <button onClick={handleNext} className="mt-4 bg-purple-600 px-6 py-2 rounded-lg">
-                  Next →
-                </button>
-              </>
-            )}
+           {current?.type === "video" && step === "learning" && (
+  <>
+    <div className="flex justify-center">
+      <div className="w-full max-w-5xl bg-black rounded-xl overflow-hidden shadow-lg aspect-video">
+        <video
+          src={current.data}
+          controls
+          className="w-full h-full object-contain"
+        />
+      </div>
+    </div>
 
-            {/* PDF */}
+    <div className="flex justify-between mt-4">
+      <button
+        onClick={handlePrev}
+        disabled={flowIndex === 0}
+        className="bg-slate-700 disabled:opacity-40 px-6 py-2 rounded-lg"
+      >
+        ← Previous
+      </button>
+
+      <button
+        onClick={handleNext}
+        className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-lg"
+      >
+        Next →
+      </button>
+    </div>
+  </>
+)}
+
+
             {current?.type === "pdf" && step === "learning" && (
-              <>
-                <iframe src={current.data} className="w-full h-[60vh] rounded-lg" />
-                <button onClick={handleNext} className="mt-4 bg-purple-600 px-6 py-2 rounded-lg">
-                  Next →
-                </button>
-              </>
-            )}
+  <>
+    <div className="flex justify-center">
+      <div className="w-full max-w-5xl h-[70vh] border border-slate-700 rounded-xl overflow-hidden">
+        <iframe src={current.data} className="w-full h-full" />
+      </div>
+    </div>
 
-            {/* QUIZ */}
-            {current?.type === "quiz" && step === "learning" && (
-              <>
-                <h2 className="text-xl font-semibold mb-4">
-                  {current.data.question}
-                </h2>
+    <div className="flex justify-between mt-4">
+      <button
+        onClick={handlePrev}
+        disabled={flowIndex === 0}
+        className="bg-slate-700 disabled:opacity-40 px-6 py-2 rounded-lg"
+      >
+        ← Previous
+      </button>
 
-                {current.data.options.map((o: QuizOption) => (
-                  <label
-                    key={o.id}
-                    className="block border border-slate-700 p-3 rounded-lg mb-3 cursor-pointer"
-                  >
-                    <input
-                      type="radio"
-                      className="mr-2"
-                      checked={answers[current.data.id] === o.id}
-                      onChange={() =>
-                        setAnswers({ ...answers, [current.data.id]: o.id })
-                      }
-                    />
-                    {o.text}
-                  </label>
-                ))}
+      <button
+        onClick={handleNext}
+        className="bg-purple-600 px-6 py-2 rounded-lg"
+      >
+        Next →
+      </button>
+    </div>
+  </>
+)}
 
-                <button onClick={handleNext} className="bg-purple-600 px-6 py-2 rounded-lg">
-                  {flowIndex === flow.length - 1 ? "Submit Test" : "Next →"}
-                </button>
-              </>
-            )}
 
-            {/* REVIEW + FEEDBACK */}
+           {current?.type === "quiz" && step === "learning" && current.data && (
+  <>
+    <h2 className="text-xl font-semibold mb-4">
+      {current.data.question}
+    </h2>
+
+    {Array.isArray(current.data.options) &&
+      current.data.options.map((o: QuizOption) => (
+        <label
+          key={o.id}
+          className="block border border-slate-700 p-3 rounded-lg mb-3 cursor-pointer"
+        >
+          <input
+            type="radio"
+            className="mr-2"
+            name={`quiz-${current.data.id}`}
+            checked={answers[current.data.id] === o.id}
+            onChange={() =>
+              setAnswers((prev) => ({
+                ...prev,
+                [current.data.id]: o.id,
+              }))
+            }
+          />
+          {o.text}
+        </label>
+      ))}
+  <div className="flex justify-between mt-4">
+      <button
+        onClick={handlePrev}
+        disabled={flowIndex === 0}
+        className="bg-slate-700 disabled:opacity-40 px-6 py-2 rounded-lg"
+      >
+        ← Previous
+      </button>
+
+      <button
+        onClick={handleNext}
+        className="bg-purple-600 px-6 py-2 rounded-lg"
+      >
+        Next →
+      </button>
+    </div>
+  </>
+)}
+
+
             {step === "review" && (
               <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-8">
-
-                {/* ANSWER SHEET */}
                 <div className="border border-slate-800 rounded-xl p-6">
                   <h2 className="text-xl font-bold mb-4 text-purple-300">
                     Answer Sheet
@@ -470,7 +578,6 @@ const generateCertificate = async () => {
                     ))}
                 </div>
 
-                {/* FEEDBACK */}
                 <div className="border border-slate-800 rounded-xl p-6">
                   <h2 className="text-xl font-bold mb-4 text-purple-300">
                     Feedback
@@ -482,9 +589,7 @@ const generateCertificate = async () => {
                         key={i}
                         onClick={() => setRating(i)}
                         className={`cursor-pointer ${
-                          i <= rating
-                            ? "text-yellow-400"
-                            : "text-slate-500"
+                          i <= rating ? "text-yellow-400" : "text-slate-500"
                         }`}
                       />
                     ))}
@@ -497,42 +602,69 @@ const generateCertificate = async () => {
                     placeholder="Write your feedback..."
                   />
 
-                 <button
-  onClick={submitFeedback}
-  className="bg-purple-600 px-8 py-3 rounded-lg"
->
-  Submit Feedback
-</button>
-
+                  <button
+                    onClick={submitFeedback}
+                    className="bg-purple-600 px-8 py-3 rounded-lg mt-4"
+                  >
+                    Submit Feedback
+                  </button>
                 </div>
               </div>
             )}
 
-            {/* CERTIFICATE */}
-            {step === "certificate" && (
-              <div className="text-center">
-                <Award size={64} className="mx-auto text-yellow-400 mb-4" />
-                <button
-  onClick={generateCertificate}
-  className="mt-4 w-full bg-purple-600 py-2 rounded-lg"
->
-  Generate Certificate
-</button>
+           {step === "certificate" && (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="bg-slate-800 border border-slate-700 rounded-2xl p-10 w-full max-w-xl text-center shadow-xl">
+      
+      <Award size={72} className="mx-auto text-yellow-400 mb-6" />
 
+      <h2 className="text-2xl font-bold mb-2">
+        🎉 Course Completed!
+      </h2>
 
-              </div>
-            )}
+      <p className="text-slate-300 mb-6">
+        You have successfully completed this course.
+        Click below to generate your certificate.
+      </p>
+
+      <button
+        onClick={generateCertificate}
+        className="w-full bg-purple-600 hover:bg-purple-700 py-3 rounded-lg text-lg font-semibold"
+      >
+        Generate Certificate
+      </button>
+    </div>
+  </div>
+)}
+
           </div>
         </div>
       </div>
+<div
+  id="certificate-html"
+  style={{
+    position: "fixed",
+    top: "-10000px",
+    left: "-10000px",
+    width: "1120px",
+    height: "790px",
+    background: "white",
+    padding: "40px",
+  }}
+>
+  <img src={logoimg} style={{ width: "120px" }} />
+  <h1 style={{ fontSize: "32px", color: "#000" }}>
+    Certificate of Completion
+  </h1>
+  <p style={{ color: "#000" }}>
+    This certifies that the user has successfully completed the course.
+  </p>
+</div>
 
-      {/* CERTIFICATE HTML */}
-      <div id="certificate-html" className="hidden">
-        <img src={logoimg} />
-        <h1>Certificate of Completion</h1>
-      </div>
 
       <Footer />
     </>
   );
+
+  
 }

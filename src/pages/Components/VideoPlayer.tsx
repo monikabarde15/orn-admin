@@ -1,16 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-
 import axios from "axios";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Award,
-  Star,
-} from "lucide-react";
-import { useParams } from "react-router-dom";
+import { Award, Star } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../../pages/Components/Footer";
 import jsPDF from "jspdf";
@@ -32,7 +25,6 @@ interface Quiz {
 
 interface Chapter {
   id: string;
-  title: string;
   video?: string | null;
   file?: string | null;
   quizzes?: Quiz[];
@@ -48,25 +40,15 @@ interface FlowItem {
   type: "video" | "pdf" | "quiz";
   data: any;
   moduleId: string;
-  chapterId: string;
 }
 
-type Step = "learning" | "result" | "review" | "feedback" | "certificate";
-
-const CERTIFICATE_LOGO = logoimg;
-
-/* ================= HELPERS ================= */
-const isVideo = (url?: string | null) =>
-  !!url && url.toLowerCase().endsWith(".mp4");
-
-const isPdf = (url?: string | null) =>
-  !!url && url.toLowerCase().endsWith(".pdf");
+type Step = "learning" | "review" | "certificate";
 
 /* ================= MAIN ================= */
-const CourseTestFinal: React.FC = () => {
+export default function CourseTestFinal() {
   const { id: courseId } = useParams<{ id: string }>();
-
-  const getCookie = (name: string) => {
+  const navigate = useNavigate();
+const getCookie = (name: string) => {
     const v = `; ${document.cookie}`;
     const parts = v.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop()?.split(";").shift() || "";
@@ -74,37 +56,24 @@ const CourseTestFinal: React.FC = () => {
   };
   const VIT = import.meta.env.VITE_API_URL;
 const API_V1 = `${VIT}/api/v1`;
-// ⏱ TIMER STATE
-const [timeLeft, setTimeLeft] = useState(0);
-
-  const user = {
-    name: getCookie("username"),
-    email: getCookie("email"),
-  };
-
-  const token =
+const token =
     getCookie("access") || localStorage.getItem("access") || "";
 
   const userId = getCookie("user_id");
+  /* ================= AUTH ================= */
+  // const token =
+  //   localStorage.getItem("access") ||
+  //   document.cookie
+  //     .split("; ")
+  //     .find((r) => r.startsWith("access="))
+  //     ?.split("=")[1];
+
+  // const userId = localStorage.getItem("user_id");
 
   const api = axios.create({
-    baseURL: `${VIT}`,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+    baseURL: import.meta.env.VITE_API_URL,
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
-const getTimeForItem = (item?: FlowItem) => {
-  if (!item) return 0;
-
-  if (item.type === "video") return 300; // 5 min
-  if (item.type === "pdf") return 180;   // 3 min
-  if (item.type === "quiz") return 60;   // 1 min
-  return 0;
-};
-
-  const generateCertificateId = () => "ORL-" + Date.now();
-  const certificateId = generateCertificateId();
 
   /* ================= STATE ================= */
   const [modules, setModules] = useState<Module[]>([]);
@@ -112,174 +81,160 @@ const getTimeForItem = (item?: FlowItem) => {
   const [flowIndex, setFlowIndex] = useState(0);
   const [step, setStep] = useState<Step>("learning");
   const [answers, setAnswers] = useState<Record<number, number>>({});
-  const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
-  const [certificate, setCertificate] = useState({
-  id: "",
-  title: "",
-  issue_date: "",
-  expiry_date: "",
-});
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [rating, setRating] = useState(0);
+  const [feedback, setFeedback] = useState("");
+const [progressId, setProgressId] = useState<number | null>(null);
+const [loadingProgress, setLoadingProgress] = useState(true);
+const [certLoading, setCertLoading] = useState(false);
 const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  const navigate = useNavigate();
-
-
-  const [rating, setRating] = useState(5);
-  const [feedback, setFeedback] = useState("");
-  const [courseTitle, setCourseTitle] = useState("");
-
   const current = flow[flowIndex];
-  const isLast = flowIndex === flow.length - 1;
+  const isActive = (idx: number) => idx === flowIndex;
+  const isCompleted = (idx: number) => idx < flowIndex;
 
-  /* ================= FLOW BUILDER ================= */
+  /* ================= FLOW ================= */
   const buildFlow = (modules: Module[]): FlowItem[] => {
-    const videos: FlowItem[] = [];
-    const pdfs: FlowItem[] = [];
-    const quizzes: FlowItem[] = [];
+    const items: FlowItem[] = [];
 
     modules.forEach((m) => {
       m.chapters.forEach((c) => {
-        if (isVideo(c.video)) {
-          videos.push({
+        if (c.video?.endsWith(".mp4")) {
+          items.push({
             type: "video",
             data: "https://" + c.video,
             moduleId: m.id,
-            chapterId: c.id,
           });
         }
 
-        if (isPdf(c.video)) {
-          pdfs.push({
-            type: "pdf",
-            data: "https://" + c.video,
-            moduleId: m.id,
-            chapterId: c.id,
-          });
-        }
-
-        if (isPdf(c.file)) {
-          pdfs.push({
+        if (c.file?.endsWith(".pdf")) {
+          items.push({
             type: "pdf",
             data: "https://" + c.file,
             moduleId: m.id,
-            chapterId: c.id,
           });
         }
 
         c.quizzes?.forEach((q) => {
-          quizzes.push({
+          items.push({
             type: "quiz",
             data: q,
             moduleId: m.id,
-            chapterId: c.id,
           });
         });
       });
     });
 
-    return [...videos, ...pdfs, ...quizzes];
+    return items;
   };
-useEffect(() => {
-  if (!current) return;
-  setTimeLeft(getTimeForItem(current));
-}, [current]);
-useEffect(() => {
-  if (!current || step !== "learning") return;
 
-  if (timeLeft <= 0) {
-    handleNext(); // ⏭ auto next / submit
-    return;
-  }
-
-  const timer = setInterval(() => {
-    setTimeLeft((t) => t - 1);
-  }, 1000);
-
-  return () => clearInterval(timer);
-}, [timeLeft, current, step]);
+  const sortModulesForVideoFirst = (modules: Module[]) =>
+    [...modules].sort((a, b) => {
+      const aHasVideo = a.chapters.some((c) => c.video?.endsWith(".mp4"));
+      const bHasVideo = b.chapters.some((c) => c.video?.endsWith(".mp4"));
+      if (aHasVideo && !bHasVideo) return -1;
+      if (!aHasVideo && bHasVideo) return 1;
+      return 0;
+    });
 
   /* ================= FETCH COURSE ================= */
   useEffect(() => {
     api.get(`/course/courses/${courseId}/`).then((res) => {
-      setCourseTitle(res.data.title);
-
       const mapped: Module[] = res.data.modules.map((m: any) => ({
         id: String(m.id),
         title: m.title,
-        chapters: m.chapters.map((c: any) => ({
-          id: String(c.id),
-          title: c.title,
-          video: c.video,
-          file: c.file,
-          quizzes: c.quizzes || [],
-        })),
+        chapters: m.chapters,
       }));
 
-      setModules(mapped);
-      const builtFlow = buildFlow(mapped);
-      setFlow(builtFlow);
-
-      if (builtFlow.length) {
-        setActiveModuleId(builtFlow[0].moduleId);
-      }
+      const sorted = sortModulesForVideoFirst(mapped);
+      setModules(sorted);
+      setFlow(buildFlow(sorted));
+      setFlowIndex(0);
+      setStep("learning");
     });
   }, [courseId]);
 
+  /* ================= TIMER ================= */
   useEffect(() => {
-    if (current) setActiveModuleId(current.moduleId);
-  }, [current]);
+    if (current?.type !== "quiz" || step !== "learning") return;
 
-  /* ================= NAVIGATION ================= */
-  const handleNext = () => {
-    if (isLast) setStep("result");
-    else setFlowIndex((i) => i + 1);
-  };
-const getOrderedModuleFlow = (moduleId: string) => {
-  const moduleFlow = flow
-    .map((f, index) => ({ ...f, index }))
-    .filter((f) => f.moduleId === moduleId);
+    setTimeLeft(60);
+    const timer = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          clearInterval(timer);
+          handleNext();
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
 
-  return [
-    ...moduleFlow.filter((f) => f.type === "video"),
-    ...moduleFlow.filter((f) => f.type === "pdf"),
-    ...moduleFlow.filter((f) => f.type === "quiz"),
-  ];
+    return () => clearInterval(timer);
+  }, [flowIndex, step]);
+
+  /* ================= NAV ================= */
+  const handleNext = async () => {
+  const nextIndex = flowIndex + 1;
+
+  if (nextIndex < flow.length) {
+    setFlowIndex(nextIndex);
+    await saveProgress(nextIndex, false);
+  } else {
+    await saveProgress(flowIndex, true);
+    setStep("review");
+  }
 };
 
-const getFlowLabel = (item: FlowItem) => {
-  if (item.type === "video") return "🎥 Video";
-  if (item.type === "pdf") return "📄 PDF";
-  if (item.type === "quiz") return "❓ Quiz";
-  return "";
-};
+useEffect(() => {
+  if (!courseId || !userId) return;
 
-  /* ================= RESULT ================= */
-  const allQuizzes: Quiz[] = modules.flatMap((m) =>
-    m.chapters.flatMap((c) => c.quizzes || [])
-  );
+  const loadProgress = async () => {
+    try {
+      const res = await api.get(
+        `/course/progress/?course=${courseId}&user=${userId}`
+      );
 
-  const getResultStats = () => {
-    let correct = 0;
-    allQuizzes.forEach((q) => {
-      if (
-        answers[q.id] === q.options.find((o) => o.is_correct)?.id
-      ) {
-        correct++;
+      if (res.data.length > 0) {
+        const p = res.data[0];
+        setProgressId(p.id);
+        setFlowIndex(p.current_index || 0);
       }
-    });
-
-    return {
-      total: allQuizzes.length,
-      correct,
-      percentage: allQuizzes.length
-        ? Math.round((correct / allQuizzes.length) * 100)
-        : 0,
-    };
+    } catch (err) {
+      console.error("Progress fetch error", err);
+    } finally {
+      setLoadingProgress(false);
+    }
   };
+
+  loadProgress();
+}, [courseId, userId]);
+const saveProgress = async (index: number, completed = false) => {
+  if (!userId || !courseId) return;
+
+  const payload = {
+    course: courseId,
+    user: userId,
+    current_index: index,
+    completed,
+  };
+
+  try {
+    if (progressId) {
+      await api.patch(`/course/progress/${progressId}/`, payload);
+    } else {
+      const res = await api.post(`/course/progress/`, payload);
+      setProgressId(res.data.id);
+    }
+  } catch (err) {
+    console.error("Progress save error", err);
+  }
+};
 
   /* ================= FEEDBACK ================= */
   const submitFeedback = async () => {
     if (!feedback.trim()) return alert("Please write feedback");
+    if (!userId) return alert("User not logged in");
 
     await api.post("/api/feedback/feedback_vc/", {
       course: courseId,
@@ -289,136 +244,27 @@ const getFlowLabel = (item: FlowItem) => {
     });
 
     setStep("certificate");
-  };
-const prepareCertificateData = () => {
-  const issueDate = new Date().toISOString().split("T")[0];
+    await saveProgress(flow.length - 1, true);
 
-  const cert = {
-    id: "ORL-" + Date.now(),
-    title: courseTitle,
-    issue_date: issueDate,
-    expiry_date: "",
   };
 
-  setCertificate(cert);
-  return cert;
-};
+  /* ================= CERTIFICATE ================= */
+  const generateCertificateFile = async () => {
+  const el = document.getElementById("certificate-html");
 
-  
-
-const saveCertificateRecordOnly = async () => {
-  try {
-    const res = await api.post("/certificate/certificate/", {
-      course: courseId,
-      title: courseTitle,
-      issue_date: new Date().toISOString().split("T")[0],
-      is_active: true,
-    });
-
-    // ✅ new certificate created
-    return res.data.id;
-
-  } catch (err: any) {
-    const data = err.response?.data;
-
-    // 🔥 CASE: bunny_error string ke andar certificate_id
-    if (data?.bunny_error) {
-      try {
-        // string ko object me convert karo
-        const parsed = JSON.parse(
-          data.bunny_error.replace(/'/g, '"')
-        );
-
-        if (parsed.certificate_id) {
-          return parsed.certificate_id;
-        }
-      } catch (e) {
-        console.error("Parsing error:", e);
-      }
-    }
-
-    throw err;
-  }
-};
-
-const getSidebarChaptersInOrder = (module: Module) => {
-  const videos: Chapter[] = [];
-  const pdfs: Chapter[] = [];
-  const quizzes: Chapter[] = [];
-
-  module.chapters.forEach((c) => {
-    // 🎥 Video
-    if (c.video && c.video.toLowerCase().endsWith(".mp4")) {
-      videos.push(c);
-    }
-
-    // 📄 PDF (video field ya file field se)
-    if (
-      (c.video && c.video.toLowerCase().endsWith(".pdf")) ||
-      (c.file && c.file.toLowerCase().endsWith(".pdf"))
-    ) {
-      pdfs.push(c);
-    }
-
-    // ❓ Quiz
-    if (c.quizzes && c.quizzes.length > 0) {
-      quizzes.push(c);
-    }
-  });
-
-  // 🔥 FINAL ORDER: Video → PDF → Quiz
-  return [...videos, ...pdfs, ...quizzes];
-};
-
-  
-const handlePrevious = () => {
-  if (flowIndex > 0) {
-    setFlowIndex((i) => i - 1);
-    setStep("learning");
-  }
-};
-
-const getModuleStartIndex = (moduleId: string) => {
-  // 1️⃣ VIDEO first
-  let index = flow.findIndex(
-    (f) => f.moduleId === moduleId && f.type === "video"
-  );
-
-  // 2️⃣ PDF second
-  if (index === -1) {
-    index = flow.findIndex(
-      (f) => f.moduleId === moduleId && f.type === "pdf"
-    );
+  if (!el) {
+    console.error("Certificate HTML missing");
+    throw new Error("Certificate HTML not found");
   }
 
-  // 3️⃣ QUIZ last
-  if (index === -1) {
-    index = flow.findIndex(
-      (f) => f.moduleId === moduleId && f.type === "quiz"
-    );
-  }
-
-  return index;
-};
-
-const generateCertificate = async () => {
-  const element = document.getElementById("certificate-html");
-  if (!element) return;
-
-  // 🔥 Either NEW or EXISTING ID
-  const certId = await saveCertificateRecordOnly();
-
-  await new Promise((r) => setTimeout(r, 300));
-
-  const canvas = await html2canvas(element, {
+  const canvas = await html2canvas(el, {
     scale: 2,
     useCORS: true,
-    backgroundColor: "#ffffff",
   });
 
   const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF("landscape", "px", "a4");
 
+  const pdf = new jsPDF("landscape", "px", "a4");
   pdf.addImage(
     imgData,
     "PNG",
@@ -428,229 +274,282 @@ const generateCertificate = async () => {
     pdf.internal.pageSize.getHeight()
   );
 
-  pdf.save(`Certificate-${certId}.pdf`);
-
-  setStep("certificate");
-
-    // ⏳ 3 seconds delay ke baad redirect
-    setTimeout(() => {
-      navigate(`/certificate-view/${certId}`);
-    }, 3000); // 3000ms = 3 sec
-};
-
-useEffect(() => {
-  if (step === "certificate" && certificate.id) {
-    const timer = setTimeout(() => {
-      navigate(`/certificate-view/${certificate.id}`);
-    }, 4000);
-
-    return () => clearTimeout(timer);
-  }
-}, [step, certificate.id]);
-
-
-
-const getModulePriority = (module: Module) => {
-  let hasVideo = false;
-  let hasPdf = false;
-  let hasQuiz = false;
-
-  module.chapters.forEach((c) => {
-    // 🎥 VIDEO
-    if (c.video && c.video.toLowerCase().endsWith(".mp4")) {
-      hasVideo = true;
-    }
-
-    // 📄 PDF
-    if (
-      (c.video && c.video.toLowerCase().endsWith(".pdf")) ||
-      (c.file && c.file.toLowerCase().endsWith(".pdf"))
-    ) {
-      hasPdf = true;
-    }
-
-    // ❓ QUIZ
-    if (c.quizzes && c.quizzes.length > 0) {
-      hasQuiz = true;
-    }
+  return new File([pdf.output("blob")], "certificate.pdf", {
+    type: "application/pdf",
   });
-
-  // 🔥 PRIORITY ORDER
-  if (hasVideo) return 1; // VIDEO FIRST
-  if (hasPdf) return 2;   // PDF SECOND
-  if (hasQuiz) return 3;  // QUIZ LAST
-  return 4;
 };
-const sortedModules = [...modules].sort(
-  (a, b) => getModulePriority(a) - getModulePriority(b)
-);
+const generateCertificate = async () => {
+  try {
+    if (!userId) {
+      alert("User not logged in");
+      return;
+    }
 
+    setCertLoading(true); // loader ON
 
-useEffect(() => {
-  if (window.innerWidth < 1024) {
-    setIsSidebarOpen(false);
+    const file = await generateCertificateFile();
+    const today = new Date().toISOString().split("T")[0];
+
+    const formData = new FormData();
+    formData.append("certificate", file);
+    formData.append("title", "Certificate of Completion");
+    formData.append("issue_date", today);
+    formData.append("is_active", "true");
+    formData.append("course", String(courseId));
+    formData.append("user", userId);
+
+    const res = await axios.post(
+      `${VIT}/certificate/certificate/`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    // ✅ NEW certificate created
+    navigate(`/certificate-view/${res.data.id}`);
+  } catch (error: any) {
+    console.error("CERTIFICATE ERROR", error);
+
+    // ✅ HANDLE: Certificate already exists
+    const bunnyError = error?.response?.data?.bunny_error;
+
+    if (bunnyError) {
+      try {
+        // backend string ko object me convert
+        const parsed =
+          typeof bunnyError === "string"
+            ? JSON.parse(
+                bunnyError.replace(/'/g, '"') // 🔥 important
+              )
+            : bunnyError;
+
+        if (parsed?.certificate_id) {
+          // 🔥 Existing certificate → redirect
+          navigate(`/certificate-view/${parsed.certificate_id}`);
+          return;
+        }
+      } catch (e) {
+        console.error("Error parsing bunny_error", e);
+      }
+    }
+
+    // ❌ real error case
+    alert("Certificate generate nahi ho paya");
+  } finally {
+    setCertLoading(false); // loader OFF
   }
-}, []);
+};
+
+
+const handlePrev = () => {
+  if (flowIndex > 0) {
+    setFlowIndex((p) => p - 1);
+    setStep("learning");
+  }
+};
+
+
+
+const SidebarItem = ({
+  label,
+  target,
+}: {
+  label: string;
+  target: (item: FlowItem) => boolean;
+}) => {
+  const idx = flow.findIndex(target);
+  if (idx === -1) return null;
+
+  return (
+    <button
+      onClick={async () => {
+        setFlowIndex(idx);
+        setStep("learning");
+        await saveProgress(idx, false);
+      }}
+      className={`w-full text-left px-3 py-2 rounded-md text-sm flex justify-between
+        ${
+          isActive(idx)
+            ? "bg-purple-700 text-white"
+            : isCompleted(idx)
+            ? "text-green-400"
+            : "text-slate-400 hover:bg-slate-800"
+        }`}
+    >
+      <span>{label}</span>
+      <span>
+        {isCompleted(idx) && "✔"}
+        {isActive(idx) && "➜"}
+      </span>
+    </button>
+  );
+};
 
   /* ================= UI ================= */
   return (
     <>
       <Navbar />
 
-      <div className="min-h-screen bg-[#020617] text-white">
-       <div
-  className={`mx-auto px-4 md:px-6 py-6 grid gap-1 relative isolate transition-all duration-300
-    ${
-      isSidebarOpen
-        ? "max-w-[1300px] grid-cols-1 lg:grid-cols-[260px_1fr]"
-        : "max-w-[1500px] grid-cols-1"
-    }`}
+      <div className="min-h-screen bg-[#020617] text-white px-6 py-6">
+        <div
+  className={`grid grid-cols-1 gap-0 transition-all duration-300 ${
+    isSidebarOpen
+      ? "lg:grid-cols-[280px_1fr]"
+      : "lg:grid-cols-[0px_1fr]"
+  }`}
 >
 
 
-         
-          {/* MODULE LIST */}
-{isSidebarOpen && (
-  <aside className="bg-slate-950 border border-slate-800 rounded-xl 
-lg:sticky lg:top-20 relative z-20 h-fit shadow-lg">
-    <div className="flex items-center justify-between p-4 border-b border-slate-700">
-      <h3 className="font-semibold">Modules</h3>
-      <button
-        onClick={() => setIsSidebarOpen(false)}
-        className="text-slate-400 hover:text-white"
-      >
-        ✕
-      </button>
-    </div>
+          {/* SIDEBAR */}
+         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 h-[70vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-purple-300 font-semibold text-lg">
+              📚 Course
+            </h3>
 
-    {/* <div className="max-h-[70vh] overflow-y-auto">
-      {modules.map((m) => (
-        <button
-          key={m.id}
-          onClick={() =>
-            setFlowIndex(flow.findIndex((f) => f.moduleId === m.id))
-          }
-          className={`w-full px-4 py-3 text-left border-b border-slate-800 hover:bg-slate-800 transition
-            ${activeModuleId === m.id && "bg-purple-600/20 text-purple-300"}
-          `}
-        >
-          {m.title}
-        </button>
-      ))}
-    </div> */
-    <div className="max-h-[70vh] overflow-y-auto">
-  {sortedModules.map((m) => (
-    <button
-      key={m.id}
-      onClick={() => {
-        const index = getModuleStartIndex(m.id);
-        if (index !== -1) setFlowIndex(index);
-      }}
-      className={`w-full px-4 py-3 text-left border-b border-slate-800 hover:bg-slate-800 transition
-        ${activeModuleId === m.id && "bg-purple-600/20 text-purple-300"}
-      `}
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="text-slate-400 hover:text-white text-sm"
+            >
+              ✖
+            </button>
+        </div>
+
+
+  {modules.map((module) => (
+    <div
+      key={module.id}
+      className="mb-6 border border-slate-800 rounded-lg p-3"
     >
-      {m.title}
-    </button>
+      {/* MODULE */}
+      <p className="font-semibold text-white mb-3 flex items-center gap-2">
+        📦 {module.title}
+      </p>
+
+      {module.chapters.map((chapter) => (
+        <div key={chapter.id} className="ml-2 mb-4">
+
+          {/* CHAPTER */}
+          <div className="bg-slate-800/60 rounded-md px-3 py-2 mb-2">
+           <p className="text-sm font-medium text-purple-300 flex justify-between">
+  {chapter.title}
+  <span className="text-xs text-slate-400">
+    {chapter.quizzes?.length || 0} Quiz
+  </span>
+</p>
+
+          </div>
+
+          <div className="ml-3 space-y-1">
+
+            {chapter.video && (
+              <SidebarItem
+                label="🎥 Video Lecture"
+                target={(f) =>
+                  f.type === "video" && f.data.includes(chapter.video!)
+                }
+              />
+            )}
+
+            {chapter.file && (
+              <SidebarItem
+                label="📄 Study Material"
+                target={(f) =>
+                  f.type === "pdf" && f.data.includes(chapter.file!)
+                }
+              />
+            )}
+
+           {chapter.quizzes?.map((quiz, i) => (
+  <SidebarItem
+    key={quiz.id}
+    label={`❓ ${i + 1}. ${quiz.question}`}
+    target={(f) =>
+      f.type === "quiz" && f.data.id === quiz.id
+    }
+  />
+))}
+
+          </div>
+        </div>
+      ))}
+    </div>
   ))}
 </div>
 
-}
-  </aside>
-)}
+
+          {/* MAIN */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
 {!isSidebarOpen && (
-  <div className="mb-4">
-    <button
-      onClick={() => setIsSidebarOpen(true)}
-      className="bg-purple-600 px-4 py-2 rounded-lg hover:bg-purple-700 transition"
-    >
-      ☰ Show Modules
-    </button>
-  </div>
+  <button
+    onClick={() => setIsSidebarOpen(true)}
+    className="mb-4 inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg text-sm"
+  >
+    📚 Open
+  </button>
 )}
 
-          {/* RIGHT CONTENT */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-950
-    border border-slate-800 rounded-2xl
-    p-1 sm:p-1
-    shadow-xl">
-    {step === "learning" && current && (
-  <div className="flex justify-end items-center mb-2 pr-2">
-    <span className="bg-slate-800 border border-slate-700 px-3 py-1 rounded-lg text-sm text-purple-300">
-      ⏱ {Math.floor(timeLeft / 60)}:
-      {(timeLeft % 60).toString().padStart(2, "0")}
-    </span>
-  </div>
-)}
+            {current?.type === "quiz" && step === "learning" && (
+              <div className="flex justify-end mb-4 text-purple-300">
+                ⏱ {timeLeft}s
+              </div>
+            )}
 
-
-        {step === "learning" && current?.type === "video" && (
+           {current?.type === "video" && step === "learning" && (
   <>
-    <div className="flex flex-col sm:flex-row gap-2 justify-between items-center mt-2">
+    <div className="flex justify-center w-full">
+  <div className="w-full max-w-6xl px-4">
+    <div className="bg-black rounded-xl overflow-hidden shadow-lg h-[60vh] max-h-[520px]">
       <video
         src={current.data}
         controls
-        autoPlay
         className="w-full h-full object-contain"
       />
     </div>
-
-    <div className="flex flex-col sm:flex-row gap-3 justify-between items-center mt-4">
-  {/* Previous */}
-  <button
-    onClick={handlePrevious}
-    disabled={flowIndex === 0}
-    className={`px-6 py-2 rounded-lg border
-      ${
-        flowIndex === 0
-          ? "border-slate-700 text-slate-500 cursor-not-allowed"
-          : "border-slate-600 hover:bg-slate-800"
-      }
-    `}
-  >
-    ← Previous
-  </button>
-
-  {/* Next */}
-  <button
-    onClick={handleNext}
-    className="bg-purple-600 px-6 py-2 rounded-lg"
-  >
-    Next →
-  </button>
+  </div>
 </div>
 
-  </>
-)}
 
-
-
-
-          {step === "learning" && current?.type === "pdf" && (
-  <>
-    <iframe
-      src={current.data}
-        className="w-full h-[55vh] sm:h-[60vh] md:h-[65vh] rounded-lg rounded-lg"
-  style={{ maxWidth: "100%" }}
-    />
-
-    <div className="flex justify-between items-center mt-4">
-      {/* Previous */}
+    <div className="flex justify-between mt-4">
       <button
-        onClick={handlePrevious}
+        onClick={handlePrev}
         disabled={flowIndex === 0}
-        className={`px-6 py-2 rounded-lg border
-          ${
-            flowIndex === 0
-              ? "border-slate-700 text-slate-500 cursor-not-allowed"
-              : "border-slate-600 hover:bg-slate-800"
-          }
-        `}
+        className="bg-slate-700 disabled:opacity-40 px-6 py-2 rounded-lg"
       >
         ← Previous
       </button>
 
-      {/* Next */}
+      <button
+        onClick={handleNext}
+        className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-lg"
+      >
+        Next →
+      </button>
+    </div>
+  </>
+)}
+
+
+            {current?.type === "pdf" && step === "learning" && (
+  <>
+    <div className="flex justify-center">
+      <div className="w-full max-w-5xl h-[70vh] border border-slate-700 rounded-xl overflow-hidden">
+        <iframe src={current.data} className="w-full h-full" />
+      </div>
+    </div>
+
+    <div className="flex justify-between mt-4">
+      <button
+        onClick={handlePrev}
+        disabled={flowIndex === 0}
+        className="bg-slate-700 disabled:opacity-40 px-6 py-2 rounded-lg"
+      >
+        ← Previous
+      </button>
+
       <button
         onClick={handleNext}
         className="bg-purple-600 px-6 py-2 rounded-lg"
@@ -662,347 +561,193 @@ lg:sticky lg:top-20 relative z-20 h-fit shadow-lg">
 )}
 
 
-            {step === "learning" && current?.type === "quiz" && (
-              <div>
-                <h2 className="text-xl font-semibold">{current.data.question}</h2>
-                {current.data.options.map((o: QuizOption) => (
-                  <label key={o.id} className="flex gap-3 items-center border p-4 rounded-lg mt-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      checked={answers[current.data.id] === o.id}
-                      onChange={() =>
-                        setAnswers({ ...answers, [current.data.id]: o.id })
-                      }
-                    />{" "}
-                    {o.text}
-                  </label>
-                ))}
-                <div className="flex justify-between items-center mt-6">
-  {/* Previous */}
-  <button
-    onClick={handlePrevious}
-    disabled={flowIndex === 0}
-    className={`px-6 py-2 rounded-lg border
-      ${
-        flowIndex === 0
-          ? "border-slate-700 text-slate-500 cursor-not-allowed"
-          : "border-slate-600 hover:bg-slate-800"
-      }
-    `}
-  >
-    ← Previous
-  </button>
-
-  {/* Next / Submit */}
-  <button
-    onClick={handleNext}
-    className="bg-purple-600 px-6 py-2 rounded-lg"
-  >
-    {isLast ? "Submit Test" : "Next →"}
-  </button>
-</div>
-
-              </div>
-            )}
-
-            {step === "result" && (
-              <div className="text-center">
-                <Award size={64} className="mx-auto text-yellow-400" />
-                <h2 className="text-2xl font-bold">Result</h2>
-                <p>{getResultStats().percentage}%</p>
-                <button onClick={() => setStep("review")} className="bg-purple-600 px-6 py-2 rounded-lg">
-                  Review
-                </button>
-              </div>
-            )}
-
-            {step === "review" && (
-  <div className="space-y-6">
-    <h2 className="text-2xl font-bold mb-4">Answer Review</h2>
-
-    {allQuizzes.map((q, index) => {
-      const correctOption = q.options.find(o => o.is_correct);
-      const userAnswerId = answers[q.id];
-
-      return (
-        <div
-          key={q.id}
-          className="border border-slate-700 rounded-lg p-4 bg-slate-800"
-        >
-          <p className="font-semibold mb-3">
-            {index + 1}. {q.question}
-          </p>
-
-          {q.options.map((o) => {
-            const isCorrect = o.id === correctOption?.id;
-            const isSelected = o.id === userAnswerId;
-
-            return (
-              <div
-                key={o.id}
-                className={`p-2 rounded-md mb-2 flex justify-between items-center
-                  ${isCorrect ? "bg-green-700/30 border border-green-500" : ""}
-                  ${!isCorrect && isSelected ? "bg-red-700/30 border border-red-500" : ""}
-                  ${!isCorrect && !isSelected ? "bg-slate-900" : ""}
-                `}
-              >
-                <span>{o.text}</span>
-
-                {isCorrect && (
-                  <span className="text-green-400 text-sm font-semibold">
-                    ✔ Correct
-                  </span>
-                )}
-
-                {!isCorrect && isSelected && (
-                  <span className="text-red-400 text-sm font-semibold">
-                    ✖ Your Answer
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      );
-    })}
-
-    <div className="text-center mt-6">
-      <button
-        onClick={() => setStep("feedback")}
-        className="bg-purple-600 px-8 py-3 rounded-lg"
-      >
-        Continue to Feedback
-      </button>
-    </div>
-  </div>
-)}
-
-
-           {step === "feedback" && (
-  <div className="max-w-xl mx-auto bg-slate-800 p-6 rounded-xl border border-slate-700">
-    <h2 className="text-2xl font-bold text-center mb-4">
-      Course Feedback
+           {current?.type === "quiz" && step === "learning" && current.data && (
+  <>
+    <h2 className="text-xl font-semibold mb-4">
+      {current.data.question}
     </h2>
 
-    {/* ⭐ STAR RATING */}
-    <div className="flex justify-center gap-2 mb-4">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          size={32}
-          onClick={() => setRating(i)}
-          className={`cursor-pointer ${
-            i <= rating ? "text-yellow-400" : "text-slate-500"
-          }`}
-          fill={i <= rating ? "#facc15" : "none"}
-        />
+    {Array.isArray(current.data.options) &&
+      current.data.options.map((o: QuizOption) => (
+        <label
+          key={o.id}
+          className="block border border-slate-700 p-3 rounded-lg mb-3 cursor-pointer"
+        >
+          <input
+            type="radio"
+            className="mr-2"
+            name={`quiz-${current.data.id}`}
+            checked={answers[current.data.id] === o.id}
+            onChange={() =>
+              setAnswers((prev) => ({
+                ...prev,
+                [current.data.id]: o.id,
+              }))
+            }
+          />
+          {o.text}
+        </label>
       ))}
-    </div>
-
-    <p className="text-center text-slate-400 mb-4">
-      Rating: {rating} / 5
-    </p>
-
-    {/* ✍ FEEDBACK TEXT */}
-    <textarea
-      value={feedback}
-      onChange={(e) => setFeedback(e.target.value)}
-      placeholder="Write your feedback here..."
-      className="w-full h-28 p-3 rounded-lg bg-slate-900 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
-    />
-
-    <div className="text-center mt-6">
+  <div className="flex justify-between mt-4">
       <button
-        onClick={submitFeedback}
-        className="bg-purple-600 px-8 py-3 rounded-lg"
+        onClick={handlePrev}
+        disabled={flowIndex === 0}
+        className="bg-slate-700 disabled:opacity-40 px-6 py-2 rounded-lg"
       >
-        Submit Feedback
+        ← Previous
       </button>
+
+      <button
+        onClick={handleNext}
+        className="bg-purple-600 px-6 py-2 rounded-lg"
+      >
+        Next →
+      </button>
+    </div>
+  </>
+)}
+
+
+            {step === "review" && (
+              <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-8">
+                <div className="border border-slate-800 rounded-xl p-6">
+                  <h2 className="text-xl font-bold mb-4 text-purple-300">
+                    Answer Sheet
+                  </h2>
+
+                  {flow
+                    .filter((f) => f.type === "quiz")
+                    .map((q: any, i) => (
+                      <div key={i} className="mb-4">
+                        <p className="font-semibold mb-2">
+                          Q{i + 1}. {q.data.question}
+                        </p>
+
+                        {q.data.options.map((opt: any) => {
+                          const selected = answers[q.data.id] === opt.id;
+                          const correct = opt.is_correct;
+
+                          return (
+                            <div
+                              key={opt.id}
+                              className={`p-2 rounded mb-1 text-sm
+                                ${
+                                  correct
+                                    ? "bg-green-600/20"
+                                    : selected
+                                    ? "bg-red-600/20"
+                                    : "bg-slate-800"
+                                }`}
+                            >
+                              {opt.text}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                </div>
+
+                <div className="border border-slate-800 rounded-xl p-6">
+                  <h2 className="text-xl font-bold mb-4 text-purple-300">
+                    Feedback
+                  </h2>
+
+                  <div className="flex gap-2 mb-4">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star
+                        key={i}
+                        onClick={() => setRating(i)}
+                        className={`cursor-pointer ${
+                          i <= rating ? "text-yellow-400" : "text-slate-500"
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  <textarea
+                    value={feedback}
+                    onChange={(e) => setFeedback(e.target.value)}
+                    className="w-full p-3 rounded bg-slate-800 border border-slate-700"
+                    placeholder="Write your feedback..."
+                  />
+
+                  <button
+                    onClick={submitFeedback}
+                    className="bg-purple-600 px-8 py-3 rounded-lg mt-4"
+                  >
+                    Submit Feedback
+                  </button>
+                </div>
+              </div>
+            )}
+
+           {step === "certificate" && (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="bg-slate-800 border border-slate-700 rounded-2xl p-10 w-full max-w-xl text-center shadow-xl">
+      
+      <Award size={72} className="mx-auto text-yellow-400 mb-6" />
+
+      <h2 className="text-2xl font-bold mb-2">
+        Course Completed!
+      </h2>
+
+      <p className="text-slate-300 mb-6">
+        You have successfully completed this course.
+        Click below to generate your certificate.
+      </p>
+
+     <button
+  onClick={generateCertificate}
+  disabled={certLoading}
+  className={`w-full py-3 rounded-lg text-lg font-semibold flex items-center justify-center gap-2
+    ${
+      certLoading
+        ? "bg-purple-600/70 cursor-not-allowed"
+        : "bg-purple-600 hover:bg-purple-700"
+    }`}
+>
+  {certLoading ? (
+    <>
+      <span className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+      Generating Certificate...
+    </>
+  ) : (
+    "Generate Certificate"
+  )}
+</button>
+
     </div>
   </div>
 )}
 
-
-            {step === "certificate" && (
-              <div className="text-center">
-                <Award size={64} className="mx-auto text-yellow-400" />
-                <h2 className="text-2xl font-bold">Certificate Ready</h2>
-                <button onClick={generateCertificate} className="bg-green-600 px-6 py-2 rounded-lg">
-                  Download Certificate
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>
-
-      {/* HIDDEN CERTIFICATE HTML */}
-      <div
+<div
   id="certificate-html"
   style={{
-    position: "absolute",
-    top: "-9999px",
-    left: "-9999px",
-    width: "1123px",
-    height: "794px",
-    backgroundColor: "#0b1220",
+    position: "fixed",
+    top: "-10000px",
+    left: "-10000px",
+    width: "1120px",
+    height: "790px",
+    background: "white",
     padding: "40px",
-    fontFamily: "'Poppins', Arial, sans-serif",
-    boxSizing: "border-box",
   }}
 >
-  {/* OUTER BLUE FRAME */}
-  <div
-    style={{
-      width: "100%",
-      height: "100%",
-      background:
-        "linear-gradient(135deg, #0f172a 0%, #0b3c7a 50%, #0f172a 100%)",
-      padding: "30px",
-      boxSizing: "border-box",
-    }}
-  >
-    {/* INNER WHITE CARD */}
-    <div
-      style={{
-        backgroundColor: "#ffffff",
-        width: "100%",
-        height: "100%",
-        padding: "50px 70px",
-        boxSizing: "border-box",
-        position: "relative",
-      }}
-    >
-      {/* LOGO */}
-      <img
-        src={CERTIFICATE_LOGO}
-        alt="Logo"
-        style={{ width: "160px", marginBottom: "30px" }}
-      />
-
-      {/* TITLE */}
-      <h1
-        style={{
-          fontSize: "46px",
-          margin: "0",
-          color: "#0f172a",
-          letterSpacing: "1px",
-        }}
-      >
-        CERTIFICATE
-      </h1>
-
-      <h3
-        style={{
-          marginTop: "8px",
-          fontSize: "18px",
-          letterSpacing: "3px",
-          color: "#2563eb",
-          fontWeight: 500,
-        }}
-      >
-        OF COMPLETION
-      </h3>
-
-      <p style={{ marginTop: "30px", fontSize: "16px", color: "#334155" }}>
-        This certifies that
-      </p>
-
-      {/* USER NAME */}
-      <h2
-        style={{
-          fontSize: "40px",
-          margin: "10px 0 20px",
-          color: "#020617",
-          fontWeight: 700,
-        }}
-      >
-        {user.name}
-      </h2>
-
-      <p style={{ fontSize: "16px", color: "#334155", maxWidth: "600px" }}>
-        has successfully completed the course
-      </p>
-
-      {/* COURSE TITLE */}
-      <h3
-        style={{
-          fontSize: "22px",
-          marginTop: "10px",
-          fontWeight: 600,
-          color: "#020617",
-        }}
-      >
-        “{certificate.title}”
-      </h3>
-
-      {/* META INFO */}
-      <div
-        style={{
-          marginTop: "40px",
-          fontSize: "14px",
-          color: "#334155",
-          lineHeight: "1.8",
-        }}
-      >
-        <p>
-          <b>Certificate ID:</b> {certificate.id}
-        </p>
-        <p>
-          <b>Issued On:</b> {certificate.issue_date}
-        </p>
-        <p>
-          <b>Expiry:</b> {certificate.expiry_date || "Lifetime"}
-        </p>
-        <p>
-          <b>Status:</b> Active
-        </p>
-      </div>
-
-      {/* SIGNATURE */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: "60px",
-          left: "70px",
-        }}
-      >
-        <div
-          style={{
-            width: "200px",
-            borderTop: "2px solid #0f172a",
-            marginBottom: "6px",
-          }}
-        />
-        <p style={{ fontWeight: 600, color: "#020617", margin: 0 }}>
-          Authorized Signature
-        </p>
-        <p style={{ fontSize: "13px", color: "#475569", margin: 0 }}>
-          OnRequestLab LMS
-        </p>
-      </div>
-
-      {/* FOOTER */}
-      <p
-        style={{
-          position: "absolute",
-          bottom: "40px",
-          right: "70px",
-          fontSize: "13px",
-          color: "#475569",
-        }}
-      >
-        Verified & Issued by <b>OnRequestLab</b>
-      </p>
-    </div>
-  </div>
+  <img src={logoimg} style={{ width: "120px" }} />
+  <h1 style={{ fontSize: "32px", color: "#000" }}>
+    Certificate of Completion
+  </h1>
+  <p style={{ color: "#000" }}>
+    This certifies that the user has successfully completed the course.
+  </p>
 </div>
-
 
 
       <Footer />
     </>
   );
-};
 
-export default CourseTestFinal;
+  
+}

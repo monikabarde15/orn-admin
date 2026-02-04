@@ -49,9 +49,10 @@ const navigate = useNavigate();
       .split("; ")
       .find((r) => r.startsWith("access="))
       ?.split("=")[1] || localStorage.getItem("access");
+  const VIT = import.meta.env.VITE_API_URL;
 
   const api = axios.create({
-    baseURL: "https://dev.backend.onrequestlab.com",
+    baseURL: `${VIT}`,
     headers: { Authorization: `Bearer ${token}` },
   });
 

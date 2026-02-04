@@ -17,7 +17,9 @@ jobs:
         with:
           fetch-depth: 1
 
-      # Decide environment
+      # --------------------------------------------------
+      # Decide environment (dev / prod)
+      # --------------------------------------------------
       - name: Set environment
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
@@ -30,7 +32,18 @@ jobs:
             echo "VITE_API_URL=${{ secrets.VITE_API_URL_PROD }}" >> $GITHUB_ENV
           fi
 
+      - name: Validate env vars
+        run: |
+          echo "ENV=${ENV}"
+          echo "HOST=${HOST}"
+          if [ -z "$VITE_API_URL" ]; then
+            echo "❌ VITE_API_URL is missing"
+            exit 1
+          fi
+
+      # --------------------------------------------------
       # SSH setup
+      # --------------------------------------------------
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -38,7 +51,9 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "${{ env.HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
 
-      # Cache deps + docker layers
+      # --------------------------------------------------
+      # Cache npm + docker layers
+      # --------------------------------------------------
       - name: Cache npm & docker
         uses: actions/cache@v4
         with:
@@ -52,7 +67,9 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Build image (env injected HERE)
+      # --------------------------------------------------
+      # Build Docker image (VITE_API_URL injected here)
+      # --------------------------------------------------
       - name: Build Docker image
         run: |
           docker buildx build \
@@ -63,12 +80,16 @@ jobs:
             --output type=docker,dest=app.tar \
             .
 
-      # Transfer image
+      # --------------------------------------------------
+      # Transfer image to server
+      # --------------------------------------------------
       - name: Transfer image
         run: |
           scp app.tar root@${{ env.HOST }}:~/onrequestlab_reactjs.tar
 
-      # Deploy
+      # --------------------------------------------------
+      # Deploy on server
+      # --------------------------------------------------
       - name: Deploy on server
         run: |
           ssh root@${{ env.HOST }} << 'EOF'
@@ -88,5 +109,4 @@ jobs:
           EOF
 
       - name: Done
-        run: |
-          echo "🚀 Deployed ${{ env.ENV }}"
+        run: echo "🚀 Deployed to ${{ env.ENV }}"

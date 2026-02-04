@@ -16,7 +16,10 @@ COPY . .
 
 # 🔥 Fail fast if env is missing
 RUN echo "VITE_API_URL=$VITE_API_URL" && \
-    if [ -z "$VITE_API_URL" ]; then echo "❌ VITE_API_URL is missing"; exit 1; fi
+    if [ -z "$VITE_API_URL" ]; then \
+      echo "❌ VITE_API_URL is missing"; \
+      exit 1; \
+    fi
 
 # Build Vite app
 RUN npm run build
@@ -28,11 +31,11 @@ FROM node:22-alpine
 WORKDIR /app
 
 # Copy built assets only
-COPY --from=builder /app/build ./build
+COPY --from=builder /app/dist ./dist
 
 # Static file server
 RUN npm install -g serve
 
 EXPOSE 3000
 
-CMD ["serve", "-s", "build", "-l", "3000"]
+CMD ["serve", "-s", "dist", "-l", "3000"]

@@ -299,7 +299,7 @@ const generateCertificate = async () => {
     formData.append("user", userId);
 
     const res = await axios.post(
-      "https://dev.backend.onrequestlab.com/certificate/certificate/",
+      `${VIT}/certificate/certificate/`,
       formData,
       {
         headers: {

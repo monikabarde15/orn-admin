@@ -2,8 +2,11 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import html2pdf from "html2pdf.js";
 import Swal from "sweetalert2";
+import api from "../../services/api"; // 👈 path adjust if needed
+
 console.log(import.meta.env.VITE_API_URL);
 const VIT=import.meta.env.VITE_API_URL;
+
 const API_URL = `${VIT}/api/v1/admin/users/`;
 const ROWS_PER_PAGE = 5;
 
@@ -14,21 +17,13 @@ const UsersList = () => {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-  };
-  const accessToken = getCookie("access");
+ 
 
   // Fetch all users once (if API supports pagination, you can modify)
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(API_URL, {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        withCredentials: true,
-      });
+      const res = await api.get(API_URL);
       const items = res.data.results || [];
       setUsers(items);
       setFilteredUsers(items);
@@ -38,6 +33,10 @@ const UsersList = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   useEffect(() => {
     fetchUsers();
@@ -68,24 +67,20 @@ const UsersList = () => {
   };
 
   // Delete user
-  const deleteUser = async (user) => {
+const deleteUser = async (user: any) => {
     const confirm = await Swal.fire({
       title: "Are you sure?",
       text: "This user will be permanently deleted!",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Yes, delete it!",
-      cancelButtonText: "Cancel",
     });
+
     if (!confirm.isConfirmed) return;
 
     try {
-      await axios.delete(`${API_URL}${user.id}/`, {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        withCredentials: true,
-      });
-      const updated = users.filter((u) => u.id !== user.id);
-      setUsers(updated);
+      await api.delete(`${API_URL}${user.id}/`);
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
       Swal.fire({
         icon: "success",
         toast: true,
@@ -94,13 +89,12 @@ const UsersList = () => {
         showConfirmButton: false,
         timer: 2000,
       });
-    } catch (err) {
-      console.error("Delete failed:", err);
+    } catch {
       Swal.fire({
         icon: "error",
         toast: true,
         position: "top",
-        title: "Failed to delete user",
+        title: "Delete failed",
         showConfirmButton: false,
         timer: 2000,
       });

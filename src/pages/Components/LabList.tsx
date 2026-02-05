@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import html2pdf from "html2pdf.js";
+import api from "../../services/api"; // 👈 path adjust if needed
 
 console.log(import.meta.env.VITE_API_URL);
 const VIT=import.meta.env.VITE_API_URL;
@@ -18,73 +19,61 @@ const LabList = () => {
   const [totalItems, setTotalItems] = useState(0);
 
   // Get access token from cookie
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-  };
-  const accessToken = getCookie("access");
-
   // Fetch instances
-  const fetchInstances = async (page = 1) => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${API_URL}?page=${page}`, {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        withCredentials: true,
-      });
+const fetchInstances = async (page = 1) => {
+  setLoading(true);
+  try {
+    const res = await api.get(`${API_URL}?page=${page}`);
 
-      const items = res.data.results || [];
-      const total = res.data.count || items.length;
+    const items = res.data.results || [];
+    const total = res.data.count || items.length;
 
-      setInstances(items);
-      setFilteredInstances(items);
-      setTotalItems(total);
-      setCurrentPage(page);
-    } catch (err) {
-      console.error("Error fetching instances:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setInstances(items);
+    setFilteredInstances(items);
+    setTotalItems(total);
+    setCurrentPage(page);
+  } catch (err) {
+    console.error("Error fetching instances:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
-  useEffect(() => {
+useEffect(() => {
+  fetchInstances(currentPage);
+}, []);
+
+// Search/filter
+useEffect(() => {
+  setFilteredInstances(
+    instances.filter((i) =>
+      i.userName?.toLowerCase().includes(search.toLowerCase()) ||
+      i.instance_type?.toLowerCase().includes(search.toLowerCase()) ||
+      i.instance_ip?.toLowerCase().includes(search.toLowerCase())
+    )
+  );
+}, [search, instances]);
+
+// Pagination
+const totalPages = Math.ceil(totalItems / ROWS_PER_PAGE);
+const changePage = (page) => {
+  if (page < 1 || page > totalPages) return;
+  fetchInstances(page);
+};
+
+// Delete instance
+const deleteInstance = async (id) => {
+  if (!window.confirm("Are you sure you want to delete this instance?")) return;
+
+  try {
+    await api.delete(`${API_URL}${id}/`);
+    alert("Instance deleted successfully!");
     fetchInstances(currentPage);
-  }, []);
-
-  // Search/filter
-  useEffect(() => {
-    setFilteredInstances(
-      instances.filter((i) =>
-        i.userName?.toLowerCase().includes(search.toLowerCase()) ||
-        i.instance_type?.toLowerCase().includes(search.toLowerCase()) ||
-        i.instance_ip?.toLowerCase().includes(search.toLowerCase())
-      )
-    );
-  }, [search, instances]);
-
-  // Pagination
-  const totalPages = Math.ceil(totalItems / ROWS_PER_PAGE);
-  const changePage = (page) => {
-    if (page < 1 || page > totalPages) return;
-    fetchInstances(page);
-  };
-
-  // Delete instance
-  const deleteInstance = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this instance?")) return;
-    try {
-      await axios.delete(`${API_URL}${id}/`, {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        withCredentials: true,
-      });
-      alert("Instance deleted successfully!");
-      fetchInstances(currentPage);
-    } catch (err) {
-      console.error("Delete failed:", err);
-      alert("Failed to delete instance.");
-    }
-  };
+  } catch (err) {
+    console.error("Delete failed:", err);
+    alert("Failed to delete instance.");
+  }
+};
 
   // CSV export
   const exportCSV = () => {

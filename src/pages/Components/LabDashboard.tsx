@@ -1,11 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import api from "../../services/api";
 
-console.log(import.meta.env.VITE_API_URL);
-const VIT=import.meta.env.VITE_API_URL;
-
-const API_BASE = `${VIT}/api/v1`;
+const VIT = import.meta.env.VITE_API_URL;
 
 /* ================= TYPES ================= */
 
@@ -16,65 +13,28 @@ interface Instance {
   instance_ip?: string;
   status: string;
   web_ssh_url?: string;
+  timestamp?: string;
+  isDeleted?: boolean;
 }
 
-/* ================= PACKAGE EXTRACTOR ================= */
-
-// const extractPackageFromName = (name?: string): string => {
-//   console.log('name=',name);
-//   if (!name) return "docker";
-
-//   const lower = name.toLowerCase();
-//    console.log('name=',name,'lower=',lower);
-
-//   if (lower.includes("kubernetes") || lower.includes("k8s")) return "kubernetes";
-//   if (lower.includes("docker")) return "docker";
-//   if (lower.includes("monika-terraform-lab")) return "terraform";
-//    if (lower.includes("monika-nodea")) return "redhat";
-//    if (lower.includes("python")) return "python";
-//    if (lower.includes("jenkins")) return "jenkins ";
-//   if (lower.includes("linux")) return "linux";
-//   if (lower.includes("iscsi")) return "iscsi";
-
-//   return "docker"; // fallback
-// };
+/* ================= HELPERS ================= */
 
 const extractPackageFromName = (name?: string): string => {
   if (!name) return "linux";
-
   const lower = name.toLowerCase();
 
-  // 🔴 REDHAT NODES (nodea / nodeb / nodec)
-  if (
-    lower.includes("nodea") ||
-    lower.includes("nodeb") ||
-    lower.includes("nodec")
-  ) {
+  if (lower.includes("nodea") || lower.includes("nodeb") || lower.includes("nodec"))
     return "redhat";
-  }
-
   if (lower.includes("kubernetes") || lower.includes("k8s"))
     return "kubernetes";
+  if (lower.includes("docker")) return "docker";
+  if (lower.includes("terraform")) return "terraform";
+  if (lower.includes("jenkins")) return "jenkins";
+  if (lower.includes("python")) return "python";
+  if (lower.includes("iscsi")) return "iscsi";
+  if (lower.includes("linux")) return "linux";
 
-  if (lower.includes("docker"))
-    return "docker";
-
-  if (lower.includes("terraform"))
-    return "terraform";
-
-  if (lower.includes("jenkins"))
-    return "jenkins"; // ✅ fixed (no space)
-
-  if (lower.includes("python"))
-    return "python";
-
-  if (lower.includes("iscsi"))
-    return "iscsi";
-
-  if (lower.includes("linux"))
-    return "linux";
-
-  return "linux"; // ✅ safe fallback
+  return "linux";
 };
 
 /* ================= DOC MAP ================= */
@@ -93,7 +53,6 @@ const DOCS_MAP: Record<string, string> = {
 /* ================= COMPONENT ================= */
 
 const LabDashboard: React.FC = () => {
-  const location = useLocation();
   const navigate = useNavigate();
 
   const [instance, setInstance] = useState<Instance | null>(null);
@@ -101,70 +60,45 @@ const LabDashboard: React.FC = () => {
   const [leftWidth, setLeftWidth] = useState(70);
 
   const isResizing = useRef(false);
-const getCookie = (name) => {
-    if (typeof document === "undefined") return "";
-    const v = `; ${document.cookie}`;
-    const parts = v.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-    return "";
-  };
 
-  const token =
-    (getCookie("access") ||
-      localStorage.getItem("access") ||
-      localStorage.getItem("jwt-auth"))?.trim();
-  const userId = getCookie("user_id");
+  /* ================= AUTH (NO COOKIES) ================= */
 
-  //const query = new URLSearchParams(location.search);
-  //const userId = query.get("user");
-
-  // const token =
-  //   localStorage.getItem("jwt-auth") ||
-  //   localStorage.getItem("access") ||
-  //   "";
+  const token = localStorage.getItem("access_token");
+  const userId = localStorage.getItem("userId");
 
   /* ================= FETCH INSTANCE ================= */
 
   useEffect(() => {
     const fetchInstance = async () => {
-      if (!userId || !token) {
+      if (!token || !userId) {
         setLoading(false);
         return;
       }
 
       try {
-        const res = await axios.get(
-          `${API_BASE}/lab/userinst/${userId}/`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
+        const res = await api.get(`/api/v1/lab/userinst/${userId}/`);
         const instances: Instance[] = res.data || [];
 
-        // ✅ Pick only running instance
-     const activeInstance =
-  instances
-    .filter((i) => i.isDeleted !== true)
-    .sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() -
-        new Date(a.timestamp).getTime()
-    )[0] || null;
+        // ✅ latest non-deleted instance
+        const activeInstance =
+          instances
+            .filter((i) => i.isDeleted !== true)
+            .sort(
+              (a, b) =>
+                new Date(b.timestamp || "").getTime() -
+                new Date(a.timestamp || "").getTime()
+            )[0] || null;
 
-setInstance(activeInstance);
-
-
-
-      } catch (error) {
-        console.error("Error fetching instance:", error);
+        setInstance(activeInstance);
+      } catch (err) {
+        console.error("Error fetching instance:", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchInstance();
-  }, [userId, token]);
+  }, [token, userId]);
 
   /* ================= RESIZE LOGIC ================= */
 
@@ -220,10 +154,6 @@ setInstance(activeInstance);
   const packageName = extractPackageFromName(instance.instance_name);
   const tutorialSrc = DOCS_MAP[packageName];
   const sshUrl = instance.web_ssh_url || "";
-
-  console.log("Lab:", instance.instance_name);
-  console.log("Package:", packageName);
-  console.log("Docs:", tutorialSrc);
 
   /* ================= UI ================= */
 

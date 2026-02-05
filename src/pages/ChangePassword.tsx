@@ -4,8 +4,8 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../pages/Components/Navbar";
 import Footer from "../pages/Components/Footer";
-console.log(import.meta.env.VITE_API_URL);
-const VIT=import.meta.env.VITE_API_URL;
+import api from "../services/api";
+
 const ChangePassword = () => {
   const [formData, setFormData] = useState({
     new_password1: "",
@@ -14,13 +14,8 @@ const ChangePassword = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-    return null;
-  };
-
+  const token = localStorage.getItem("access_token");
+  const userId = localStorage.getItem("userId");
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setErrors({ ...errors, [e.target.name]: "" });
@@ -29,7 +24,7 @@ const ChangePassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
-    const accessToken = getCookie("access");
+    const accessToken = token;
 
     if (!accessToken) {
       toast.error("No access token found. Please log in again.");
@@ -45,8 +40,8 @@ const ChangePassword = () => {
 
     setLoading(true);
     try {
-      await axios.post(
-        `${VIT}/api/v1/users/auth/password/change/`,
+      await api.post(
+        `/api/v1/users/auth/password/change/`,
         {
           new_password1: formData.new_password1,
           new_password2: formData.new_password2,

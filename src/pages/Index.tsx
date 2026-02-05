@@ -11,6 +11,7 @@ import IconHorizontalDots from "../components/Icon/IconHorizontalDots";
 import IconDollarSign from "../components/Icon/IconDollarSign";
 import IconShoppingCart from "../components/Icon/IconShoppingCart";
 import IconArrowLeft from "../components/Icon/IconArrowLeft";
+import api from "../services/api"; // path adjust if needed
 
 const VIT = import.meta.env.VITE_API_URL;
 
@@ -20,82 +21,73 @@ const Index = () => {
       state.themeConfig.theme === "dark" || state.themeConfig.isDarkMode
   );
 
-  const getCookie = (name: string) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(";").shift();
-  };
+ 
 const [activities, setActivities] = useState<any[]>([]);
 const [orders, setOrders] = useState<any[]>([]);
 
-  const token = getCookie("access");
 
   const [loading, setLoading] = useState(true);
   const [counts, setCounts] = useState<any>({});
 
   /* ================= API CALL (ONE TIME) ================= */
   useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const headers = { Authorization: `Bearer ${token}` };
+  const fetchAll = async () => {
+    try {
+      const [
+        users,
+        support,
+        payments,
+        instances,
+        feedback,
+        contact,
+      ] = await Promise.all([
+        api.get("/api/v1/admin/users/count"),
+        api.get("/api/v1/admin/support/count"),
+        api.get("/api/v1/admin/payments/count"),
+        api.get("/api/v1/admin/instances/count"),
+        api.get("/api/v1/admin/feedback/count"),
+        api.get("/api/v1/admin/contact/count"),
+      ]);
 
-        const [
-          users,
-          support,
-          payments,
-          instances,
-          feedback,
-          contact,
-        ] = await Promise.all([
-          fetch(`${VIT}/api/v1/admin/users/count`, { headers }).then(r => r.json()),
-          fetch(`${VIT}/api/v1/admin/support/count`, { headers }).then(r => r.json()),
-          fetch(`${VIT}/api/v1/admin/payments/count`, { headers }).then(r => r.json()),
-          fetch(`${VIT}/api/v1/admin/instances/count`, { headers }).then(r => r.json()),
-          fetch(`${VIT}/api/v1/admin/feedback/count`, { headers }).then(r => r.json()),
-          fetch(`${VIT}/api/v1/admin/contact/count`, { headers }).then(r => r.json()),
-        ]);
+      setCounts({
+        users: users.data.count || 0,
+        support: support.data.count || 0,
+        payments: payments.data.count || 0,
+        instances: instances.data.count || 0,
+        feedback: feedback.data.count || 0,
+        contact: contact.data.count || 0,
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        setCounts({
-          users: users.count || 0,
-          support: support.count || 0,
-          payments: payments.count || 0,
-          instances: instances.count || 0,
-          feedback: feedback.count || 0,
-          contact: contact.count || 0,
-        });
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
+  fetchAll();
+}, []);
 
-    fetchAll();
-  }, []);
 useEffect(() => {
-  const headers = { Authorization: `Bearer ${token}` };
-
-  // Recent Activities (Users)
-  fetch(`${VIT}/api/v1/admin/users/?page=1`, { headers })
-    .then(res => res.json())
-    .then(data => {
-      const mapped = data.results.map((u: any) => ({
+  // Recent Users
+  api.get("/api/v1/admin/users/?page=1")
+    .then(res => {
+      const mapped = res.data.results.map((u: any) => ({
         text: `${u.username} joined`,
         time: new Date(u.date_joined).toLocaleTimeString(),
-        status: u.is_active ? 'Completed' : 'Pending',
-        color: u.is_active ? 'bg-success' : 'bg-danger',
+        status: u.is_active ? "Completed" : "Pending",
+        color: u.is_active ? "bg-success" : "bg-danger",
       }));
       setActivities(mapped.slice(0, 6));
     });
 
-  // Recent Orders (Payments)
-  fetch(`${VIT}/api/v1/admin/payments/?page=1`, { headers })
-    .then(res => res.json())
-    .then(data => {
-      setOrders(data.results.slice(0, 5));
+  // Recent Payments
+  api.get("/api/v1/admin/payments/?page=1")
+    .then(res => {
+      setOrders(res.data.results.slice(0, 5));
     });
 
 }, []);
+
 
   /* ================= MAIN AREA GRAPH ================= */
   const mainChart = {

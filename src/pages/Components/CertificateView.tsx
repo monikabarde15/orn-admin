@@ -8,6 +8,7 @@ import logoimg from "../../../public/assets/orllogo.png";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
+import api from "../../services/api";
 
 const CERTIFICATE_LOGO = logoimg;
 
@@ -23,6 +24,7 @@ interface Certificate {
 
 const CertificateView: React.FC = () => {
   const { certificateId } = useParams<{ certificateId: string }>();
+const [username, setUsername] = useState<string>("");
 
   const [certificate, setCertificate] = useState<Certificate | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,31 +32,29 @@ const CertificateView: React.FC = () => {
 const navigate = useNavigate();
 
   /* ================= HELPERS ================= */
-  const getCookie = (name: string) => {
-    if (typeof document === "undefined") return "";
-    const v = `; ${document.cookie}`;
-    const parts = v.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()!.split(";").shift();
-    return "";
-  };
-
-  const user = {
-    name: getCookie("username") || "Learner",
-    email: getCookie("email"),
-  };
-
-  /* ================= AUTH ================= */
-  const token =
-    document.cookie
-      .split("; ")
-      .find((r) => r.startsWith("access="))
-      ?.split("=")[1] || localStorage.getItem("access");
+  const token = localStorage.getItem("access_token");
+  const userId = localStorage.getItem("userId");
   const VIT = import.meta.env.VITE_API_URL;
 
-  const api = axios.create({
-    baseURL: `${VIT}`,
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  useEffect(() => {
+  const fetchProfile = async () => {
+    try {
+      const res = await api.get("/api/v1/users/profile/");
+      // backend ke hisaab se key adjust kar lena
+      setUsername(
+        res.data?.username ||
+        res.data?.name ||
+        res.data?.full_name ||
+        "Learner"
+      );
+    } catch (err) {
+      console.error("Profile fetch failed", err);
+      setUsername("Learner");
+    }
+  };
+
+  fetchProfile();
+}, []);
 
   /* ================= FETCH CERTIFICATE ================= */
   useEffect(() => {
@@ -195,7 +195,7 @@ const navigate = useNavigate();
               </div>
 
               <div>
-                <b className="text-white">Issued To:</b> {user.name}
+                <b className="text-white">Issued To:</b> {username}
               </div>
 
               <div>
@@ -306,7 +306,7 @@ const navigate = useNavigate();
           fontWeight: 700,
         }}
       >
-        {user.name}
+        {username}
       </h2>
 
       <p style={{ fontSize: "16px", color: "#334155", maxWidth: "600px" }}>

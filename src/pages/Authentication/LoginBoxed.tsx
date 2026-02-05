@@ -38,92 +38,7 @@ const LoginBoxed = () => {
     dispatch(setPageTitle("Login Boxed"));
   }, [dispatch]);
 
-  // // ✅ LOGIN HANDLER
-  // const submitForm = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setError("");
-  //   setLoading(true);
-
-  //   if (!username.trim() || !password.trim()) {
-  //     toast.error("Please fill in all fields.", { position: "top-center" });
-  //     setLoading(false);
-  //     return;
-  //   }
-
-  //   try {
-  //     const response = await axios.post(
-  //       `${VIT}/api/v1/users/login/`,
-  //       { "login":username, password },
-  //       { headers: { "Content-Type": "application/json" }, withCredentials: true }
-  //     );
-
-  //     const data = response.data;
-  //     if (data.user) {
-  //       // Save cookies
-  //       document.cookie = `username=${encodeURIComponent(data.user.username)}; path=/; max-age=86400`;
-  //       document.cookie = `user_id=${encodeURIComponent(data.user.id)}; path=/; max-age=86400`;
-  //       document.cookie = `email=${encodeURIComponent(data.user.email)}; path=/; max-age=86400`;
-  //       document.cookie = `is_superuser=${data.user.is_superuser}; path=/; max-age=86400`;
-  //       document.cookie = `access=${data.access}; path=/; max-age=86400`;
-
-  //       // Save localStorage
-  //       localStorage.setItem("jwt-auth", data.access);
-  //       localStorage.setItem("userId", data.user.id);
-  //       localStorage.setItem("email", data.user.email);
-  //       localStorage.setItem("username", data.user.username);
-
-  //       toast.success("Login successful!", { position: "top-center" });
-  //       console.log('use====',data.user.is_superuser);
-  //       // setTimeout(() => {
-  //       //   if (data.user.is_superuser == true) {
-  //       //     window.location.href = "/index";
-  //       //   } else {
-  //       //     window.location.href = "/";
-  //       //   }
-  //       // }, 1200);
-  //       console.log('use====', data.user.is_superuser);
-
-  //         setTimeout(() => {
-  //           if (data.user.is_superuser === true) {
-  //             window.location.href = "/index";
-  //           } else {
-  //             window.location.href = "/";
-  //           }
-  //         }, 1200);
-
-
-  //     }
-  //   } catch (err: any) {
-  //     let msg = "Invalid username or password.";
-
-  //     if (err.response?.data) {
-  //       const data = err.response.data;
-
-  //       // ✅ Handle email verification error
-  //       if (data.non_field_errors && data.non_field_errors[0]?.includes("verify your email")) {
-  //         msg = (
-  //           <span>
-  //             {data.non_field_errors[0]}{" "}
-  //             <Link to="/otp" className="text-blue-500 underline">
-  //               Verify OTP
-  //             </Link>
-  //           </span>
-  //         );
-  //       } else if (data.detail) msg = data.detail;
-  //       else if (data.error) msg = data.error;
-  //       else if (typeof data === "object") {
-  //         const firstKey = Object.keys(data)[0];
-  //         if (Array.isArray(data[firstKey])) msg = data[firstKey][0];
-  //       }
-  //     }
-
-  //     setError(msg as string);
-  //     toast.error(msg, { position: "top-center", autoClose: 4000 });
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-// ✅ LOGIN HANDLER
+  
 const submitForm = async (e: React.FormEvent) => {
   e.preventDefault();
   setError("");
@@ -147,8 +62,7 @@ const submitForm = async (e: React.FormEvent) => {
     if (data.user && data.access) {
 
       // ✅ SAVE SESSION EXPIRY TIME
-      const expiryTime = Date.now() + SESSION_TIME_MS;
-      localStorage.setItem("session_expiry", expiryTime.toString());
+      
 
       // ✅ COOKIES (SHORT LIVED)
       document.cookie = `username=${encodeURIComponent(data.user.username)}; path=/;`;
@@ -158,10 +72,14 @@ const submitForm = async (e: React.FormEvent) => {
       document.cookie = `access=${data.access}; path=/;`;
 
       // ✅ LOCAL STORAGE
-      localStorage.setItem("jwt-auth", data.access);
-      localStorage.setItem("userId", data.user.id);
-      localStorage.setItem("email", data.user.email);
-      localStorage.setItem("username", data.user.username);
+      localStorage.setItem("access_token", data.access);
+      localStorage.setItem("refresh_token", data.refresh);
+
+  // 👤 USER INFO
+  localStorage.setItem("userId", String(data.user.id));
+  localStorage.setItem("email", data.user.email);
+  localStorage.setItem("username", data.user.username);
+  localStorage.setItem("is_superuser", String(data.user.is_superuser));
 
       toast.success("Login successful!", { position: "top-center" });
 

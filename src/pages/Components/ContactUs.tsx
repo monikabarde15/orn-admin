@@ -4,9 +4,8 @@ import { motion } from "framer-motion";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import countryList from "country-list-with-dial-code-and-flag";
+import api from "../../services/api";
 
-console.log(import.meta.env.VITE_API_URL);
-const VIT=import.meta.env.VITE_API_URL;
 const countryCodes = countryList.getAll().map((c) => ({
     dialCode: c.dialCode,
     name: c.name,
@@ -61,56 +60,50 @@ const ContactUs = () => {
 
   // ----------------- SUBMIT -------------------
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const newErrors = validate();
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
+  const newErrors = validate();
+  setErrors(newErrors);
+  if (Object.keys(newErrors).length > 0) return;
 
-    setLoading(true);
+  setLoading(true);
 
-    try {
-      const response = await fetch(
-        `${VIT}/api/contact/submit/`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            user: "1",
-            subject: "Contact Query",
-            first_name: formData.first_name,
-            last_name: formData.last_name,
-            email: formData.email,
-            phone: `${countryCode}${formData.phone}`,
-            message: formData.message,
-          }),
-        }
-      );
+  try {
+    const payload = {
+      user: localStorage.getItem("userId") || null, // ✅ dynamic user
+      subject: "Contact Query",
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      email: formData.email,
+      phone: `${countryCode}${formData.phone}`,
+      message: formData.message,
+    };
 
-      const data = await response.json();
+    await api.post("/api/contact/submit/", payload);
 
-      if (!response.ok) {
-        toast.error(data.message || "Something went wrong!");
-      } else {
-        toast.success("✓ Message sent successfully!");
+    toast.success("✓ Message sent successfully!");
 
-        setFormData({
-          first_name: "",
-          last_name: "",
-          email: "",
-          phone: "",
-          message: "",
-        });
-        setErrors({});
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Network error. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    setFormData({
+      first_name: "",
+      last_name: "",
+      email: "",
+      phone: "",
+      message: "",
+    });
+
+    setErrors({});
+  } catch (err) {
+    console.error(err);
+
+    toast.error(
+      err.response?.data?.message ||
+      "Something went wrong. Please try again."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // ----------------- UI -------------------
   return (

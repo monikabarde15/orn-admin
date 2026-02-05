@@ -9,6 +9,7 @@ import Footer from "../../pages/Components/Footer";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import logoimg from "../../../public/assets/orllogo.png";
+import api from "../../services/api";
 
 /* ================= TYPES ================= */
 interface QuizOption {
@@ -48,33 +49,10 @@ type Step = "learning" | "review" | "certificate";
 export default function CourseTestFinal() {
   const { id: courseId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-const getCookie = (name: string) => {
-    const v = `; ${document.cookie}`;
-    const parts = v.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(";").shift() || "";
-    return "";
-  };
-  const VIT = import.meta.env.VITE_API_URL;
-const API_V1 = `${VIT}/api/v1`;
-const token =
-    getCookie("access") || localStorage.getItem("access") || "";
+  const token = localStorage.getItem("access_token");
+  const userId = localStorage.getItem("userId");
 
-  const userId = getCookie("user_id");
-  /* ================= AUTH ================= */
-  // const token =
-  //   localStorage.getItem("access") ||
-  //   document.cookie
-  //     .split("; ")
-  //     .find((r) => r.startsWith("access="))
-  //     ?.split("=")[1];
-
-  // const userId = localStorage.getItem("user_id");
-
-  const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
-
+  
   /* ================= STATE ================= */
   const [modules, setModules] = useState<Module[]>([]);
   const [flow, setFlow] = useState<FlowItem[]>([]);
@@ -298,8 +276,8 @@ const generateCertificate = async () => {
     formData.append("course", String(courseId));
     formData.append("user", userId);
 
-    const res = await axios.post(
-      `${VIT}/certificate/certificate/`,
+    const res = await api.post(
+      `certificate/certificate/`,
       formData,
       {
         headers: {
@@ -337,7 +315,7 @@ const generateCertificate = async () => {
     }
 
     // ❌ real error case
-    alert("Certificate generate nahi ho paya");
+    alert("Something error!");
   } finally {
     setCertLoading(false); // loader OFF
   }

@@ -5,8 +5,7 @@ import { Send, Star, User, Mail, MessageSquare } from 'lucide-react';
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
 import { FeedbackMetatage } from '../Pages/FeedbackMetatage';
-console.log(import.meta.env.VITE_API_URL);
-const VIT=import.meta.env.VITE_API_URL;
+import api from "../../services/api";
 
 const FeedbackForm = () => {
   const [formData, setFormData] = useState({
@@ -40,27 +39,17 @@ const FeedbackForm = () => {
   setLoading(true);
 
   try {
-const getCookie = (name) => {
-if (typeof document === "undefined") return "";
-const v = `; ${document.cookie}`;
-const parts = v.split(`; ${name}=`);
-if (parts.length === 2) return parts.pop().split(";").shift();
-return "";
-};
+ const token = localStorage.getItem("access_token");
+  const userid = localStorage.getItem("userId");
 
-const token =
-(getCookie("access") ||
-localStorage.getItem("access") ||
-localStorage.getItem("jwt-auth"))?.trim();
-const userId = getCookie("user_id");
 const payload = {
   user: formData.name,               // or userId if backend needs ID
   subject: formData.category,        // or formData.email if category not required
   description: formData.message
 };
 
-    const response = await axios.post(
-      `${VIT}/api/feedback/feedback_vc/`,
+    const response = await api.post(
+      `/api/feedback/feedback_vc/`,
       payload,
       {
         headers: {

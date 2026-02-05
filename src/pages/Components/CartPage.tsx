@@ -5,9 +5,7 @@ import Footer from "../Components/Footer";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-console.log(import.meta.env.VITE_API_URL);
-const VIT=import.meta.env.VITE_API_URL;
-const API_BASE = `${VIT}/api/v1`;
+import api from "../../services/api";
 
 const CartPage = () => {
   const [loaderSeconds, setLoaderSeconds] = useState(0);
@@ -21,19 +19,8 @@ const loaderTimerRef = useRef(null);
   const [isLaunching, setIsLaunching] = useState(false);
   const pollRef = useRef(null);
 
-  const getCookie = (name) => {
-    if (typeof document === "undefined") return "";
-    const v = `; ${document.cookie}`;
-    const parts = v.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-    return "";
-  };
-
-  const token =
-    (getCookie("access") ||
-      localStorage.getItem("access") ||
-      localStorage.getItem("jwt-auth"))?.trim();
-  const userId = getCookie("user_id");
+const token = localStorage.getItem("access_token");
+const userId = localStorage.getItem("userId");
 
   const notify = (msg, type = "info", opts = {}) =>
     toast[type](msg, {
@@ -46,14 +33,15 @@ const loaderTimerRef = useRef(null);
       ...opts,
     });
 
-  const requireLogin = () => {
-    if (!token || !userId) {
-      notify("Please login to continue", "error");
-      navigate("/login");
-      return false;
-    }
-    return true;
-  };
+const requireLogin = () => {
+  if (!token || !userId) {
+    notify("Please login to continue", "error");
+    navigate("/login");
+    return false;
+  }
+  return true;
+};
+
 
   useEffect(() => {
     try {
@@ -126,7 +114,7 @@ const loaderTimerRef = useRef(null);
   const checkWallet = async () => {
     try {
       setProcessing(true);
-      const res = await axios.get(`${API_BASE}/users/wallet/balance/`, {
+      const res = await api.get(`api/v1/users/wallet/balance/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data?.balance ?? 0;
@@ -140,8 +128,8 @@ const loaderTimerRef = useRef(null);
   const createSubscriptionOnBackend = async (planId, price) => {
     setProcessing(true);
     try {
-      const res = await axios.post(
-        `${API_BASE}/users/subscriptions/create/${planId}/`,
+      const res = await api.post(
+        `api/v1/users/subscriptions/create/${planId}/`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -201,15 +189,15 @@ const loaderTimerRef = useRef(null);
 
       const endpoint =
         paymentId === "free"
-          ? `${API_BASE}/users/deploy-free/${action}/`
-          : `${API_BASE}/users/deploy/${action}/`;
+          ? `api/v1/users/deploy-free/${action}/`
+          : `api/v1/users/deploy/${action}/`;
 
     const body =
       paymentId === "free"
         ? { user_id: userId, action }
         : { user_id: userId, action, payment_id: paymentId };
 
-    await axios.post(endpoint, body, {
+    await api.post(endpoint, body, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -239,66 +227,15 @@ const loaderTimerRef = useRef(null);
   }
 };
 
-  // const pollForLaunchedInstances = (paymentId = null) => {
-  //   if (pollRef.current) clearInterval(pollRef.current);
-
-  //   pollRef.current = setInterval(async () => {
-  //     try {
-  //       const res = await axios.get(`${API_BASE}/lab/userinst/${userId}/`, {
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       });
-
-  //       const instances = res.data || [];
-
-  //       const launched = instances.find((i) => {
-  //         if (i.status !== "Launched") return false;
-
-  //         if (!paymentId) return true;
-
-  //         if (paymentId === "free")
-  //           return i.is_free || !i.payment_id || i.payment_id === "free";
-
-  //         return i.payment_id === paymentId;
-  //       });
-
-  //       if (launched) {
-  //         clearInterval(pollRef.current);
-  //         pollRef.current = null;
-
-  //         setCartItems([]);
-  //         localStorage.removeItem("orl_cart");
-
-  //         const url =
-  //           launched?.web_ssh_url ||
-  //           launched?.webssh_url ||
-  //           launched?.web_ssh ||
-  //           launched?.web_ssh_link ||
-  //           launched?.webssh ||
-  //           launched?.console_url ||
-  //           launched?.public_url ||
-  //           launched?.ssh_url ||
-  //           launched?.instance_url ||
-  //           launched?.connect_url ||
-  //           launched?.user_instance_link;
-
-  //         if (url) window.open(url, "_blank");
-
-  //         window.location.href = `/lab?user=${userId}`;
-  //       }
-  //     } catch (err) {
-  //       console.error("Polling error:", err);
-  //     }
-  //   }, 1000);
-  // };
-
+ 
   
   const pollForLaunchedInstances = () => {
   if (pollRef.current) clearInterval(pollRef.current);
 
   pollRef.current = setInterval(async () => {
     try {
-      const res = await axios.get(
-        `${API_BASE}/lab/userinst/${userId}/`,
+      const res = await api.get(
+        `api/v1/lab/userinst/${userId}/`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -340,7 +277,7 @@ const loaderTimerRef = useRef(null);
       if (url) window.open(url, "_blank");
 
       // ✅ STEP 6: AUTO REDIRECT (THIS WAS MISSING)
-      window.location.href = `/lab?user=${userId}`;
+      window.location.href = `/lab?user`;
 
     } catch (err) {
       console.error("Polling error:", err);
@@ -365,8 +302,8 @@ const loaderTimerRef = useRef(null);
       const loaded = await loadRazorpay();
       if (!loaded) return notify("Failed to load Razorpay", "error");
 
-      const orderRes = await axios.post(
-        `${API_BASE}/users/create-order/`,
+      const orderRes = await api.post(
+        `api/v1/users/create-order/`,
         { amount },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -383,8 +320,8 @@ const loaderTimerRef = useRef(null);
 
         handler: async function (response) {
           try {
-            const verify = await axios.post(
-              `${API_BASE}/users/verify-payment/`,
+            const verify = await api.post(
+              `api/v1/users/verify-payment/`,
               {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
@@ -530,8 +467,8 @@ const loaderTimerRef = useRef(null);
 
   const updateActiveStatus = async () => {
   try {
-    const res = await axios.post(
-      `${API_BASE}/users/update_active/${userId}/`,
+    const res = await api.post(
+      `/users/update_active/${userId}/`,
       {},
       {
         headers: {
@@ -616,8 +553,8 @@ const loaderTimerRef = useRef(null);
 
   const upgradeSubscription = async (subscriptionId, newPackageId, item) => {
   try {
-    const res = await axios.post(
-      `${API_BASE}/users/subscriptions/${subscriptionId}/upgrade/`,
+    const res = await api.post(
+      `api/v1/users/subscriptions/${subscriptionId}/upgrade/`,
       { new_package_id: newPackageId },
       {
         headers: {

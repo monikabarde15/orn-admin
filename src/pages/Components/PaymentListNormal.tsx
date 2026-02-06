@@ -4,6 +4,7 @@ import html2pdf from "html2pdf.js";
 import Message from "../MessagesList";
 import Navbar from "../Components/Navbar";
 import Footer from "../Components/Footer";
+import api from "../../services/api";
 
 const ROWS_PER_PAGE = 5;
 console.log(import.meta.env.VITE_API_URL);
@@ -17,21 +18,14 @@ const PaymentListNormal = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-    return null;
-  };
-
-  const accessToken = getCookie("access");
-  const userid = getCookie("user_id");
+ const accessToken = localStorage.getItem("access_token");
+  const userid = localStorage.getItem("userId");
 
   const fetchPayments = async (page = 1) => {
     if (!userid) return;
     setLoading(true);
     try {
-      const res = await axios.get(`${VIT}/api/v1/users/payments/${userid}/`, {
+      const res = await api.get(`/api/v1/users/payments/${userid}/`, {
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
         withCredentials: true,
       });

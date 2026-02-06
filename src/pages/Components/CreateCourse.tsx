@@ -19,50 +19,9 @@ import {
 } from "lucide-react"
 import axios from "axios";
 import { Toaster, toast } from "react-hot-toast"
+import api from "../../services/api"; // 👈 path adjust if needed
+const userId = localStorage.getItem("userId")
 
-const getCookie = (name: string) => {
-  if (typeof document === "undefined") return "";
-  const v = `; ${document.cookie}`;
-  const parts = v.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(";").shift();
-  return "";
-};
-console.log(import.meta.env.VITE_API_URL);
-const VIT=import.meta.env.VITE_API_URL;
-const token =
-  (getCookie("access") ||
-    localStorage.getItem("access") ||
-    localStorage.getItem("jwt-auth"))?.trim();
-      const userId = getCookie("user_id");
-
-
-const api = axios.create({
-  baseURL: `${VIT}`,
-  withCredentials: true,
-  headers: {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  },
-});
-
-// ✅ AUTO ATTACH TOKEN + CSRF TO EVERY REQUEST
-api.interceptors.request.use((config) => {
-  const accessToken =
-    getCookie("access") ||
-    localStorage.getItem("access") ||
-    localStorage.getItem("jwt-auth");
-
-  if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
-  }
-
-  const csrf = getCookie("csrftoken");
-  if (csrf) {
-    config.headers["X-CSRFTOKEN"] = csrf;
-  }
-
-  return config;
-});
 
 interface Subscription {
   id: number
@@ -108,26 +67,9 @@ interface Lesson {
   mcqs?: QuizQuestion[]
 }
 
-const publicApi = axios.create({
-  baseURL: `${VIT}`,
-})
-const privateApi = axios.create({
-  baseURL: `${VIT}`,
-  withCredentials: true,
-})
 
-privateApi.interceptors.request.use((config) => {
-  const token =
-    getCookie("access") || localStorage.getItem("access")
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-
-  return config
-})
 const fetchSubscriptions = async (): Promise<Subscription[]> => {
-  const res = await publicApi.get("/api/v1/packages/")
+  const res = await api.get("/api/v1/packages/")
   return res.data
 }
 
@@ -144,7 +86,7 @@ const mockApi = {
   data: CourseFormData
 ): Promise<{ id: string; success: boolean }> => {
 
-  const res = await privateApi.post(
+  const res = await api.post(
     "/course/courses/",
     {
       title: data.title,
@@ -172,7 +114,7 @@ const mockApi = {
     courseId: string,
     module: Omit<Module, "id">
   ): Promise<{ id: string; success: boolean }> => {
-    const res = await privateApi.post(
+    const res = await api.post(
       "/course/modules/",
       {
         title: module.title,
@@ -191,7 +133,7 @@ const mockApi = {
   // UPDATE MODULE
   // =========================
   updateModule: async (_moduleId: string, data: Partial<Module>): Promise<{ success: boolean }> => {
-    await privateApi.patch(
+    await api.patch(
       `/course/modules/${_moduleId}/`,
       data,
       
@@ -204,7 +146,7 @@ const mockApi = {
   // DELETE MODULE
   // =========================
   deleteModule: async (_moduleId: string): Promise<{ success: boolean }> => {
-    await privateApi.delete(`/course/modules/${_moduleId}/`, {
+    await api.delete(`/course/modules/${_moduleId}/`, {
     
     })
 
@@ -235,7 +177,7 @@ const mockApi = {
       formData.append("attachment_file", lesson.attachmentFile)
     }
 
-    const res = await privateApi.post("/course/chapter/", formData)
+    const res = await api.post("/course/chapter/", formData)
 
     return { id: String(res.data.id), success: true }
   },
@@ -256,7 +198,7 @@ const mockApi = {
   if (data.videoFile) formData.append("video_file", data.videoFile)
   if (data.attachmentFile) formData.append("attachment_file", data.attachmentFile)
 
-  await privateApi.patch(`/course/chapter/${lessonId}/`, formData, {
+  await api.patch(`/course/chapter/${lessonId}/`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   })
 
@@ -268,7 +210,7 @@ const mockApi = {
   // DELETE LESSON
   // =========================
   deleteLesson: async (_lessonId: string): Promise<{ success: boolean }> => {
-    await privateApi.delete(`/course/chapter/${_lessonId}/`, {
+    await api.delete(`/course/chapter/${_lessonId}/`, {
       
     })
 
@@ -282,7 +224,7 @@ const mockApi = {
     question: string
     options: { text: string; is_correct: boolean }[]
   }) => {
-    return await privateApi.post("/course/quizzes/", data)
+    return await api.post("/course/quizzes/", data)
   },
 
    updateQuiz : async (
@@ -292,7 +234,7 @@ const mockApi = {
       options: { text: string; is_correct: boolean }[]
     }
   ) => {
-    return await privateApi.patch(`/course/quizzes/${quizId}/`, data)
+    return await api.patch(`/course/quizzes/${quizId}/`, data)
   },
   // =========================
 // DELETE QUIZ
@@ -300,7 +242,7 @@ const mockApi = {
 deleteQuiz: async (
   quizId: string
 ): Promise<{ success: boolean }> => {
-  await privateApi.delete(`/course/quizzes/${quizId}/`)
+  await api.delete(`/course/quizzes/${quizId}/`)
   return { success: true }
 },
 
@@ -310,7 +252,7 @@ deleteQuiz: async (
   uploadThumbnail: async (file: File): Promise<{ url: string; success: boolean }> => {
     const imageUrl = URL.createObjectURL(file)
 
-    await privateApi.post(
+    await api.post(
       "/course/thumbnail/",
       {
         image_url: imageUrl,
@@ -880,6 +822,8 @@ function MCQForm({ lessonId, editingMcq, onSaved }) {
 // ============================================
 function ModuleEditor({
   modules,
+     setModules,
+
   lessonForm,
   setLessonForm,
   onAddModule,
@@ -894,6 +838,7 @@ function ModuleEditor({
   updateMcqCount,
 }: {
   modules: Module[]
+   setModules: React.Dispatch<React.SetStateAction<Module[]>>
   lessonForm: any
   setLessonForm: React.Dispatch<React.SetStateAction<any>>
   onAddModule: any
@@ -936,7 +881,7 @@ const [mcqFormLessonId, setMcqFormLessonId] = useState<string | null>(null)
   }
 
 const fetchMCQs = async (lessonId: string) => {
-  const res = await privateApi.get(`/course/quizzes/?chapter=${lessonId}`)
+  const res = await api.get(`/course/quizzes/?chapter=${lessonId}`)
 
   updateMcqCount(lessonId, res.data.length)
 
@@ -1080,13 +1025,13 @@ const handleEditModule = (module: Module) => {
      <div className="space-y-4">
   {modules.map((module, moduleIndex) => (
     <Card key={module.id}>
-      <CardHeader className="pb-3">
+     <CardHeader className="pb-3">
   <div className="flex items-start justify-between">
+    {/* LEFT */}
     <div className="flex items-center gap-3">
       <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 text-sm font-semibold">
         {moduleIndex + 1}
       </div>
-
       <div>
         <CardTitle className="text-base">{module.title}</CardTitle>
         {module.description && (
@@ -1097,27 +1042,40 @@ const handleEditModule = (module: Module) => {
       </div>
     </div>
 
-    {/* 🔥 MODULE ACTIONS */}
+    {/* RIGHT (🔥 ACTIONS) */}
     <div className="flex gap-2">
+      {/* EDIT */}
       <Button
-        size="icon"
         variant="ghost"
-        onClick={() => handleEditModule(module)}
+        size="icon"
+        onClick={() => {
+          setEditingModule(module)
+          setModuleForm({
+            title: module.title,
+            description: module.description || "",
+          })
+          setShowModuleForm(true)
+        }}
       >
         <Edit className="h-4 w-4 text-blue-600" />
       </Button>
 
+      {/* DELETE */}
       <Button
-  size="icon"
-  variant="ghost"
-  onClick={() => onDeleteModule(module.id)}
->
-  <Trash2 className="h-4 w-4 text-red-600" />
-</Button>
-
+        variant="ghost"
+        size="icon"
+        onClick={() => {
+          if (window.confirm("Delete this module?")) {
+            onDeleteModule(module.id)
+          }
+        }}
+      >
+        <Trash2 className="h-4 w-4 text-red-500" />
+      </Button>
     </div>
   </div>
 </CardHeader>
+
 
         
         <CardContent className="pt-0 space-y-3">
@@ -1968,27 +1926,6 @@ const handleAddLesson = async (moduleId: string) => {
   }
   
 
-
-  // Step 3: Thumbnail upload
-  // const handleThumbnailUpload = async (file: File) => {
-  //   setIsLoading(true)
-  //   const result = await mockApi.uploadThumbnail(file)
-  //   if (result.success) {
-  //     setThumbnail(result.url)
-  //   }
-  //   setIsLoading(false)
-  // }
-  const getCookie = (name: string) => {
-  if (typeof document === "undefined") return "";
-  const v = `; ${document.cookie}`;
-  const parts = v.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(";").shift();
-  return "";
-};
-
-
-      const userId = getCookie("user_id");
-
 const handleThumbnailUpload = async (file: File) => {
   if (!courseId) return
 
@@ -2064,6 +2001,7 @@ const handleThumbnailUpload = async (file: File) => {
           {currentStep === 1 && (
             <ModuleEditor
             modules={modules}
+ setModules={setModules}
 
             lessonForm={lessonForm}
             setLessonForm={setLessonForm}

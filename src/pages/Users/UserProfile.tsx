@@ -1,58 +1,27 @@
 import { useDispatch } from "react-redux";
 import { setPageTitle } from "../../store/themeConfigSlice";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
 import { Mail, Calendar, Clock, Shield } from "lucide-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
-const VIT = import.meta.env.VITE_API_URL;
-const normalizeImageUrl = (url) => {
-  if (!url) return DEFAULT_AVATAR;
-
-  // already absolute
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
-  }
-
-  // CDN URL without protocol
-  return `https://${url}`;
-};
-
+import api from "../../services/api"; // ✅ ONLY api
 
 const DEFAULT_AVATAR =
   "https://t4.ftcdn.net/jpg/01/24/65/69/240_F_124656969_x3y8YVzvrqFZyv3YLWNo6PJaC88SYxqM.jpg";
 
+const normalizeImageUrl = (url?: string) => {
+  if (!url) return DEFAULT_AVATAR;
+  if (url.startsWith("http")) return url;
+  return `https://${url}`;
+};
+
 const UserProfile = () => {
   const dispatch = useDispatch();
 
-  // ---------------------
-  // Cookie Helper
-  // ---------------------
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-    return "";
-  };
-
-  // ---------------------
-  // STATES
-  // ---------------------
-  const [user, setUser] = useState({
-    username: "",
-    email: "",
-    first_name: "",
-    last_name: "",
-    date_joined: "",
-    last_active: "",
-    is_active: false,
-    is_staff: false,
-    is_superuser: false,
-    profile_image: DEFAULT_AVATAR,
-  });
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
@@ -61,94 +30,59 @@ const UserProfile = () => {
     last_name: "",
   });
 
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState("");
 
-  // ---------------------
-  // FETCH PROFILE
-  // ---------------------
-  useEffect(() => {
-    dispatch(setPageTitle("Profile"));
+  /* ---------------- FETCH PROFILE ---------------- */
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
 
-    const fetchUser = async () => {
-      try {
-        let token = getCookie("access") || getCookie("jwt-auth");
-        if (!token) {
-          toast.error("Authentication token missing");
-          return;
-        }
-
-        const res = await axios.get(
-          `${VIT}/api/v1/users/profile/`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-
-        const data = res.data;
-
-      const avatarUrl = normalizeImageUrl(data.profile_image);
+      const res = await api.get("/api/v1/users/profile/");
+      const data = res.data;
 
       setUser({
-        username: data.username,
-        email: data.email,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        date_joined: data.date_joined,
-        last_active: data.last_active,
-        is_active: data.is_active,
-        is_staff: data.is_staff,
-        is_superuser: data.is_superuser,
-        profile_image: avatarUrl,
+        ...data,
+        profile_image: normalizeImageUrl(data.profile_image),
       });
 
+      setFormData({
+        username: data.username || "",
+        first_name: data.first_name || "",
+        last_name: data.last_name || "",
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load profile");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        setFormData({
-          username: data.username,
-          first_name: data.first_name,
-          last_name: data.last_name,
-        });
-      } catch (err) {
-        console.error(err);
-        toast.error("Failed to load profile");
-      }
-    };
+  useEffect(() => {
+    dispatch(setPageTitle("Profile"));
+    fetchProfile();
+  }, []);
 
-    fetchUser();
-  }, [dispatch]);
+  /* ---------------- HELPERS ---------------- */
+  const formatDate = (date?: string) =>
+    date ? new Date(date).toLocaleString() : "-";
 
-  // ---------------------
-  // Helpers
-  // ---------------------
-  const formatDate = (date) =>
-    date ? new Date(date).toLocaleString() : "";
-
-  const handleChange = (e) =>
+  const handleChange = (e: any) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // ---------------------
-  // IMAGE PREVIEW
-  // ---------------------
-  const handleImageSelect = (e) => {
-    const file = e.target.files[0];
+  /* ---------------- IMAGE SELECT ---------------- */
+  const handleImageSelect = (e: any) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
     setSelectedImage(file);
     setPreviewImage(URL.createObjectURL(file));
   };
 
-  // ---------------------
-  // SAVE PROFILE
-  // ---------------------
+  /* ---------------- SAVE PROFILE ---------------- */
   const handleSave = async () => {
     try {
-      let token = getCookie("access") || getCookie("jwt-auth");
-      if (!token) {
-        toast.error("Authentication token missing");
-        return;
-      }
-
       const form = new FormData();
       form.append("username", formData.username);
       form.append("first_name", formData.first_name);
@@ -158,28 +92,19 @@ const UserProfile = () => {
         form.append("profile_image", selectedImage);
       }
 
-      const res = await axios.patch(
-        `${VIT}/api/v1/users/profile/update/`,
+      const res = await api.patch(
+        "/api/v1/users/profile/update/",
         form,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
 
-      let avatarUrl = user.profile_image;
-      if (res.data.profile_image) {
-        avatarUrl = res.data.profile_image.startsWith("http")
-          ? res.data.profile_image
-          : `${VIT}${res.data.profile_image}`;
-      }
+      const updated = res.data;
 
-      setUser((prev) => ({
+      setUser((prev: any) => ({
         ...prev,
-        ...formData,
-        profile_image: previewImage || avatarUrl,
+        ...updated,
+        profile_image:
+          previewImage || normalizeImageUrl(updated.profile_image),
       }));
 
       setEditMode(false);
@@ -190,9 +115,15 @@ const UserProfile = () => {
     }
   };
 
-  // ---------------------
-  // RENDER
-  // ---------------------
+  /* ---------------- RENDER ---------------- */
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+        Loading profile...
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-900">
       <Navbar />
@@ -204,15 +135,16 @@ const UserProfile = () => {
             {/* Avatar */}
             <div className="flex flex-col items-center">
               <label className="cursor-pointer">
-               <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-primary mb-4">
-  <img
-    src={previewImage || user.profile_image || DEFAULT_AVATAR}
-    alt="Avatar"
-    className="w-full h-full object-cover object-center"
-    onError={(e) => (e.currentTarget.src = DEFAULT_AVATAR)}
-  />
-</div>
-
+                <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-primary mb-4">
+                  <img
+                    src={previewImage || user.profile_image || DEFAULT_AVATAR}
+                    alt="Avatar"
+                    className="w-full h-full object-cover"
+                    onError={(e) =>
+                      (e.currentTarget.src = DEFAULT_AVATAR)
+                    }
+                  />
+                </div>
                 <input
                   type="file"
                   accept="image/*"
@@ -227,22 +159,22 @@ const UserProfile = () => {
                     name="username"
                     value={formData.username}
                     onChange={handleChange}
-                    className="mb-2 px-2 py-1 rounded"
+                    className="mb-2 px-3 py-2 rounded w-full"
                   />
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 w-full">
                     <input
                       name="first_name"
                       value={formData.first_name}
                       onChange={handleChange}
-                      className="px-2 py-1 rounded"
-                      placeholder="First"
+                      className="px-3 py-2 rounded w-full"
+                      placeholder="First name"
                     />
                     <input
                       name="last_name"
                       value={formData.last_name}
                       onChange={handleChange}
-                      className="px-2 py-1 rounded"
-                      placeholder="Last"
+                      className="px-3 py-2 rounded w-full"
+                      placeholder="Last name"
                     />
                   </div>
                 </>
@@ -258,8 +190,10 @@ const UserProfile = () => {
               )}
 
               <button
-                onClick={() => (editMode ? handleSave() : setEditMode(true))}
-                className="mt-4 px-4 py-2 bg-primary text-white rounded"
+                onClick={() =>
+                  editMode ? handleSave() : setEditMode(true)
+                }
+                className="mt-4 px-5 py-2 bg-primary text-white rounded-lg"
               >
                 {editMode ? "Save" : "Edit Profile"}
               </button>
@@ -268,8 +202,16 @@ const UserProfile = () => {
             {/* Info */}
             <div className="grid md:grid-cols-2 gap-6 text-white flex-1">
               <Info icon={<Mail />} label="Email" value={user.email} />
-              <Info icon={<Calendar />} label="Joined" value={formatDate(user.date_joined)} />
-              <Info icon={<Clock />} label="Last Active" value={formatDate(user.last_active)} />
+              <Info
+                icon={<Calendar />}
+                label="Joined"
+                value={formatDate(user.date_joined)}
+              />
+              <Info
+                icon={<Clock />}
+                label="Last Active"
+                value={formatDate(user.last_active)}
+              />
               <Info
                 icon={<Shield />}
                 label="Status"
@@ -292,8 +234,8 @@ const UserProfile = () => {
   );
 };
 
-// Small Info Card
-const Info = ({ icon, label, value }) => (
+/* ---------------- SMALL INFO CARD ---------------- */
+const Info = ({ icon, label, value }: any) => (
   <div className="flex gap-3 bg-white/10 p-4 rounded-xl">
     <div className="text-primary">{icon}</div>
     <div>

@@ -1,14 +1,12 @@
 // LabPricing.jsx
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
+import api from "../../services/api";
 
-const VIT = import.meta.env.VITE_API_URL;
-const API_BASE = `${VIT}/api/v1`;
 const ITEMS_PER_PAGE = 5;
 
 const notify = (msg, type = "info") =>
@@ -17,22 +15,9 @@ const notify = (msg, type = "info") =>
 export default function LabPricing() {
   const navigate = useNavigate();
 
-  
-  /* ================= AUTH ================= */
-  const getCookie = (name) => {
-    const v = `; ${document.cookie}`;
-    const parts = v.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-    return "";
-  };
-
-  const token =
-    getCookie("access") ||
-    localStorage.getItem("jwt-auth") ||
-    localStorage.getItem("token") ||
-    "";
-
-  const userId = getCookie("user_id");
+  /* ================= AUTH (NO COOKIES) ================= */
+  const token = localStorage.getItem("access_token");
+  const userId = localStorage.getItem("userId");
 
   /* ================= STATE ================= */
   const [subscriptions, setSubscriptions] = useState([]);
@@ -43,66 +28,79 @@ export default function LabPricing() {
   /* ================= HELPERS ================= */
   const isActionAllowed = (inst) => inst.status === "Launched";
 
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    return d.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  /* ================= GUARD ================= */
+  useEffect(() => {
+    if (!token || !userId) {
+      notify("Please login first", "error");
+      navigate("/login");
+    }
+  }, []);
+
   /* ================= FETCH ================= */
   const fetchSubscriptions = async () => {
-    const res = await axios.get(
-      `${API_BASE}/users/subscriptions/`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    setSubscriptions(res.data || []);
+    try {
+      const res = await api.get("/api/v1/users/subscriptions/");
+      setSubscriptions(res.data || []);
+    } catch (err) {
+      notify("Failed to load subscriptions", "error");
+    }
   };
-const formatDateTime = (dateStr) => {
-  if (!dateStr) return "N/A";
-  const d = new Date(dateStr);
-  return d.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
 
   const fetchInstances = async () => {
-    const res = await axios.get(
-      `${API_BASE}/lab/userinst/${userId}/`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    setInstances(res.data || []);
+    try {
+      const res = await api.get(`/api/v1/lab/userinst/${userId}/`);
+      setInstances(res.data || []);
+    } catch (err) {
+      notify("Failed to load instances", "error");
+    }
   };
 
   useEffect(() => {
-    fetchSubscriptions();
-    fetchInstances();
-  }, [token]);
+    if (token && userId) {
+      fetchSubscriptions();
+      fetchInstances();
+    }
+  }, [token, userId]);
 
   /* ================= INSTANCE ACTIONS ================= */
-  const rebootInstance = async (id) => {
-    await axios.post(
-      `${API_BASE}/users/reboot/${id}/`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    notify("Reboot started", "success");
+  const rebootInstance = async (instanceId) => {
+    try {
+      await api.post(`/api/v1/users/reboot/${instanceId}/`);
+      notify("Reboot started", "success");
+    } catch {
+      notify("Reboot failed", "error");
+    }
   };
 
   const destroyInstance = async (inst) => {
     try {
-      await axios.post(
-        `${API_BASE}/users/deploy-free/destroy/`,
-        { user_id: userId, user_instance_id: inst.user_instance_id },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post("/api/v1/users/deploy-free/destroy/", {
+        user_id: userId,
+        user_instance_id: inst.user_instance_id,
+      });
+
       notify("Instance destroyed successfully", "success");
       fetchInstances();
     } catch (err) {
-      notify(err.response?.data?.error || "Destroy failed", "error");
+      notify(err?.response?.data?.error || "Destroy failed", "error");
     }
   };
 
   /* ================= SORT + SEARCH + PAGINATION ================= */
 
-  // 👉 Launched instances top par
+  // 🔥 launched instances top
   const sortedInstances = [...instances].sort((a, b) => {
     if (a.status === "Launched" && b.status !== "Launched") return -1;
     if (a.status !== "Launched" && b.status === "Launched") return 1;
@@ -122,7 +120,7 @@ const formatDateTime = (dateStr) => {
     page * ITEMS_PER_PAGE
   );
 
-  /* ================= RENDER ================= */
+  /* ================= UI ================= */
   return (
     <>
       <Navbar />
@@ -134,6 +132,7 @@ const formatDateTime = (dateStr) => {
         </h1>
 
         <div className="max-w-5xl mx-auto bg-white/5 p-6 rounded-xl">
+          {/* SEARCH */}
           <input
             className="w-full mb-4 px-3 py-2 rounded bg-white/10 text-white"
             placeholder="Search instance..."
@@ -144,6 +143,7 @@ const formatDateTime = (dateStr) => {
             }}
           />
 
+          {/* LIST */}
           {paginatedInstances.map((inst) => (
             <div
               key={inst.user_instance_id}
@@ -153,6 +153,7 @@ const formatDateTime = (dateStr) => {
                 <div className="text-white font-semibold">
                   {inst.instance_name}
                 </div>
+
                 <div
                   className={`text-sm ${
                     inst.status === "Launched"
@@ -162,18 +163,16 @@ const formatDateTime = (dateStr) => {
                 >
                   Status: {inst.status}
                 </div>
+
                 <div className="text-xs text-gray-400 mt-1">
-              Time: {formatDateTime(inst.rentDate || inst.timestamp)}
-            </div>
+                  Time: {formatDateTime(inst.rentDate || inst.timestamp)}
+                </div>
               </div>
-              
 
               <div className="flex gap-2">
                 <button
                   disabled={!isActionAllowed(inst)}
-                  onClick={() =>
-                    window.open(`/lab`, "_blank")
-                  }
+                  onClick={() => window.open(`/lab?user`, "_blank")}
                   className="px-3 py-1 bg-blue-600 rounded disabled:opacity-40"
                 >
                   WebSSH
@@ -181,9 +180,7 @@ const formatDateTime = (dateStr) => {
 
                 <button
                   disabled={!isActionAllowed(inst)}
-                  onClick={() =>
-                    rebootInstance(inst.user_instance_id)
-                  }
+                  onClick={() => rebootInstance(inst.user_instance_id)}
                   className="px-3 py-1 bg-yellow-600 rounded disabled:opacity-40"
                 >
                   Reboot
@@ -200,7 +197,7 @@ const formatDateTime = (dateStr) => {
             </div>
           ))}
 
-          {/* ===== CLEAN PAGINATION ===== */}
+          {/* PAGINATION */}
           {totalPages > 1 && (
             <div className="flex justify-center mt-6">
               <div className="flex gap-2 bg-white/5 px-4 py-2 rounded-lg">

@@ -16,11 +16,21 @@ import IconMenuTodo from '../Icon/Menu/IconMenuTodo';
 import IconMenuNotes from '../Icon/Menu/IconMenuNotes';
 import IconMenuScrumboard from '../Icon/Menu/IconMenuScrumboard';
 import IconMenuContacts from '../Icon/Menu/IconMenuContacts';
-import IconMenuInvoice from '../Icon/Menu/IconMenuInvoice';
-import IconMenuCalendar from '../Icon/Menu/IconMenuCalendar';
-import IconMenuDatatables from '../Icon/Menu/IconMenuDatatables';
-import IconMenuTables from '../Icon/Menu/IconMenuTables';
-import IconMenuForms from '../Icon/Menu/IconMenuForms';
+import IconSettings from '../Icon/IconSettings';
+import IconBox from '../Icon/IconBox';
+import IconFeedbackList from '../Icon/IconFeedbackList';
+
+import IconBlogs from '../Icon/IconBlogs';
+
+import IconMoon from '../Icon/IconMoon';
+
+import IconUser from '../Icon/IconUser';
+import IconUsers from '../Icon/IconUsers';
+import IconMessage2 from '../Icon/IconMessage2';
+
+import IconOpenBook from '../Icon/IconOpenBook';
+import IconDollarSign from '../Icon/IconDollarSign';
+
 import IconMenuUsers from '../Icon/Menu/IconMenuUsers';
 import IconMenuPages from '../Icon/Menu/IconMenuPages';
 import IconMenuAuthentication from '../Icon/Menu/IconMenuAuthentication';
@@ -133,7 +143,7 @@ const menuItems: MenuItem[] = [
           sectionLabel: "User management",
           key: "users",
           label: "users",
-          icon: IconMenuUsers,
+          icon: IconUsers,
           subMenu: [
             { path: "/users-list", label: "Users List", permission: "Users" },
           ],
@@ -147,7 +157,7 @@ const menuItems: MenuItem[] = [
       { 
         path: is_superuser  ? "/lab-list" : "/apps/LabListNormal",
         label: "Lab List", 
-        icon: IconMenuContacts, 
+        icon: IconBox, 
         permission: "LabList" 
       },
     ],
@@ -159,7 +169,7 @@ const menuItems: MenuItem[] = [
       { 
         path: is_superuser  ? "/admin-payment-list" : "/apps/PaymentListNormal",
         label: "PaymentList", 
-        icon: IconMenuContacts, 
+        icon: IconDollarSign, 
         permission: "PaymentList" 
       },
     ],
@@ -171,7 +181,7 @@ if (is_superuser) {
   menuItems.push({
     sectionLabel: "Blog Management",
     items: [
-      { path: "/admin-blog", label: "Blogs", icon: IconMenuContacts, permission: "blogs" },
+      { path: "/admin-blog", label: "Blogs", icon: IconBlogs, permission: "blogs" },
     ],
   });
 }
@@ -180,7 +190,7 @@ if (is_superuser) {
   menuItems.push({
     sectionLabel: "Courses Management",
     items: [
-      { path: "/courses", label: "Courses", icon: IconMenuContacts, permission: "courses" },
+      { path: "/courses", label: "Courses", icon: IconOpenBook, permission: "courses" },
     ],
   });
 }
@@ -190,10 +200,10 @@ if (is_superuser) {
   menuItems.push({
     sectionLabel: "user support",
     items: [
-      { path: "/admin-contacts", label: "contacts", icon: IconMenuContacts, permission: "contacts" },
-      { path: "/admin-feedback-list", label: "Feedback List", icon: IconMenuContacts, permission: "FeedbackListNew" },
-      { path: "/admin-change-password", label: "Change Password", icon: IconMenuContacts, permission: "contacts" },
-      { path: "/admin-messages", label: "Support", icon: IconMenuContacts, permission: "contacts" },
+      { path: "/admin-contacts", label: "contacts", icon: IconUser, permission: "contacts" },
+      { path: "/admin-feedback-list", label: "Feedback List", icon: IconFeedbackList, permission: "FeedbackListNew" },
+      { path: "/admin-change-password", label: "Change Password", icon: IconSettings, permission: "contacts" },
+      { path: "/admin-messages", label: "Support", icon: IconMessage2, permission: "contacts" },
     ],
   });
 } else {

@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-console.log(import.meta.env.VITE_API_URL);
-const VIT=import.meta.env.VITE_API_URL;
+import api from "../services/api";
 
-const API_BASE = `${VIT}/api/v1/admin/blog/`;
-const IMAGE_BASE = `${VIT}`;
+const API_BASE = "/api/v1/admin/blog/";
+const IMAGE_BASE = import.meta.env.VITE_API_URL;
 
 /* ================= Quill Config ================= */
 const quillModules = {
@@ -32,62 +30,74 @@ const quillFormats = [
 ];
 
 const AdminBlogPanel = () => {
-  const [blogs, setBlogs] = useState([]);
-  const [selectedBlog, setSelectedBlog] = useState(null);
+  const [blogs, setBlogs] = useState<any[]>([]);
+  const [selectedBlog, setSelectedBlog] = useState<any | null>(null);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const [imageFile, setImageFile] = useState(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
   const [loadingBlogs, setLoadingBlogs] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
-  /* ================= Auth ================= */
-  const getCookie = (name) => {
-    const match = document.cookie.match(
-      new RegExp("(^| )" + name + "=([^;]+)")
-    );
-    return match ? match[2] : null;
-  };
-  const accessToken = getCookie("access");
-
-  const getFullImageUrl = (path) => {
+  /* ================= Helpers ================= */
+  const getFullImageUrl = (path?: string) => {
     if (!path) return "";
-    if (path.startsWith("http")) return path;
-    return `${IMAGE_BASE}${path}`;
+    return path.startsWith("http") ? path : `${IMAGE_BASE}${path}`;
   };
 
-  /* ================= Load Blogs ================= */
-  const loadBlogs = async () => {
-    setLoadingBlogs(true);
-    setError("");
-    try {
-      const res = await axios.get(API_BASE, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      setBlogs(res.data.results || res.data || []);
-    } catch (err) {
-      setError("Failed to load blogs");
-    } finally {
-      setLoadingBlogs(false);
-    }
-  };
-
-  /* ================= Select Blog ================= */
-  const openBlog = (blog) => {
-    setSelectedBlog(blog);
-    setTitle(blog.title || "");
-    setDescription(blog.description || "");
-    setImageUrl(blog.imageUrl || blog.image || "");
+  const resetForm = () => {
+    setSelectedBlog(null);
+    setTitle("");
+    setDescription("");
+    setImageUrl("");
     setImageFile(null);
     setError("");
   };
 
+  /* ================= Load Blogs ================= */
+  const loadBlogs = async () => {
+  setLoadingBlogs(true);
+  try {
+    const res = await api.get(API_BASE);
+
+    const list = (res.data.results || res.data || []).map((b: any) => ({
+      ...b,
+      id: b.id || b.blogId, // ✅ NORMALIZE HERE
+    }));
+
+    setBlogs(list);
+  } catch (err) {
+    setError("Failed to load blogs");
+  } finally {
+    setLoadingBlogs(false);
+  }
+};
+
+
+  useEffect(() => {
+    loadBlogs();
+  }, []);
+
+  /* ================= Select Blog ================= */
+
+  const openBlog = (blog: any) => {
+  setSelectedBlog(blog);
+
+  setTitle(blog.title || "");
+  setDescription(blog.description || "");
+  setImageUrl(blog.image || blog.imageUrl || "");
+  setImageFile(null);
+};
+
+
   /* ================= Save Blog ================= */
   const saveBlog = async () => {
     if (!title.trim()) {
-      alert("Title is required");
+      setError("Title is required");
       return;
     }
 
@@ -100,23 +110,19 @@ const AdminBlogPanel = () => {
       formData.append("description", description);
 
       if (imageFile) formData.append("image", imageFile);
-      if (imageUrl) formData.append("imageUrl", imageUrl);
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "multipart/form-data",
-        },
-      };
+      else if (imageUrl) formData.append("imageUrl", imageUrl);
 
       if (selectedBlog) {
-        await axios.put(
-          `${API_BASE}${selectedBlog.blogId}/`,
-          formData,
-          config
-        );
+       await api.put(
+  `/api/v1/admin/blog/${selectedBlog.id}/`,
+  formData,
+  { headers: { "Content-Type": "multipart/form-data" } }
+);
+
       } else {
-        await axios.post(API_BASE, formData, config);
+        await api.post(API_BASE, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
       }
 
       resetForm();
@@ -131,13 +137,11 @@ const AdminBlogPanel = () => {
   /* ================= Delete Blog ================= */
   const deleteBlog = async () => {
     if (!selectedBlog) return;
-    if (!window.confirm("Delete this blog?")) return;
+    if (!window.confirm("Are you sure you want to delete this blog?")) return;
 
     setDeleting(true);
     try {
-      await axios.delete(`${API_BASE}${selectedBlog.blogId}/`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      await api.delete(`${API_BASE}${selectedBlog.id}/`);
       resetForm();
       loadBlogs();
     } catch (err) {
@@ -146,18 +150,6 @@ const AdminBlogPanel = () => {
       setDeleting(false);
     }
   };
-
-  const resetForm = () => {
-    setSelectedBlog(null);
-    setTitle("");
-    setDescription("");
-    setImageUrl("");
-    setImageFile(null);
-  };
-
-  useEffect(() => {
-    loadBlogs();
-  }, []);
 
   /* ================= JSX ================= */
   return (
@@ -176,14 +168,15 @@ const AdminBlogPanel = () => {
           <div className="flex-1 overflow-y-auto">
             {blogs.map((blog) => (
               <div
-                key={blog.blogId}
+                key={blog.id}
                 onClick={() => openBlog(blog)}
                 className={`p-3 cursor-pointer border-b flex gap-3 ${
-                  selectedBlog?.blogId === blog.blogId
+                  selectedBlog?.id === blog.id
                     ? "bg-blue-100"
                     : "hover:bg-blue-50"
                 }`}
               >
+
                 <div className="w-14 h-14 bg-gray-100 border rounded overflow-hidden">
                   {blog.image || blog.imageUrl ? (
                     <img
@@ -197,13 +190,14 @@ const AdminBlogPanel = () => {
                     </div>
                   )}
                 </div>
+
                 <div>
                   <div className="font-medium">{blog.title}</div>
                   <div className="text-xs text-gray-500">
                     {blog.description
                       ?.replace(/<[^>]*>?/gm, "")
-                      .slice(0, 50)}
-                    ...
+                      .slice(0, 60)}
+                    …
                   </div>
                 </div>
               </div>
@@ -213,7 +207,7 @@ const AdminBlogPanel = () => {
 
         <button
           onClick={resetForm}
-          className="m-4 bg-green-500 text-white py-2 rounded"
+          className="m-4 bg-green-500 hover:bg-green-600 text-white py-2 rounded"
         >
           + Add New Blog
         </button>
@@ -221,7 +215,7 @@ const AdminBlogPanel = () => {
 
       {/* ================= Editor ================= */}
       <div className="flex-1 flex flex-col bg-gray-50">
-        <div className="p-4 bg-white border-b flex justify-between">
+        <div className="p-4 bg-white border-b flex justify-between items-center">
           <div className="font-semibold">
             {selectedBlog ? "Edit Blog" : "New Blog"}
           </div>
@@ -249,7 +243,7 @@ const AdminBlogPanel = () => {
             />
           </div>
 
-          {/* Description Editor */}
+          {/* Description */}
           <div className="mb-4">
             <label className="font-medium">Description</label>
             <ReactQuill
@@ -268,9 +262,12 @@ const AdminBlogPanel = () => {
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setImageFile(e.target.files[0])}
+              onChange={(e) =>
+                setImageFile(e.target.files ? e.target.files[0] : null)
+              }
               className="w-full border rounded px-3 py-2 mt-1"
             />
+
             {imageFile && (
               <img
                 src={URL.createObjectURL(imageFile)}
@@ -287,6 +284,7 @@ const AdminBlogPanel = () => {
               onChange={(e) => setImageUrl(e.target.value)}
               className="w-full border rounded px-3 py-2 mt-1"
             />
+
             {!imageFile && imageUrl && (
               <img
                 src={getFullImageUrl(imageUrl)}
@@ -298,9 +296,13 @@ const AdminBlogPanel = () => {
           <button
             onClick={saveBlog}
             disabled={saving}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
           >
-            {saving ? "Saving..." : selectedBlog ? "Update Blog" : "Add Blog"}
+            {saving
+              ? "Saving..."
+              : selectedBlog
+              ? "Update Blog"
+              : "Add Blog"}
           </button>
         </div>
       </div>

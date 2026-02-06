@@ -1,38 +1,25 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Message from "../pages/MessagesList";
+import api from "../services/api";
 
 const AdminChangePassword = () => {
   const [formData, setFormData] = useState({
     new_password1: "",
     new_password2: "",
   });
+
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-    return null;
-  };
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: "" }); // clear field error on change
+    setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
-    const accessToken = getCookie("access");
-
-    if (!accessToken) {
-      toast.error("No access token found. Please log in again.");
-      return;
-    }
 
     if (formData.new_password1 !== formData.new_password2) {
       setErrors({
@@ -42,29 +29,20 @@ const AdminChangePassword = () => {
     }
 
     setLoading(true);
-    try {
-      await axios.post(
-        "https://backend.onrequestlab.com/api/v1/users/auth/password/change/",
-        {
-          new_password1: formData.new_password1,
-          new_password2: formData.new_password2,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
 
-      toast.success("Password changed successfully!");
+    try {
+      await api.post("/api/v1/users/auth/password/change/", {
+        new_password1: formData.new_password1,
+        new_password2: formData.new_password2,
+      });
+
+      toast.success("Password changed successfully 🎉");
       setFormData({ new_password1: "", new_password2: "" });
     } catch (error) {
       if (error.response?.data) {
         const apiErrors = {};
         const data = error.response.data;
 
-        // Collect field-specific errors
         for (const key in data) {
           if (Array.isArray(data[key])) {
             apiErrors[key] = data[key][0];
@@ -73,14 +51,15 @@ const AdminChangePassword = () => {
           }
         }
 
-        // If non-field error
-        if (Object.keys(apiErrors).length === 0 && data.detail) {
+        if (Object.keys(apiErrors).length > 0) {
+          setErrors(apiErrors);
+        } else if (data.detail) {
           toast.error(data.detail);
         } else {
-          setErrors(apiErrors);
+          toast.error("Password update failed.");
         }
       } else {
-        toast.error("Something went wrong. Please try again.");
+        toast.error("Server error. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -95,7 +74,7 @@ const AdminChangePassword = () => {
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* New Password */}
+          {/* NEW PASSWORD */}
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700">
               New Password
@@ -120,7 +99,7 @@ const AdminChangePassword = () => {
             )}
           </div>
 
-          {/* Confirm Password */}
+          {/* CONFIRM PASSWORD */}
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700">
               Confirm New Password
@@ -145,7 +124,7 @@ const AdminChangePassword = () => {
             )}
           </div>
 
-          {/* Submit button */}
+          {/* SUBMIT */}
           <div className="flex justify-end">
             <button
               type="submit"

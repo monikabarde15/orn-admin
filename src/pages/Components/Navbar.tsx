@@ -6,168 +6,160 @@ import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { Wallet, User, LogOut, Laptop, ShoppingCart, Lock, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import api from "../../services/api";
 
 const Navbar = () => {
           const navigate = useNavigate();
   
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [walletBalance, setWalletBalance] = useState(null);
-  const [loadingWallet, setLoadingWallet] = useState(false);
   const [profileMenu, setProfileMenu] = useState(false);
   const [cartItems, setCartItems] = useState(JSON.parse(localStorage.getItem("orl_cart") || "[]"));
   const [cartOpen, setCartOpen] = useState(false);
 const logoutTimerRef = useRef<any>(null);
 
-  console.log(import.meta.env.VITE_API_URL);
-const VIT=import.meta.env.VITE_API_URL;
 
-  const menuRef = useRef(null);
-  const cartRef = useRef(null);
-  const API_BASE = `${VIT}/api/v1`;
+const [isLoggedIn, setIsLoggedIn] = useState(false);
+const [profile, setProfile] = useState<any>(null);
+const [profileLoading, setProfileLoading] = useState(true);
 
-  useEffect(() => {
-    const token = localStorage.getItem("jwt-auth");
-    setIsLoggedIn(!!token);
-    if (token) fetchWalletBalance(token);
-  }, []);
-  const getCookie = (name) => {
-    if (typeof document === "undefined") return "";
-    const v = `; ${document.cookie}`;
-    const parts = v.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-    return "";
-  };
+const [walletBalance, setWalletBalance] = useState<number | null>(null);
+const [loadingWallet, setLoadingWallet] = useState(false);
 
-const user = {
-    name: getCookie("username"),
-    email: getCookie("email"),
-  };
-  console.log('user=',user.name);
-  //   const is_superuser = getCookie("is_superuser") === "true";
-  // if (is_superuser) {
-  //   navigate("/index");
-  // }
-  const is_superuser = getCookie("is_superuser") === "true";
+// const fetchProfile = async () => {
+//   try {
+//     const res = await api.get("/api/v1/users/profile/");
+//     setProfile(res.data);
 
-  useEffect(() => {
-    if (is_superuser) {
+//     // 🔥 LOGIN CONFIRMATION
+//     setIsLoggedIn(true);
+
+//     // wallet bhi yahin se
+//     fetchWalletBalance();
+//   } catch (err) {
+//     console.error("Profile fetch failed:", err);
+//     setIsLoggedIn(false);
+//   } finally {
+//     setProfileLoading(false);
+//   }
+// };
+
+const fetchProfile = async () => {
+  try {
+    setProfileLoading(true);
+    const res = await api.get("/api/v1/users/profile/");
+    setProfile(res.data);
+  } catch (err) {
+    console.error("Profile fetch failed:", err);
+    setIsLoggedIn(false); // token invalid ho to logout state
+  } finally {
+    setProfileLoading(false);
+  }
+};
+
+useEffect(() => {
+  const token = localStorage.getItem("access_token"); // ✅ SAME AS ADMIN
+
+  if (token) {
+    fetchProfile();   // ✅ profile decides login
+  } else {
+    setIsLoggedIn(false);
+    setProfileLoading(false);
+  }
+}, []);
+
+console.log("isLoggedIn:", isLoggedIn);
+console.log("profile:", profile);
+const user = profile;
+useEffect(() => {
+  if (!profile) return;
+
+  if (profile.is_superuser === true) {
+    // 🔒 SUPERADMIN GUARD
+    if (!window.location.pathname.startsWith("/index")) {
       navigate("/index", { replace: true });
     }
-  }, [is_superuser, navigate]);
+  }
+}, [profile, navigate]);
 
-  const fetchWalletBalance = async (token) => {
+const fetchWalletBalance = async () => {
+  try {
     setLoadingWallet(true);
-    try {
-      const res = await axios.get(`${API_BASE}/users/wallet/balance/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setWalletBalance(res.data?.balance ?? res.data?.wallet_amount ?? 0);
-    } catch (err) {
-      console.error("Wallet fetch error:", err);
-      setWalletBalance(0);
-    } finally {
-      setLoadingWallet(false);
+    const res = await api.get("/api/v1/users/wallet/balance/");
+    setWalletBalance(res.data?.balance ?? res.data?.wallet_amount ?? 0);
+  } catch (err) {
+    console.error("Wallet fetch error:", err);
+    setWalletBalance(0);
+  } finally {
+    setLoadingWallet(false);
+  }
+};
+const menuRef = useRef(null);
+const cartRef = useRef(null); // ✅ REQUIRED
+useEffect(() => {
+  const handleClickOutside = (e) => {
+    if (menuRef.current && !menuRef.current.contains(e.target)) {
+      setProfileMenu(false);
+    }
+
+    if (cartRef.current && !cartRef.current.contains(e.target)) {
+      setCartOpen(false);
     }
   };
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setProfileMenu(false);
-      if (cartRef.current && !cartRef.current.contains(e.target)) setCartOpen(false);
-    };
-    const handleStorageChange = () => setCartItems(JSON.parse(localStorage.getItem("orl_cart") || "[]"));
+  const handleStorageChange = () => {
+    setCartItems(JSON.parse(localStorage.getItem("orl_cart") || "[]"));
+  };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    window.addEventListener("storage", handleStorageChange);
+  document.addEventListener("mousedown", handleClickOutside);
+  window.addEventListener("storage", handleStorageChange);
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      window.removeEventListener("storage", handleStorageChange);
-    };
-  }, []);
-
-  // const handleLogout = () => {
-  //   localStorage.removeItem("jwt-auth");
-  //   toast.info("You have been logged out!", { position: "top-center" });
-  //   setTimeout(() => (window.location.href = "/"), 800);
-  // };
-  
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+    window.removeEventListener("storage", handleStorageChange);
+  };
+}, []);
 useEffect(() => {
-  const SESSION_TIME_MS = 15 * 60 * 1000; // 15 min
+  const token = localStorage.getItem("access_token");
 
-  const logout = () => {
-    // 🔴 Remove localStorage
-    localStorage.removeItem("jwt-auth");
-    localStorage.removeItem("access");
-    localStorage.removeItem("user_id");
-    localStorage.removeItem("session_expiry");
-
-    // 🔴 Remove ALL accessible cookies
-    document.cookie.split(";").forEach(cookie => {
-      document.cookie = cookie
-        .replace(/^ +/, "")
-        .replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
-    });
-
-    // 🔴 IMPORTANT: update UI
+  if (token) {
+    setIsLoggedIn(true);
+  } else {
     setIsLoggedIn(false);
+  }
+}, []);
+useEffect(() => {
+  if (isLoggedIn) {
+    fetchProfile();
+    fetchWalletBalance();
+  }
+}, [isLoggedIn]);
 
-    toast.info("Session expired. Logged out!", {
-      position: "top-center",
-    });
+
+const handleLogout = async () => {
+  try {
+    await api.post("/api/v1/users/auth/logout/");
+  } catch (err) {
+    console.warn("Logout API failed:", err);
+  } finally {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("userId");
+
+    setIsLoggedIn(false);
+    setProfile(null);
+
+    toast.info("You have been logged out!", { position: "top-center" });
 
     setTimeout(() => {
       window.location.href = "/";
     }, 800);
-  };
-
-  const resetTimer = () => {
-    if (logoutTimerRef.current) {
-      clearTimeout(logoutTimerRef.current);
-    }
-
-    logoutTimerRef.current = setTimeout(logout, SESSION_TIME_MS);
-  };
-
-  // 🧠 user activity detect
-  const events = ["click", "mousemove", "keydown", "scroll", "touchstart"];
-  events.forEach(event =>
-    window.addEventListener(event, resetTimer)
-  );
-
-  // start countdown
-  resetTimer();
-
-  return () => {
-    if (logoutTimerRef.current) {
-      clearTimeout(logoutTimerRef.current);
-    }
-    events.forEach(event =>
-      window.removeEventListener(event, resetTimer)
-    );
-  };
-}, []);
-
-   const handleLogout = () => {
-    // localStorage.removeItem("jwt-auth");
-    // localStorage.removeItem("user_id");
-    // toast.info("You have been logged out!", { position: "top-center" });
-    // setTimeout(() => (window.location.href = "/"), 800);
-    // Remove localStorage items
-localStorage.removeItem("jwt-auth");
-localStorage.removeItem("access");
-localStorage.removeItem("user_id");
-
-
-// Remove cookies
-document.cookie = "access=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-document.cookie = "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-
-
-toast.info("You have been logged out!", { position: "top-center" });
-setTimeout(() => (window.location.href = "/"), 800);
-  };
+  }
+};
+const profileImage = profile?.profile_image
+  ? profile.profile_image.startsWith("http")
+    ? profile.profile_image
+    : `https://${profile.profile_image}`
+  : "https://t4.ftcdn.net/jpg/01/24/65/69/240_F_124656969_x3y8YVzvrqFZyv3YLWNo6PJaC88SYxqM.jpg";
 
   const navigateTo = (path) => (window.location.href = path);
 
@@ -244,9 +236,9 @@ setTimeout(() => (window.location.href = "/"), 800);
           {/* Mobile Profile */}
           {isLoggedIn ? (
             <div className="mobile-profile">
-            <div className="blue-btn">
-              <p>{(user?.name || "").slice(0, 5) + (user?.name?.length > 2 ? "..." : "")}</p>
-            </div>
+              <div className="blue-btn">
+                <p>{(user?.name || "").slice(0, 5) + (user?.name?.length > 2 ? "..." : "")}</p>
+              </div>
 
                   
               <p className="wallet-line">
@@ -311,13 +303,25 @@ setTimeout(() => (window.location.href = "/"), 800);
           {isLoggedIn ? (
             <div className="profile-wrapper" ref={menuRef}>
               <div className="profile-avatar" onClick={() => setProfileMenu(!profileMenu)}>
-                <User size={22} />
+                {/* <User size={22} /> */}
+               <img
+                src={profileImage}
+                alt="profile"
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
+              />
+
+
               </div>
               {profileMenu && (
                 <div className="profile-dropdown clean-card">
                   <div className="dropdown-wallet">
                     {/* <p>{user.name||''}</p> */}
-                     <p onClick={() => navigateTo("/users/user-profile")} >{(user?.name || "").slice(0, 5) + (user?.name?.length > 4 ? "..." : "")}</p>
+                     <p onClick={() => navigateTo("/users/user-profile")} >{(user?.username || "").slice(0, 5) + (user?.username?.length > 4 ? "..." : "")}</p>
                   </div>
                   
                   <div className="dropdown-wallet">

@@ -5,6 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Navbar from './Navbar';
 import Footer from './Footer';
 import { useNavigate } from "react-router-dom";
+import api from "../../services/api";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -19,15 +20,8 @@ const [currentPage, setCurrentPage] = useState(1);
 
   
   /* ================= AUTH ================= */
-  const getCookie = (name) => {
-    const v = `; ${document.cookie}`;
-    const parts = v.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-    return "";
-  };
-
-  const token =
-    getCookie("access") || localStorage.getItem("token") || "";
+   const token = localStorage.getItem("access_token");
+  const userId = localStorage.getItem("userId");
 
   const authHeader = {
     Authorization: `Bearer ${token}`,
@@ -48,8 +42,8 @@ const [currentPage, setCurrentPage] = useState(1);
   /* ================= FETCH ================= */
   const fetchCertificates = async () => {
     try {
-      const res = await axios.get(
-        `${API_BASE}/certificate/certificate/`,
+      const res = await api.get(
+        `/certificate/certificate/`,
         { headers: authHeader }
       );
       setCertificates(res.data || []);
@@ -69,8 +63,8 @@ const [currentPage, setCurrentPage] = useState(1);
     try {
       if (form.id) {
         // UPDATE
-        await axios.patch(
-          `${API_BASE}/certificate/certificate/${form.id}/`,
+        await api.patch(
+          `/certificate/certificate/${form.id}/`,
           {
             title: form.title,
             issue_date: form.issue_date,
@@ -93,8 +87,8 @@ const [currentPage, setCurrentPage] = useState(1);
         fd.append("expiry_date", form.expiry_date);
         fd.append("is_active", form.is_active);
 
-        await axios.post(
-          `${API_BASE}/certificate/certificate/`,
+        await api.post(
+          `/certificate/certificate/`,
           fd,
           {
             headers: {
@@ -127,8 +121,8 @@ const [currentPage, setCurrentPage] = useState(1);
     if (!window.confirm("Delete certificate?")) return;
 
     try {
-      await axios.delete(
-        `${API_BASE}/certificate/certificate/${id}/`,
+      await api.delete(
+        `certificate/certificate/${id}/`,
         { headers: authHeader }
       );
       notify("Certificate deleted", "success");
@@ -282,23 +276,7 @@ const paginatedCertificates = certificates.slice(
       </button>
 
       {/* Secondary Actions */}
-      <div className="flex justify-between text-sm text-gray-300">
-        {/* <button
-          onClick={() => handleDownload(c)}
-          className="hover:text-white transition"
-        >
-          Download
-        </button> */}
-
-       
-
-        <button
-          onClick={() => handleDelete(c.id)}
-          className="text-red-400 hover:text-red-300 transition"
-        >
-          Delete
-        </button>
-      </div>
+      
     </div>
   ))}
 </div>

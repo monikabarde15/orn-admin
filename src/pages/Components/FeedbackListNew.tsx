@@ -3,90 +3,38 @@ import { Dialog, Transition } from "@headlessui/react";
 import Swal from "sweetalert2";
 import { useDispatch } from "react-redux";
 import { setPageTitle } from "../../store/themeConfigSlice";
+
 import IconListCheck from "../../components/Icon/IconListCheck";
 import IconLayoutGrid from "../../components/Icon/IconLayoutGrid";
 import IconSearch from "../../components/Icon/IconSearch";
-import IconFacebook from "../../components/Icon/IconFacebook";
-import IconInstagram from "../../components/Icon/IconInstagram";
-import IconLinkedin from "../../components/Icon/IconLinkedin";
-import IconTwitter from "../../components/Icon/IconTwitter";
 import IconX from "../../components/Icon/IconX";
-import axios from "axios";
 
-console.log(import.meta.env.VITE_API_URL);
-const VIT=import.meta.env.VITE_API_URL;
+import api from "../../services/api";
 
-
-const API_URL = `${VIT}/api/v1/admin/feedback/`;
+const API_URL = "/api/v1/admin/feedback/";
+const PAGE_SIZE = 10;
 
 const FeedbackListNew = () => {
   const dispatch = useDispatch();
-  const [addContactModal, setAddContactModal] = useState(false);
-  const [value, setValue] = useState("list");
 
+  const [view, setView] = useState<"list" | "grid">("list");
   const [search, setSearch] = useState("");
-  const [contactList, setContactList] = useState([]);
-  const [filteredItems, setFilteredItems] = useState([]);
+
+  const [feedbackList, setFeedbackList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Fetch access token from cookie
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-  };
-  const accessToken = getCookie("access");
+  // 🔥 pagination state
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
-  // ✅ Fetch all contacts
-  const fetchContacts = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(API_URL, {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        withCredentials: true,
-      });
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-      const data = Array.isArray(res.data.results) ? res.data.results : [];
-      setContactList(data);
-      setFilteredItems(data);
-    } catch (err) {
-      console.error("Error fetching Feedback:", err);
-      showMessage("Failed to fetch Feedback", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+  /* ================= TOAST ================= */
 
-  // ✅ Delete contact
-  const deleteUser = async (user) => {
-    const confirmDelete = await Swal.fire({
-      title: "Are you sure?",
-      text: "This contact will be permanently deleted!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Yes, delete it!",
-      cancelButtonText: "Cancel",
-      reverseButtons: true,
-    });
-
-    if (!confirmDelete.isConfirmed) return;
-
-    try {
-      await axios.delete(`${API_URL}${user.feedback_id}/`, {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        withCredentials: true,
-      });
-
-      setContactList(contactList.filter((c) => c.feedback_id !== user.feedback_id));
-      showMessage("Feedback deleted successfully!");
-    } catch (err) {
-      console.error("Delete failed:", err);
-      showMessage("Failed to delete contact", "error");
-    }
-  };
-
-  // ✅ Show toast
-  const showMessage = (msg, type = "success") => {
+  const showMessage = (
+    msg: string,
+    type: "success" | "error" = "success"
+  ) => {
     Swal.fire({
       toast: true,
       position: "top",
@@ -97,108 +45,218 @@ const FeedbackListNew = () => {
     });
   };
 
-  // ✅ Search contacts
-  useEffect(() => {
-    setFilteredItems(
-      contactList.filter((c) =>
-        `${c.first_name} ${c.last_name}`
-          .toLowerCase()
-          .includes(search.toLowerCase())
-      )
-    );
-  }, [search, contactList]);
+  /* ================= FETCH FEEDBACK ================= */
+
+  const fetchFeedback = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get(API_URL, {
+        params: {
+          page,
+          page_size: PAGE_SIZE,
+          search: search || undefined, // optional server-side search
+        },
+      });
+
+      setFeedbackList(res.data?.results || []);
+      setTotalCount(res.data?.count || 0);
+    } catch (error) {
+      console.error("Error fetching feedback:", error);
+      showMessage("Failed to fetch feedback", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ================= DELETE FEEDBACK ================= */
+
+  const deleteFeedback = async (item: any) => {
+    const confirm = await Swal.fire({
+      title: "Are you sure?",
+      text: "This feedback will be permanently deleted!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      await api.delete(`${API_URL}${item.feedback_id}/`);
+      showMessage("Feedback deleted");
+
+      // 🔥 refetch same page
+      fetchFeedback();
+    } catch (error) {
+      console.error("Delete failed:", error);
+      showMessage("Failed to delete feedback", "error");
+    }
+  };
+
+  /* ================= EFFECTS ================= */
 
   useEffect(() => {
-    dispatch(setPageTitle("Contacts"));
-    fetchContacts();
+    dispatch(setPageTitle("Feedback"));
   }, [dispatch]);
+
+  useEffect(() => {
+    fetchFeedback();
+  }, [page, search]);
+
+  /* ================= PAGINATION UI ================= */
+
+  const Pagination = () => {
+  if (totalPages <= 1) return null;
+
+  const MAX_PAGES = 5;
+  let start = Math.max(1, page - Math.floor(MAX_PAGES / 2));
+  let end = start + MAX_PAGES - 1;
+
+  if (end > totalPages) {
+    end = totalPages;
+    start = Math.max(1, end - MAX_PAGES + 1);
+  }
+
+  const pages = [];
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  return (
+    <div className="flex justify-between items-center mt-6">
+      {/* INFO */}
+      <p className="text-sm text-gray-500">
+        Page <b>{page}</b> of <b>{totalPages}</b> • Total {totalCount}
+      </p>
+
+      {/* CONTROLS */}
+      <div className="flex items-center gap-1">
+        {/* PREV */}
+        <button
+          className="btn btn-outline-primary btn-sm"
+          disabled={page === 1}
+          onClick={() => setPage(page - 1)}
+        >
+          Prev
+        </button>
+
+        {/* PAGE NUMBERS */}
+        {pages.map((p) => (
+          <button
+            key={p}
+            onClick={() => setPage(p)}
+            className={`btn btn-sm ${
+              p === page
+                ? "btn-primary"
+                : "btn-outline-primary"
+            }`}
+          >
+            {p}
+          </button>
+        ))}
+
+        {/* NEXT */}
+        <button
+          className="btn btn-outline-primary btn-sm"
+          disabled={page === totalPages}
+          onClick={() => setPage(page + 1)}
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
+  /* ================= UI ================= */
 
   return (
     <div>
+      {/* HEADER */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h2 className="text-xl font-semibold">Feedback List</h2>
-        <div className="flex sm:flex-row flex-col sm:items-center sm:gap-3 gap-4 w-full sm:w-auto">
-          <div className="flex gap-3">
-            <button
-              type="button"
-              className={`btn btn-outline-primary p-2 ${
-                value === "list" && "bg-primary text-white"
-              }`}
-              onClick={() => setValue("list")}
-            >
-              <IconListCheck />
-            </button>
-            <button
-              type="button"
-              className={`btn btn-outline-primary p-2 ${
-                value === "grid" && "bg-primary text-white"
-              }`}
-              onClick={() => setValue("grid")}
-            >
-              <IconLayoutGrid />
-            </button>
-          </div>
+
+        <div className="flex gap-3">
+          <button
+            className={`btn btn-outline-primary p-2 ${
+              view === "list" ? "bg-primary text-white" : ""
+            }`}
+            onClick={() => setView("list")}
+          >
+            <IconListCheck />
+          </button>
+
+          <button
+            className={`btn btn-outline-primary p-2 ${
+              view === "grid" ? "bg-primary text-white" : ""
+            }`}
+            onClick={() => setView("grid")}
+          >
+            <IconLayoutGrid />
+          </button>
 
           <div className="relative">
             <input
               type="text"
-              placeholder="Search Feedback"
-              className="form-input py-2 ltr:pr-11 rtl:pl-11 peer"
+              placeholder="Search feedback"
+              className="form-input py-2 pr-10"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
             />
-            <button
-              type="button"
-              className="absolute ltr:right-[11px] rtl:left-[11px] top-1/2 -translate-y-1/2 peer-focus:text-primary"
-            >
-              <IconSearch className="mx-auto" />
-            </button>
+            <IconSearch className="absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
         </div>
       </div>
 
-      {/* Table View */}
-      {value === "list" && (
-        <div className="mt-5 panel p-0 border-0 overflow-hidden">
+      {/* ================= LIST VIEW ================= */}
+      {view === "list" && (
+        <div className="mt-5 panel p-0 overflow-hidden">
           <div className="table-responsive">
             <table className="table-striped table-hover">
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Name</th>
-                  <th>subject</th>
-                  <th>description</th>
+                  <th>User</th>
+                  <th>Subject</th>
+                  <th>Description</th>
                   <th>Date</th>
-                  <th className="!text-center">Actions</th>
+                  <th className="text-center">Actions</th>
                 </tr>
               </thead>
+
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="text-center text-muted py-4">
+                    <td colSpan={6} className="text-center py-4">
                       Loading...
                     </td>
                   </tr>
-                ) : filteredItems.length === 0 ? (
+                ) : feedbackList.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center text-muted py-4">
-                      No feedback found.
+                    <td colSpan={6} className="text-center py-4">
+                      No feedback found
                     </td>
                   </tr>
                 ) : (
-                  filteredItems.map((item) => (
+                  feedbackList.map((item) => (
                     <tr key={item.feedback_id}>
                       <td>{item.feedback_id}</td>
-                      <td>
-                        {item.user}
-                      </td>
+                      <td>{item.user}</td>
                       <td>{item.subject}</td>
-                      <td>{item.description}</td>
-                      <td>{new Date(item.timestamp).toLocaleString()}</td>
+                      <td className="max-w-[300px] truncate">
+                        {item.description}
+                      </td>
+                      <td>
+                        {new Date(item.timestamp).toLocaleString()}
+                      </td>
                       <td className="text-center">
                         <button
                           className="btn btn-sm btn-outline-danger"
-                          onClick={() => deleteUser(item)}
+                          onClick={() => deleteFeedback(item)}
                         >
                           Delete
                         </button>
@@ -209,91 +267,41 @@ const FeedbackListNew = () => {
               </tbody>
             </table>
           </div>
+
+          <Pagination />
         </div>
       )}
 
-      {/* Grid View */}
-      {value === "grid" && (
-        <div className="grid xl:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-6 mt-5">
-          {filteredItems.map((item) => (
-            <div
-              key={item.feedback_id}
-              className="bg-white dark:bg-[#1c232f] rounded-md p-5 shadow text-center relative"
-            >
-              <h4 className="text-lg font-semibold mb-2">
-                {item.first_name} {item.last_name}
-              </h4>
-              <p className="text-sm text-gray-500 mb-1">{item.email}</p>
-              <p className="text-sm text-gray-500 mb-1">{item.phone}</p>
-              <p className="text-sm text-gray-600 italic mb-4 truncate">
-                {item.message}
-              </p>
-              <div className="flex justify-center space-x-3 mb-4">
-                <IconFacebook />
-                <IconInstagram />
-                <IconLinkedin />
-                <IconTwitter />
+      {/* ================= GRID VIEW ================= */}
+      {view === "grid" && (
+        <>
+          <div className="grid xl:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-6 mt-5">
+            {feedbackList.map((item) => (
+              <div
+                key={item.feedback_id}
+                className="bg-white rounded-md p-5 shadow"
+              >
+                <h4 className="font-semibold">{item.subject}</h4>
+                <p className="text-sm text-gray-500 mt-1">
+                  {item.user}
+                </p>
+                <p className="text-sm text-gray-600 mt-2 line-clamp-3">
+                  {item.description}
+                </p>
+
+                <button
+                  className="btn btn-outline-danger btn-sm w-full mt-4"
+                  onClick={() => deleteFeedback(item)}
+                >
+                  Delete
+                </button>
               </div>
-              <button
-                type="button"
-                className="btn btn-outline-danger w-full"
-                onClick={() => deleteUser(item)}
-              >
-                Delete
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Modal (future add/edit) */}
-      <Transition appear show={addContactModal} as={Fragment}>
-        <Dialog
-          as="div"
-          open={addContactModal}
-          onClose={() => setAddContactModal(false)}
-          className="relative z-[51]"
-        >
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-[black]/60" />
-          </Transition.Child>
-          <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center px-4 py-8">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className="panel border-0 p-0 rounded-lg overflow-hidden w-full max-w-lg text-black dark:text-white-dark">
-                  <button
-                    type="button"
-                    onClick={() => setAddContactModal(false)}
-                    className="absolute top-4 ltr:right-4 rtl:left-4 text-gray-400 hover:text-gray-800 dark:hover:text-gray-600 outline-none"
-                  >
-                    <IconX />
-                  </button>
-                  <div className="text-lg font-medium bg-[#fbfbfb] dark:bg-[#121c2c] py-3 px-5">
-                    Add Contact
-                  </div>
-                  {/* Add form here if needed */}
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
+            ))}
           </div>
-        </Dialog>
-      </Transition>
+
+          <Pagination />
+        </>
+      )}
     </div>
   );
 };

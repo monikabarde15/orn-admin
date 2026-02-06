@@ -10,28 +10,16 @@ import {
   ChevronUp,
   Download,
 } from "lucide-react";
+import api from "../../services/api";
+
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../../pages/Components/Footer";
 
 /* ================= CONFIG ================= */
 
-const VIT = import.meta.env.VITE_API_URL;
-const API_V1 = `${VIT}/api/v1`;
 
-const getCookie = (name: string) => {
-  const v = `; ${document.cookie}`;
-  const parts = v.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(";").shift() || "";
-  return "";
-};
-
-const token =
-  getCookie("access") ||
-  localStorage.getItem("jwt-auth") ||
-  localStorage.getItem("token") ||
-  "";
-
-const userId = getCookie("user_id");
+  const token = localStorage.getItem("access_token");
+  const userId = localStorage.getItem("userId");
 
 const headers = {
   Authorization: `Bearer ${token}`,
@@ -126,8 +114,8 @@ const CourseEnrollment: React.FC = () => {
   useEffect(() => {
     const fetchCourse = async () => {
       try {
-        const res = await axios.get(
-          `${VIT}/course/courses/${id}/`,
+        const res = await api.get(
+          `/course/courses/${id}/`,
           { headers }
         );
         setCourse(res.data);
@@ -151,8 +139,8 @@ const CourseEnrollment: React.FC = () => {
     const fetchAll = async () => {
       try {
         const [subsRes, walletRes] = await Promise.all([
-          axios.get(`${API_V1}/users/subscriptions/`, { headers }),
-          axios.get(`${API_V1}/users/wallet/balance/`, { headers }),
+          api.get(`api/v1/users/subscriptions/`, { headers }),
+          api.get(`api/v1/users/wallet/balance/`, { headers }),
         ]);
 
         const sub = subsRes.data.find(
@@ -185,8 +173,8 @@ const CourseEnrollment: React.FC = () => {
     const loaded = await loadRazorpay();
     if (!loaded) throw new Error("Razorpay load failed");
 
-    const orderRes = await axios.post(
-      `${API_V1}/users/create-order/`,
+    const orderRes = await api.post(
+      `api/v1/users/create-order/`,
       { amount },
       { headers }
     );
@@ -202,8 +190,8 @@ const CourseEnrollment: React.FC = () => {
 
         handler: async (res: any) => {
           try {
-            await axios.post(
-              `${API_V1}/users/verify-payment/`,
+            await api.post(
+              `api/v1/users/verify-payment/`,
               {
                 razorpay_payment_id: res.razorpay_payment_id,
                 razorpay_order_id: res.razorpay_order_id,
@@ -227,8 +215,8 @@ const CourseEnrollment: React.FC = () => {
   /* ================= INSTANCE LIST + POLLING ================= */
 
   const fetchInstances = async () => {
-    const res = await axios.get(
-      `${API_V1}/lab/userinst/${userId}`,
+    const res = await api.get(
+      `api/v1/lab/userinst/${userId}`,
       { headers }
     );
     return res.data || [];
@@ -294,8 +282,8 @@ const CourseEnrollment: React.FC = () => {
       }
 
       // 🚀 Deploy
-      await axios.post(
-        `${API_V1}/users/deploy/${action}/`,
+      await api.post(
+        `api/v1/users/deploy/${action}/`,
         {
           user_id: userId,
           payment_id: subscription.subscription_id,
@@ -307,7 +295,7 @@ const CourseEnrollment: React.FC = () => {
       await waitForLatestInstanceReady();
 
       // ✅ Redirect ONLY when launched
-      window.location.href = `/lab`;
+      window.location.href = `/lab?user`;
     } catch (err) {
       console.error("Launch failed", err);
       alert("Lab launch failed");

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import api from "../services/api";
 
-console.log(import.meta.env.VITE_API_URL);
-const VIT=import.meta.env.VITE_API_URL;
 
-const API_BASE = `${VIT}/api/v1/support/chats/messages/`;
+
+const API_BASE = `/api/v1/support/chats/messages/`;
 
 export default function SupportChat() {
   const [email, setEmail] = useState("");
@@ -29,7 +29,7 @@ export default function SupportChat() {
   const fetchMessages = async () => {
     if (!email) return;
     try {
-      const res = await axios.get(`${API_BASE}?email=${email}`);
+      const res = await api.get(`${API_BASE}?email=${email}`);
       const newMessages = res.data || [];
       if (newMessages.length > messages.length) playSound();
       setMessages(newMessages);
@@ -50,7 +50,7 @@ export default function SupportChat() {
 
     try {
       const payload = { message, email, attachments };
-      const res = await axios.post(API_BASE, payload);
+      const res = await api.post(API_BASE, payload);
       const newMsg = {
         ...res.data,
         sender: "guest",

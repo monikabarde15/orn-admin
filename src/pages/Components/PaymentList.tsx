@@ -1,36 +1,24 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import html2pdf from "html2pdf.js";
-console.log(import.meta.env.VITE_API_URL);
-const VIT=import.meta.env.VITE_API_URL;
+import api from "../../services/api";
 
-const API_URL = `${VIT}/api/v1/admin/payments/`;
+const API_URL = "/api/v1/admin/payments/";
 const ROWS_PER_PAGE = 5;
 
 const PaymentList = () => {
-  const [payments, setPayments] = useState([]);
-  const [filteredPayments, setFilteredPayments] = useState([]);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [filteredPayments, setFilteredPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
-  // Get cookie
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-  };
-  const accessToken = getCookie("access");
-
-  // Fetch payments
+  /* ================= FETCH PAYMENTS ================= */
   const fetchPayments = async (page = 1) => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}?page=${page}`, {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        withCredentials: true,
-      });
+      const res = await api.get(`${API_URL}?page=${page}`);
+
       const items = res.data.results || [];
       const total = res.data.count || items.length;
 
@@ -46,35 +34,46 @@ const PaymentList = () => {
   };
 
   useEffect(() => {
-    fetchPayments(currentPage);
+    fetchPayments(1);
   }, []);
 
-  // Search/filter
+  /* ================= SEARCH FILTER ================= */
   useEffect(() => {
+    if (!search.trim()) {
+      setFilteredPayments(payments);
+      return;
+    }
+
     setFilteredPayments(
       payments.filter(
         (p) =>
-          (p.order_id || "")
-            .toLowerCase()
-            .includes(search.toLowerCase()) ||
-          (p.payment_id || "")
-            .toLowerCase()
-            .includes(search.toLowerCase())
+          (p.order_id || "").toLowerCase().includes(search.toLowerCase()) ||
+          (p.payment_id || "").toLowerCase().includes(search.toLowerCase())
       )
     );
   }, [search, payments]);
 
-  // Pagination buttons
+  /* ================= PAGINATION ================= */
   const totalPages = Math.ceil(totalItems / ROWS_PER_PAGE);
-  const changePage = (page) => {
+
+  const changePage = (page: number) => {
     if (page < 1 || page > totalPages) return;
     fetchPayments(page);
   };
 
-  // Export table to CSV
+  /* ================= EXPORT CSV ================= */
   const exportCSV = () => {
     const csv = [
-      ["ID", "Order ID", "Payment ID", "Amount", "Status", "Refund ID", "Refund Status", "Created At"],
+      [
+        "ID",
+        "Order ID",
+        "Payment ID",
+        "Amount",
+        "Status",
+        "Refund ID",
+        "Refund Status",
+        "Created At",
+      ],
       ...filteredPayments.map((p) => [
         p.id,
         p.order_id,
@@ -96,7 +95,7 @@ const PaymentList = () => {
     a.click();
   };
 
-  // Export table to PDF
+  /* ================= EXPORT PDF ================= */
   const exportPDF = () => {
     const element = document.createElement("table");
     element.innerHTML = `
@@ -125,8 +124,7 @@ const PaymentList = () => {
             <td>${p.refund_id || "-"}</td>
             <td>${p.refund_status || "-"}</td>
             <td>${new Date(p.created_at).toLocaleString()}</td>
-          </tr>
-        `
+          </tr>`
           )
           .join("")}
       </tbody>
@@ -144,13 +142,10 @@ const PaymentList = () => {
       .save();
   };
 
-  // Print / Download invoice
-  const handleInvoice = async (id, action) => {
+  /* ================= INVOICE ================= */
+  const handleInvoice = async (id: number, action: "print" | "download") => {
     try {
-      const res = await axios.get(`${API_URL}${id}/`, {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        withCredentials: true,
-      });
+      const res = await api.get(`${API_URL}${id}/`);
       const p = res.data;
 
       const element = document.createElement("div");
@@ -158,20 +153,27 @@ const PaymentList = () => {
       element.innerHTML = `
         <h2 style="text-align:center;">Invoice #${p.id}</h2>
         <p><strong>Order ID:</strong> ${p.order_id}</p>
-        <p><strong>Payment ID:</strong> ${p.payment_id || '-'}</p>
+        <p><strong>Payment ID:</strong> ${p.payment_id || "-"}</p>
         <p><strong>Amount:</strong> ${p.amount}</p>
         <p><strong>Status:</strong> ${p.status}</p>
-        <p><strong>Refund ID:</strong> ${p.refund_id || '-'}</p>
-        <p><strong>Refund Status:</strong> ${p.refund_status || '-'}</p>
-        <p><strong>Created At:</strong> ${new Date(p.created_at).toLocaleString()}</p>
+        <p><strong>Refund ID:</strong> ${p.refund_id || "-"}</p>
+        <p><strong>Refund Status:</strong> ${p.refund_status || "-"}</p>
+        <p><strong>Created At:</strong> ${new Date(
+          p.created_at
+        ).toLocaleString()}</p>
       `;
 
       if (action === "print") {
         const w = window.open("", "", "width=700,height=700");
-        w.document.write("<html><head><title>Invoice</title></head><body>" + element.innerHTML + "</body></html>");
-        w.document.close();
-        w.focus();
-        w.print();
+        w!.document.write(`
+          <html>
+            <head><title>Invoice</title></head>
+            <body>${element.innerHTML}</body>
+          </html>
+        `);
+        w!.document.close();
+        w!.focus();
+        w!.print();
       } else {
         html2pdf()
           .set({
@@ -189,6 +191,7 @@ const PaymentList = () => {
     }
   };
 
+  /* ================= UI ================= */
   return (
     <div>
       <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
@@ -210,7 +213,7 @@ const PaymentList = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="table table-striped table-hover w-full" id="dataTable">
+        <table className="table table-striped table-hover w-full">
           <thead>
             <tr>
               <th>ID</th>
@@ -224,6 +227,7 @@ const PaymentList = () => {
               <th>Actions</th>
             </tr>
           </thead>
+
           <tbody>
             {loading ? (
               <tr>
@@ -249,10 +253,16 @@ const PaymentList = () => {
                   <td>{p.refund_status || "-"}</td>
                   <td>{new Date(p.created_at).toLocaleString()}</td>
                   <td>
-                    <button className="btn btn-sm btn-primary me-1" onClick={() => handleInvoice(p.id, "print")}>
+                    <button
+                      className="btn btn-sm btn-primary me-1"
+                      onClick={() => handleInvoice(p.id, "print")}
+                    >
                       Print
                     </button>
-                    <button className="btn btn-sm btn-success" onClick={() => handleInvoice(p.id, "download")}>
+                    <button
+                      className="btn btn-sm btn-success"
+                      onClick={() => handleInvoice(p.id, "download")}
+                    >
                       PDF
                     </button>
                   </td>
@@ -263,22 +273,35 @@ const PaymentList = () => {
         </table>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center mt-4 gap-1 flex-wrap">
-          <button className="btn btn-sm btn-outline-primary" disabled={currentPage === 1} onClick={() => changePage(currentPage - 1)}>
+          <button
+            className="btn btn-sm btn-outline-primary"
+            disabled={currentPage === 1}
+            onClick={() => changePage(currentPage - 1)}
+          >
             Prev
           </button>
+
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
-              className={`btn btn-sm ${currentPage === page ? "btn-primary" : "btn-outline-primary"}`}
+              className={`btn btn-sm ${
+                currentPage === page
+                  ? "btn-primary"
+                  : "btn-outline-primary"
+              }`}
               onClick={() => changePage(page)}
             >
               {page}
             </button>
           ))}
-          <button className="btn btn-sm btn-outline-primary" disabled={currentPage === totalPages} onClick={() => changePage(currentPage + 1)}>
+
+          <button
+            className="btn btn-sm btn-outline-primary"
+            disabled={currentPage === totalPages}
+            onClick={() => changePage(currentPage + 1)}
+          >
             Next
           </button>
         </div>

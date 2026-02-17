@@ -2,676 +2,233 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
-import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import api from "../../services/api";
 
 const CartPage = () => {
-  const [loaderSeconds, setLoaderSeconds] = useState(0);
-const loaderTimerRef = useRef(null);
-
   const navigate = useNavigate();
+
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [upgradeInProgress, setUpgradeInProgress] = useState(false);
-  const [isLaunching, setIsLaunching] = useState(false);
-  const pollRef = useRef(null);
+  const [loaderSeconds, setLoaderSeconds] = useState(0);
+  const [subscriptionActive, setSubscriptionActive] = useState(false);
 
-const token = localStorage.getItem("access_token");
-const userId = localStorage.getItem("userId");
+  const loaderRef = useRef(null);
 
-  const notify = (msg, type = "info", opts = {}) =>
-    toast[type](msg, {
-      position: "top-center",
-      autoClose: 2000,
-      closeButton: true,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      ...opts,
-    });
+  const token = localStorage.getItem("access_token");
+  const userId = localStorage.getItem("userId");
 
-const requireLogin = () => {
-  if (!token || !userId) {
-    notify("Please login to continue", "error");
-    navigate("/login");
-    return false;
-  }
-  return true;
-};
+  const notify = (msg, type = "info") =>
+    toast[type](msg, { position: "top-center", autoClose: 2000 });
 
-
-  useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem("orl_cart") || "[]");
-      setCartItems(stored);
-    } catch {
-      setCartItems([]);
+  const requireLogin = () => {
+    if (!token || !userId) {
+      notify("Please login to continue", "error");
+      navigate("/login");
+      return false;
     }
+    return true;
+  };
+
+  // Load cart
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("orl_cart") || "[]");
+    setCartItems(stored);
   }, []);
 
+  // Loader Timer
   useEffect(() => {
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, []);
-
-
-  useEffect(() => {
-  const isLoaderActive =
-    loading || processing || upgradeInProgress || isLaunching;
-
-  if (isLoaderActive) {
-    setLoaderSeconds(0);
-    loaderTimerRef.current = setInterval(() => {
-      setLoaderSeconds((prev) => prev + 1);
-    }, 1000);
-  } else {
-    if (loaderTimerRef.current) {
-      clearInterval(loaderTimerRef.current);
-      loaderTimerRef.current = null;
+    if (loading) {
+      loaderRef.current = setInterval(
+        () => setLoaderSeconds((prev) => prev + 1),
+        1000
+      );
+    } else {
+      clearInterval(loaderRef.current);
+      setLoaderSeconds(0);
     }
-    setLoaderSeconds(0);
-  }
-
-  return () => {
-    if (loaderTimerRef.current) {
-      clearInterval(loaderTimerRef.current);
-      loaderTimerRef.current = null;
-    }
-  };
-}, [loading, processing, upgradeInProgress, isLaunching]);
-
-  // 🔥 HOURS UPDATE — main logic
-  const updateHours = (index, hours) => {
-    const updated = [...cartItems];
-    const h = Math.max(1, Number(hours));
-    console.log('h=',h,'pric=',updated[index].basePrice,'cartItems=',cartItems);
-    updated[index].hours = h;
-    updated[index].price = updated[index].basePrice * h;
-
-    setCartItems(updated);
-    localStorage.setItem("orl_cart", JSON.stringify(updated));
-  };
+    return () => clearInterval(loaderRef.current);
+  }, [loading]);
 
   const totalAmount = cartItems.reduce(
     (sum, i) => sum + Number(i.price || 0),
     0
   );
 
+  // 🔎 Check active subscription
+  const checkActiveSubscription = async (planId) => {
+    try {
+      const res = await api.get( 
+      `api/v1/users/subscriptions`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const activePlans = res.data || [];
+
+      const isActive = activePlans.some(
+        (sub) => sub.plan_id === planId && sub.active === true
+      );
+
+      setSubscriptionActive(isActive);
+      return isActive;
+
+    } catch {
+      return false;
+    }
+  };
+
+  // Auto check on load
+  useEffect(() => {
+    if (cartItems.length) {
+      checkActiveSubscription(cartItems[0].planId);
+    }
+  }, [cartItems]);
+
+  // 🗑 Remove
   const removeItem = (index) => {
-    setProcessing(true);
     const updated = [...cartItems];
     updated.splice(index, 1);
     setCartItems(updated);
     localStorage.setItem("orl_cart", JSON.stringify(updated));
-    notify("Item removed", "info");
-    setProcessing(false);
+
+    notify("Item removed", "success");
+
+    if (updated.length === 0) navigate("/");
   };
 
-  const checkWallet = async () => {
-    try {
-      setProcessing(true);
-      const res = await api.get(`api/v1/users/wallet/balance/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return res.data?.balance ?? 0;
-    } catch {
-      return 0;
-    } finally {
-      setProcessing(false);
+  // 💳 Razorpay
+  const openRazorpay = async (amount, planId) => {
+    const alreadyActive = await checkActiveSubscription(planId);
+    if (alreadyActive) {
+      notify("Subscription already active.", "info");
+      navigate("/my-subscrption");
+      return;
     }
-  };
 
-  const createSubscriptionOnBackend = async (planId, price) => {
-    setProcessing(true);
-    try {
-      const res = await api.post(
-        `api/v1/users/subscriptions/create/${planId}/`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      return res.data;
-    } catch (err) {
-      const data = err?.response?.data;
-      if (data?.error === "Insufficient wallet balance") {
-        const balance = data.balance || 0;
-        const required = data.required || price;
-        const remaining = required - balance;
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    document.body.appendChild(script);
 
-        notify(
-          `Wallet insufficient. Paying ₹${remaining} via Razorpay`,
-          "warning"
+    const orderRes = await api.post(
+      `api/v1/users/create-order/`,
+      { amount },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const order = orderRes.data;
+
+    const options = {
+      key: order.key_id,
+      amount: order.amount * 100,
+      currency: "INR",
+      name: "OnRequestLab",
+      description: "Plan Payment",
+      order_id: order.order_id,
+
+      handler: async function (response) {
+        const verify = await api.post(
+          `api/v1/users/verify-payment/`,
+          {
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_signature: response.razorpay_signature,
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-        await openRazorpay(remaining);
-      } else {
-        notify(data?.error || "Subscription creation failed", "error");
-      }
-      return null;
-    } finally {
-      setProcessing(false);
-    }
-  };
 
-  const formatAction = (name) => name.split(" ")[0].toLowerCase();
-
-  
-  const launchSingle = async (lab, paymentId, retry = false) => {
-  setProcessing(true);
-  setIsLaunching(true);
-
-  try {
-    if (!lab.subscription) {
-      const createdSub = await createSubscriptionOnBackend(lab.planId);
-
-        if (createdSub) {
-          lab.subscription = createdSub;
-          notify(
-            `Subscription for ${lab.name} created automatically!`,
-            "success"
-          );
-        } else {
-          notify(`Failed to create subscription for ${lab.name}`, "error");
+        if (!verify.data.success) {
+          notify("Payment verification failed", "error");
           return;
         }
-      }
- 
-     const actionnew = formatAction(lab.name);
-        let action = "";
 
-        if (actionnew === "terraform") {
-          action = actionnew;//"iscsi";
-        } else {
-          action = actionnew;
-        }
+        notify("Payment Successful!", "success");
 
-      const endpoint =
-        paymentId === "free"
-          ? `api/v1/users/deploy-free/${action}/`
-          : `api/v1/users/deploy/${action}/`;
+        localStorage.removeItem("orl_cart");
+        setCartItems([]);
 
-    const body =
-      paymentId === "free"
-        ? { user_id: userId, action }
-        : { user_id: userId, action, payment_id: paymentId };
+        navigate("/my-subscrption");
+      },
+    };
 
-    await api.post(endpoint, body, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    new window.Razorpay(options).open();
+  };
 
-    notify(`Instance ${lab.name} launched successfully!`, "success");
+  // 🔒 Create Subscription
+  const createSubscription = async (planId, price) => {
+  try {
+    const res = await api.post(
+      `api/v1/users/subscriptions/create/${planId}/`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    return res.data;
+
   } catch (err) {
-    const msg = err?.response?.data?.error;
+    const data = err?.response?.data;
+    console.log('data=',data);
 
-    // ⭐ If subscription error → auto create → retry launch
+    // 🚫 If backend says already exists
     if (
-      msg?.includes("does not allow") &&
-      msg?.includes("subscription") &&
-      !retry
+      data?.error?.toLowerCase().includes("already")
     ) {
-      notify("Subscription missing. Creating automatically...", "warning");
-
-      const sub = await createSubscriptionOnBackend(lab.planId);
-
-      if (sub) {
-        lab.subscription = sub;
-        return launchSingle(lab, paymentId, true); // ⭐ retry launch
-      }
+      notify("Subscription already active.", "info");
+      navigate("/my-subscrption");
+      return null;
     }
 
-    notify(msg || "Instance launch failed", "error");
-  } finally {
-    setProcessing(false);
+    // 💳 Only open Razorpay if wallet insufficient
+    if (data?.error === "Insufficient wallet balance") {
+      const remaining =
+        (data.required || price) - (data.balance || 0);
+
+      await openRazorpay(remaining, planId);
+      return null;
+    }
+
+    notify(data?.error || "Subscription failed", "error");
+    return null;
   }
 };
 
- 
-  
-  const pollForLaunchedInstances = () => {
-  if (pollRef.current) clearInterval(pollRef.current);
 
-  pollRef.current = setInterval(async () => {
-    try {
-      const res = await api.get(
-        `api/v1/lab/userinst/${userId}/`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
 
-      const instances = Array.isArray(res.data) ? res.data : [];
-
-      // ✅ STEP 1: only launched & not deleted
-      const launchedInstances = instances.filter(
-        (i) =>
-          i.status === "Launched" &&
-          i.isDeleted !== true
-      );
-
-      if (!launchedInstances.length) return;
-
-      // ✅ STEP 2: pick LATEST launched instance
-      const latestLaunched = launchedInstances.sort(
-        (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-      )[0];
-
-      console.log("✅ Latest launched instance:", latestLaunched);
-
-      // ✅ STEP 3: stop polling
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-
-      // ✅ STEP 4: cleanup
-      setCartItems([]);
-      localStorage.removeItem("orl_cart");
-
-      // ✅ STEP 5: open web ssh (optional)
-      const url =
-        latestLaunched.web_ssh_url ||
-        latestLaunched.webssh_url ||
-        latestLaunched.web_ssh ||
-        latestLaunched.console_url ||
-        latestLaunched.public_url ||
-        latestLaunched.instance_url;
-
-      if (url) window.open(url, "_blank");
-
-      // ✅ STEP 6: AUTO REDIRECT (THIS WAS MISSING)
-      window.location.href = `/lab?user`;
-
-    } catch (err) {
-      console.error("Polling error:", err);
-    }
-  }, 1000);
-};
-
-  const loadRazorpay = () =>
-    new Promise((resolve) => {
-      if (window.Razorpay) return resolve(true);
-      const s = document.createElement("script");
-      s.src = "https://checkout.razorpay.com/v1/checkout.js";
-      s.onload = () => resolve(true);
-      s.onerror = () => resolve(false);
-      document.body.appendChild(s);
-    });
-
-  const openRazorpay = async (amount) => {
-    setProcessing(true);
-    setIsLaunching(true);
-    try {
-      const loaded = await loadRazorpay();
-      if (!loaded) return notify("Failed to load Razorpay", "error");
-
-      const orderRes = await api.post(
-        `api/v1/users/create-order/`,
-        { amount },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      const order = orderRes.data;
-
-      const options = {
-        key: order.key_id,
-        amount: order.amount * 100,
-        currency: "INR",
-        name: "OnRequestLab",
-        description: "Lab Instance Payment",
-        order_id: order.order_id,
-
-        handler: async function (response) {
-          try {
-            const verify = await api.post(
-              `api/v1/users/verify-payment/`,
-              {
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-              },
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            if (!verify.data.success)
-              return notify("Payment verification failed", "error");
-
-            notify("Payment Successful! Launching Instances...", "success");
-
-            await Promise.all(
-              cartItems.map((item) =>
-                launchSingle(item, response.razorpay_payment_id)
-              )
-            );
-
-            pollForLaunchedInstances();
-          } catch {
-            notify("Payment verification failed", "error");
-          }
-        },
-
-        modal: { ondismiss: () => notify("Payment cancelled", "info") },
-      };
-
-      new window.Razorpay(options).open();
-    } catch (err) {
-      notify("Payment Failed!", "error");
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  // const handleCheckout = async () => {
-  //   if (!requireLogin()) return;
-  //   if (loading || processing || upgradeInProgress || isLaunching) return;
-  //   if (!cartItems.length) return notify("Cart empty", "info");
-
-  //   setLoading(true);
-  //   setIsLaunching(true);
-
-  //   try {
-  //     for (const item of cartItems) {
-  //       if (!item.subscription) {
-  //         const sub = await createSubscriptionOnBackend(item.planId);
-  //         item.subscription = sub;
-  //         notify(`Subscription created for ${item.name}`, "success");
-  //       }
-
-  //       const wallet = await checkWallet();
-  //       const remaining = Math.max(0, item.price - wallet);
-
-  //       if (remaining === 0) {
-  //         notify(
-  //           `₹${item.price} deducted from Wallet. Launching ${item.name}...`,
-  //           "success"
-  //         );
-  //         await launchSingle(item, "wallet");
-  //       } else {
-  //         notify(
-  //           `Wallet ₹${wallet} insufficient. Paying ₹${remaining} via Razorpay`,
-  //           "warning"
-  //         );
-  //         await openRazorpay(remaining);
-  //       }
-  //     }
-
-  //     pollForLaunchedInstances();
-  //   } catch (err) {
-  //     notify(err?.response?.data?.message || "Checkout failed", "error");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // const updateActiveStatus = async (item) => {
-  //   try {
-  //     const res = await axios.post(
-  //       `${API_BASE}/users/update_active/${userId}/`,
-  //       {},
-  //       { headers: { Authorization: `Bearer ${token}` } }
-  //     );
-  //     return res.data;
-  //   } catch {
-  //     notify("Failed to update active status", "error");
-  //     return null;
-  //   }
-  // };
-
-  const handleCheckout = async () => {
+  // 🔥 Checkout
+const handleCheckout = async () => {
   if (!requireLogin()) return;
-  if (loading || processing || upgradeInProgress || isLaunching) return;
   if (!cartItems.length) return notify("Cart empty", "info");
 
+  const item = cartItems[0];
+
   setLoading(true);
-  setIsLaunching(true);
 
   try {
-    // 1️⃣ Create subscriptions if missing
-    for (const item of cartItems) {
-      if (!item.subscription) {
-        const sub = await createSubscriptionOnBackend(item.planId);
-        if (!sub) return;
-        item.subscription = sub;
-        notify(`Subscription created for ${item.name}`, "success");
-      }
+    const alreadyActive = await checkActiveSubscription(item.planId);
+
+    if (alreadyActive) {
+      notify("Plan already active.", "info");
+      navigate("/my-subscrption");
+      return;
     }
 
-    // 2️⃣ Wallet check (ONCE)
-    const walletBalance = await checkWallet();
-    const total = totalAmount;
-    const remaining = Math.max(0, total - walletBalance);
+    const sub = await createSubscription(item.planId, item.price);
 
-    // 3️⃣ If wallet enough → direct launch
-    if (remaining === 0) {
-      notify("Paid from wallet. Launching instances...", "success");
+    if (!sub) return;
 
-      await Promise.all(
-        cartItems.map((item) => launchSingle(item, "wallet"))
-      );
+    notify("Subscription activated successfully!", "success");
 
-      pollForLaunchedInstances();
-    } 
-    // 4️⃣ Wallet insufficient / 0 → Razorpay
-    else {
-      notify(
-        `Wallet ₹${walletBalance}. Paying ₹${remaining} via Razorpay`,
-        "warning"
-      );
-      await openRazorpay(remaining);
-      // 🔥 openRazorpay ke andar already launch + polling ho raha hai
-    }
+    localStorage.removeItem("orl_cart");
+    setCartItems([]);
+
+    navigate("/my-subscrption");
 
   } catch (err) {
-    notify(err?.response?.data?.message || "Checkout failed", "error");
+    notify("Checkout failed", "error");
   } finally {
     setLoading(false);
   }
 };
-
-  const updateActiveStatus = async () => {
-  try {
-    const res = await api.post(
-      `/users/update_active/${userId}/`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    return res.data;
-  } catch (error) {
-    console.error("update_active API error 👉", error.response);
-    notify(
-      error?.response?.data?.message || "Failed to update active status",
-      "error"
-    );
-    return null;
-  }
-};
-// const upgradeSubscription = async (subscriptionId, newPackageId) => {
-//   try {
-//     const res = await axios.post(
-//       `${API_BASE}/users/subscriptions/${subscriptionId}/upgrade/`,
-//       {
-//         new_package_id: newPackageId, // ✅ curl ke jaisa
-//       },
-//       {
-//         headers: {
-//           Accept: "application/json",
-//           Authorization: `Bearer ${token}`,
-//           "Content-Type": "application/json",
-//         },
-//       }
-//     );
-
-//     return res.data;
-//   } catch (error) {
-//     console.error("upgrade API error 👉", error.response);
-//     notify(
-//       error?.response?.data?.message || "Subscription upgrade failed",
-//       "error"
-//     );
-//     return null;
-//   }
-// };
-
-  // const handleUpgrade = async (item) => {
-  //   if (!requireLogin()) return;
-  //   if (upgradeInProgress || isLaunching) return;
-
-  //   const confirmUpgrade = window.confirm("Do you want to upgrade this plan?");
-  //   if (!confirmUpgrade) return;
-
-  //   setUpgradeInProgress(true);
-  //   setIsLaunching(true);
-
-  //   try {
-  //     const updated = await updateActiveStatus(item);
-  //     if (!updated) {
-  //       notify("Update active failed", "error");
-  //       return;
-  //     }
-
-  //     notify("Plan activated successfully!", "success");
-
-  //     const wallet = await checkWallet();
-  //     const remaining = Math.max(0, item.price - wallet);
-
-  //     if (remaining === 0) {
-  //       notify(`₹${item.price} deducted. Upgrading...`, "success");
-  //       await launchSingle(item, "wallet");
-  //       pollForLaunchedInstances();
-  //     } else {
-  //       notify(`Wallet low, paying ₹${remaining} via Razorpay`, "warning");
-  //       await openRazorpay(remaining);
-  //     }
-  //   } catch (err) {
-  //     notify(err?.response?.data?.message || "Upgrade failed", "error");
-  //   } finally {
-  //     setUpgradeInProgress(false);
-  //   }
-  // };
-
-  const upgradeSubscription = async (subscriptionId, newPackageId, item) => {
-  try {
-    const res = await api.post(
-      `api/v1/users/subscriptions/${subscriptionId}/upgrade/`,
-      { new_package_id: newPackageId },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    return res.data;
-
-  } catch (error) {
-    const data = error?.response?.data;
-
-    // 🔥 WALLET INSUFFICIENT CASE
-    if (data?.error === "Insufficient wallet balance") {
-      const balance = data.balance || 0;
-      const required = data.required || item.price;
-      const remaining = required - balance;
-
-      notify(
-        `Wallet ₹${balance}. Paying ₹${remaining} via Razorpay`,
-        "warning"
-      );
-
-      // 🔥 Razorpay → payment success → launch
-      await openRazorpay(remaining);
-      return null;
-    }
-
-    notify(data?.error || "Subscription upgrade failed", "error");
-    return null;
-  }
-};
-
-  const handleUpgrade = async (item) => {
-  if (!requireLogin()) return;
-  if (upgradeInProgress || isLaunching) return;
-
-  const confirmUpgrade = window.confirm(
-    "Do you want to upgrade this plan?"
-  );
-  if (!confirmUpgrade) return;
-
-  setUpgradeInProgress(true);
-  setIsLaunching(true); // 🔥 loader ON
-
-  try {
-    // 1️⃣ subscription id
-    const subscriptionId =
-      item.subscription?.id || item.subscription?.subscription_id;
-
-    if (!subscriptionId) {
-      notify("Subscription ID missing", "error");
-      return;
-    }
-
-    // 2️⃣ new package id
-    const newPackageId = item.planId;
-
-    if (!newPackageId) {
-      notify("Package ID missing", "error");
-      return;
-    }
-
-    // 3️⃣ UPGRADE
-    // const upgraded = await upgradeSubscription(
-    //   subscriptionId,
-    //   newPackageId
-    // );
-
-const upgraded = await upgradeSubscription(
-  subscriptionId,
-  newPackageId,
-  item
-);
-
-// Agar Razorpay open hua hai → launch already ho jayega
-if (!upgraded) return;
-
-notify("Subscription upgraded successfully!", "success");
-
-// local update
-item.subscription = upgraded;
-
-// direct launch
-await launchSingle(item, "wallet");
-pollForLaunchedInstances();
-
-    if (!upgraded) return;
-
-    notify("Subscription upgraded successfully!", "success");
-
-    // ⭐ IMPORTANT: update local subscription
-    item.subscription = upgraded;
-
-    // 4️⃣ DIRECT INSTANCE LAUNCH (wallet based)
-    notify("Launching instance...", "info");
-
-    await launchSingle(item, "wallet"); // 🔥 direct launch
-
-    // 5️⃣ START POLLING (loader keeps running)
-    pollForLaunchedInstances("wallet");
-
-  } catch (err) {
-    notify(
-      err?.response?.data?.message || "Upgrade failed",
-      "error"
-    );
-  } finally {
-    // ❌ YAHAN loader band NAHI karna
-    // loader polling ke baad band hoga
-    setUpgradeInProgress(false);
-  }
-};
-
-
 
 
   return (
@@ -679,109 +236,64 @@ pollForLaunchedInstances();
       <Navbar />
       <ToastContainer />
 
-      {(loading || processing || upgradeInProgress || isLaunching) && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center z-[9999]">
+      {loading && (
+        <div className="fixed inset-0 bg-black/70 flex flex-col items-center justify-center z-[9999]">
           <div className="w-16 h-16 border-4 border-t-transparent border-purple-400 rounded-full animate-spin"></div>
-          {/* <p className="text-white mt-4 text-xl font-semibold">Please wait...</p> */}
-        <p className="text-purple-300 mt-2 text-sm">
-          Processing time: {loaderSeconds}s
-        </p>
-
+          <p className="text-purple-300 mt-2">
+            Processing time: {loaderSeconds}s
+          </p>
         </div>
       )}
 
-      <div className="min-h-screen bg-[#070B19] text-white px-4 py-10">
-        <h1 className="text-4xl font-bold mb-10">Booking Details</h1>
+      <div className="min-h-screen bg-[#050B1E] text-white px-8 py-10">
+        <h1 className="text-4xl font-semibold mb-10">
+          Booking Details
+        </h1>
 
         <div className="flex flex-col lg:flex-row gap-10">
-          {/* LEFT SECTION */}
-          <div className="w-full lg:w-2/3 space-y-6">
+          <div className="flex-1 border border-gray-700 rounded-2xl p-6 bg-[#0B1228]">
             {cartItems.map((item, idx) => (
-              <div
-                key={idx}
-                className="border p-5 rounded-xl flex items-center justify-between shadow-sm"
-              >
-                <div className="flex items-center space-x-5">
-                  <div className="w-32 h-20 bg-gray-200 rounded-lg" />
+              <div key={idx} className="flex gap-6">
+                <div className="w-32 h-24 bg-gray-300 rounded-xl"></div>
 
-                  <div>
-                    <h2 className="text-xl font-semibold">{item.name}</h2>
+                <div className="flex-1">
+                  <h2 className="text-2xl font-semibold flex items-center gap-3">
+                    {item.name}
+                    {subscriptionActive && (
+                      <span className="text-xs bg-green-600 px-2 py-1 rounded">
+                        Active
+                      </span>
+                    )}
+                  </h2>
 
-                    <p className="text-sm text-gray-400 mt-1">
-                      {item.newdescription}
-                    </p>
+                  <p className="text-gray-400 mt-2 text-sm">
+                    {item.newdescription}
+                  </p>
 
-                    <p className="text-sm text-gray-400 mt-1">
-                      Billing: <span className="font-bold">{item.billingType}</span>
-                    </p>
-
-                    {/* HOURS INPUT */}
-                    <div className="mt-3">
-                      <label className="text-sm text-gray-400">Hours:</label>
-
-                      <input
-                        type="number"
-                        min="1"
-                        value={item.hours || 1}
-                        onChange={(e) => updateHours(idx, e.target.value)}
-                        className="ml-2 px-2 py-1 w-20 bg-gray-800 text-white rounded border border-gray-600"
-                      />
-
-                      <p className="text-sm mt-1 text-purple-300">
-                        ₹{item.basePrice} / hour
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={() => removeItem(idx)}
-                      disabled={
-                        processing || loading || upgradeInProgress || isLaunching
-                      }
-                      className="text-purple-600 font-semibold mt-2 hover:underline disabled:opacity-50"
-                    >
-                      Remove
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => removeItem(idx)}
+                    className="mt-4 text-purple-400 hover:underline"
+                  >
+                    Remove
+                  </button>
                 </div>
 
-                <div className="text-2xl font-bold">₹{item.price}</div>
+                <div className="text-2xl font-bold">
+                  ₹{item.price}
+                </div>
               </div>
             ))}
-
-            {!cartItems.length && (
-              <p className="text-gray-500 text-xl">Your cart is empty.</p>
-            )}
           </div>
 
-          {/* RIGHT SECTION */}
-          <div className="w-full lg:w-1/3 border p-6 rounded-2xl shadow-md h-fit">
-            <h3 className="text-xl font-bold mb-5">Total:</h3>
-            <p className="text-4xl font-bold mb-5">₹{totalAmount}</p>
+          <div className="w-full lg:w-[350px] border border-gray-700 rounded-2xl p-6 bg-[#0B1228]">
+            <h3 className="text-lg font-semibold mb-4">Total:</h3>
+            <p className="text-4xl font-bold mb-6">₹{totalAmount}</p>
 
-            {/* UPGRADE BTN */}
-            <button
-              onClick={() => handleUpgrade(cartItems[0])}
-              disabled={!cartItems[0]?.subscription}
-              className={`w-full mb-4 px-4 py-3 rounded-xl font-bold text-white ${
-                cartItems[0]?.subscription
-                  ? "bg-gradient-to-r from-purple-600 to-blue-500 hover:scale-105"
-                  : "bg-gray-700 opacity-60 cursor-not-allowed"
-              }`}
-            >
-              Upgrade
-            </button>
-
-            {/* CHECKOUT BTN */}
             <button
               onClick={handleCheckout}
-              disabled={cartItems[0]?.subscription}
-              className={`w-full px-4 py-3 rounded-xl font-bold text-white ${
-                !cartItems[0]?.subscription
-                  ? "bg-gradient-to-r from-pink-500 to-purple-600 hover:scale-105"
-                  : "bg-gray-700 opacity-60 cursor-not-allowed"
-              }`}
+              className="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-pink-500 to-purple-600 hover:scale-105 transition"
             >
-              Checkout
+              {subscriptionActive ? "View Subscription" : "Activate Plan"}
             </button>
           </div>
         </div>

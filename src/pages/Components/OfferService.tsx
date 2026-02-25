@@ -111,20 +111,20 @@ const categories = [
       </svg>
     )
   },
-  {
-    name: "Python",
-    color: "rgba(255, 159, 28, 0.15)",
-    iconColor: "#FF9F1C",
-    icon: (
-      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M3 3v18h18M7 16l4-4 3 3 5-7"/>
-        <circle cx="7" cy="16" r="1.5" fill="currentColor"/>
-        <circle cx="11" cy="12" r="1.5" fill="currentColor"/>
-        <circle cx="14" cy="15" r="1.5" fill="currentColor"/>
-        <circle cx="19" cy="8" r="1.5" fill="currentColor"/>
-      </svg>
-    )
-  },
+  // {
+  //   name: "Python",
+  //   color: "rgba(255, 159, 28, 0.15)",
+  //   iconColor: "#FF9F1C",
+  //   icon: (
+  //     <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2">
+  //       <path d="M3 3v18h18M7 16l4-4 3 3 5-7"/>
+  //       <circle cx="7" cy="16" r="1.5" fill="currentColor"/>
+  //       <circle cx="11" cy="12" r="1.5" fill="currentColor"/>
+  //       <circle cx="14" cy="15" r="1.5" fill="currentColor"/>
+  //       <circle cx="19" cy="8" r="1.5" fill="currentColor"/>
+  //     </svg>
+  //   )
+  // },
 ];
 
 const fadeUp = {

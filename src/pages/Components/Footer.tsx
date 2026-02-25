@@ -121,9 +121,14 @@ const Footer = () => {
                 Blog
               </a>
             </li>
-             <li>
+             {/* <li>
               <a href="/assets/pdf/Red Hat Linux Cluster_Glossary.pdf" target="_blank" className="hover:text-white">
                 Document
+              </a>
+            </li> */}
+             <li>
+              <a href="contact-us" className="hover:text-white">
+                Contact Us
               </a>
             </li>
           </ul>

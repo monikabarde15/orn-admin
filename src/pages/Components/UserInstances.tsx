@@ -77,7 +77,7 @@ export default function LabPricing() {
   /* ================= INSTANCE ACTIONS ================= */
   const rebootInstance = async (instanceId) => {
     try {
-      await api.post(`/api/v1/users/reboot/${instanceId}/`);
+      await api.post(`/api/v1/lab/reboot/${instanceId}/`);
       notify("Reboot started", "success");
     } catch {
       notify("Reboot failed", "error");
@@ -86,7 +86,7 @@ export default function LabPricing() {
 
   const destroyInstance = async (inst) => {
     try {
-      await api.post("/api/v1/users/deploy-free/destroy/", {
+      await api.post("/api/v1/lab/deploy-free/destroy/", {
         user_id: userId,
         user_instance_id: inst.user_instance_id,
       });

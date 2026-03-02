@@ -283,7 +283,7 @@ const CourseEnrollment: React.FC = () => {
 
       // 🚀 Deploy
       await api.post(
-        `api/v1/users/deploy/${action}/`,
+        `api/v1/lab/deploy/${action}/`,
         {
           user_id: userId,
           payment_id: subscription.subscription_id,

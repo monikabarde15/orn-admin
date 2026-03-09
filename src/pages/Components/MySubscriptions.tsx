@@ -28,7 +28,7 @@ export default function MySubscriptions() {
 
   const token = localStorage.getItem("access_token");
   const userId = localStorage.getItem("userId");
-
+const [SubscriptionLocal, setSubscriptionLocal] = useState<any>(null);
   /* -------------------- STATE -------------------- */
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [wallet, setWallet] = useState<number>(0);
@@ -164,14 +164,41 @@ export default function MySubscriptions() {
   };
 
   /* -------------------- CONTINUE -------------------- */
-  const handleContinue = (plan: any) => {
-    if (!isActive(plan)) {
-      setPopupPlan(plan);
-      setShowPopup(true);
-      return;
+  // const handleContinue = (plan: any) => {
+  //   console.log('plan=',plan);
+  //   if (!isActive(plan)) {
+  //     setPopupPlan(plan);
+  //     setShowPopup(true);
+  //     return;
+  //   }
+  // //  navigate(`/course-preview/${plan.course_id}/${plan.package_id}`);
+  // };
+  useEffect(() => {
+    const savedPlan = localStorage.getItem("subscriptionLocal");
+  
+    if (savedPlan) {
+      const parsedPlan = JSON.parse(savedPlan);
+      setSubscriptionLocal(parsedPlan);
     }
-    navigate(`/course-preview/${plan.course_id}`);
-  };
+  }, []);
+const handleContinue = (plan: any) => {
+  const existingPlan = JSON.parse(localStorage.getItem("subscriptionLocal") || "{}");
+
+  // 👉 agar package change hua tabhi replace karo
+  if (existingPlan.package_id !== plan.package_id) {
+    localStorage.removeItem("subscriptionLocal");
+    localStorage.setItem("subscriptionLocal", JSON.stringify(plan));
+    setSubscriptionLocal(plan);
+  }
+
+  if (!isActive(plan)) {
+    setPopupPlan(plan);
+    setShowPopup(true);
+    return;
+  }
+
+  navigate(`/course-preview/${plan.course_id}/${plan.package_id}`);
+};
 
   /* -------------------- UI -------------------- */
   return (

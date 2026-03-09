@@ -18,7 +18,7 @@ export default function LabPricing() {
   /* ================= AUTH (NO COOKIES) ================= */
   const token = localStorage.getItem("access_token");
   const userId = localStorage.getItem("userId");
-
+const [SubscriptionLocal, setSubscriptionLocal] = useState<any>(null);
   /* ================= STATE ================= */
   const [subscriptions, setSubscriptions] = useState([]);
   const [instances, setInstances] = useState([]);
@@ -83,10 +83,17 @@ export default function LabPricing() {
       notify("Reboot failed", "error");
     }
   };
+useEffect(() => {
+  const savedPlan = localStorage.getItem("subscriptionLocal");
 
+  if (savedPlan) {
+    const parsedPlan = JSON.parse(savedPlan);
+    setSubscriptionLocal(parsedPlan);
+  }
+}, []);
   const destroyInstance = async (inst) => {
     try {
-      await api.post("/api/v1/lab/deploy-free/destroy/", {
+      await api.post(`/api/v1/lab/deploy/destroy/${packageId}/`, {
         user_id: userId,
         user_instance_id: inst.user_instance_id,
       });
@@ -119,7 +126,12 @@ export default function LabPricing() {
     (page - 1) * ITEMS_PER_PAGE,
     page * ITEMS_PER_PAGE
   );
+console.log("Current Plan =", SubscriptionLocal);
+const plan = JSON.parse(localStorage.getItem("subscriptionLocal") || "{}");
 
+const packageId = plan.package_id;
+
+console.log("packageId",packageId);
   /* ================= UI ================= */
   return (
     <>

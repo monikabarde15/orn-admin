@@ -92,6 +92,9 @@ interface Subscription {
 
 const CourseEnrollment: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { slug } = useParams();
+
+  console.log(slug);
 
   const [course, setCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
@@ -260,6 +263,7 @@ const CourseEnrollment: React.FC = () => {
   /* ================= LAUNCH LAB ================= */
 
   const launchLab = async () => {
+    console.log('subscription=',subscription);
     if (!subscription) {
       alert("No active subscription");
       return;
@@ -283,7 +287,7 @@ const CourseEnrollment: React.FC = () => {
 
       // 🚀 Deploy
       await api.post(
-        `api/v1/lab/deploy/${action}/`,
+        `api/v1/lab/deploy/${action}/${slug}/`,
         {
           user_id: userId,
           payment_id: subscription.subscription_id,

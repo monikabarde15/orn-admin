@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
 import { toast, ToastContainer } from "react-toastify";
+import { Check } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
 import api from "../../services/api";
 
@@ -31,13 +32,15 @@ const CartPage = () => {
     return true;
   };
 
-  // Load cart
+  /* ================= LOAD CART ================= */
+
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("orl_cart") || "[]");
     setCartItems(stored);
   }, []);
 
-  // Loader Timer
+  /* ================= LOADER TIMER ================= */
+
   useEffect(() => {
     if (loading) {
       loaderRef.current = setInterval(
@@ -48,6 +51,7 @@ const CartPage = () => {
       clearInterval(loaderRef.current);
       setLoaderSeconds(0);
     }
+
     return () => clearInterval(loaderRef.current);
   }, [loading]);
 
@@ -56,11 +60,12 @@ const CartPage = () => {
     0
   );
 
-  // 🔎 Check active subscription
+  /* ================= CHECK ACTIVE SUBSCRIPTION ================= */
+
   const checkActiveSubscription = async (planId) => {
     try {
-      const res = await api.get( 
-      `api/v1/users/subscriptions`,
+      const res = await api.get(
+        `/api/v1/users/subscriptions`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -71,6 +76,7 @@ const CartPage = () => {
       );
 
       setSubscriptionActive(isActive);
+
       return isActive;
 
     } catch {
@@ -78,17 +84,18 @@ const CartPage = () => {
     }
   };
 
-  // Auto check on load
   useEffect(() => {
     if (cartItems.length) {
       checkActiveSubscription(cartItems[0].planId);
     }
   }, [cartItems]);
 
-  // 🗑 Remove
+  /* ================= REMOVE ITEM ================= */
+
   const removeItem = (index) => {
     const updated = [...cartItems];
     updated.splice(index, 1);
+
     setCartItems(updated);
     localStorage.setItem("orl_cart", JSON.stringify(updated));
 
@@ -97,21 +104,40 @@ const CartPage = () => {
     if (updated.length === 0) navigate("/");
   };
 
-  // 💳 Razorpay
+  /* ================= RAZORPAY ================= */
+
+  const loadRazorpay = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) return resolve(true);
+
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+
+      document.body.appendChild(script);
+    });
+  };
+
   const openRazorpay = async (amount, planId) => {
+
     const alreadyActive = await checkActiveSubscription(planId);
+
     if (alreadyActive) {
       notify("Subscription already active.", "info");
       navigate("/my-subscrption");
       return;
     }
 
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    document.body.appendChild(script);
+    const loaded = await loadRazorpay();
+
+    if (!loaded) {
+      notify("Razorpay failed to load", "error");
+      return;
+    }
 
     const orderRes = await api.post(
-      `api/v1/users/create-order/`,
+      `/api/v1/users/create-order/`,
       { amount },
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -127,8 +153,9 @@ const CartPage = () => {
       order_id: order.order_id,
 
       handler: async function (response) {
+
         const verify = await api.post(
-          `api/v1/users/verify-payment/`,
+          `/api/v1/users/verify-payment/`,
           {
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_order_id: response.razorpay_order_id,
@@ -154,82 +181,87 @@ const CartPage = () => {
     new window.Razorpay(options).open();
   };
 
-  // 🔒 Create Subscription
+  /* ================= CREATE SUBSCRIPTION ================= */
+
   const createSubscription = async (planId, price) => {
-  try {
-    const res = await api.post(
-      `api/v1/users/subscriptions/create/${planId}/`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    try {
 
-    return res.data;
+      const res = await api.post(
+        `/api/v1/users/subscriptions/create/${planId}/`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-  } catch (err) {
-    const data = err?.response?.data;
-    console.log('data=',data);
+      return res.data;
 
-    // 🚫 If backend says already exists
-    if (
-      data?.error?.toLowerCase().includes("already")
-    ) {
-      notify("Subscription already active.", "info");
-      navigate("/my-subscrption");
+    } catch (err) {
+
+      const data = err?.response?.data;
+
+      if (data?.error?.toLowerCase().includes("already")) {
+        notify("Subscription already active.", "info");
+        navigate("/my-subscrption");
+        return null;
+      }
+
+      if (data?.error === "Insufficient wallet balance") {
+
+        const remaining =
+          (data.required || price) - (data.balance || 0);
+
+        await openRazorpay(remaining, planId);
+
+        return null;
+      }
+
+      notify(data?.error || "Subscription failed", "error");
+
       return null;
     }
+  };
 
-    // 💳 Only open Razorpay if wallet insufficient
-    if (data?.error === "Insufficient wallet balance") {
-      const remaining =
-        (data.required || price) - (data.balance || 0);
+  /* ================= CHECKOUT ================= */
 
-      await openRazorpay(remaining, planId);
-      return null;
-    }
+  const handleCheckout = async () => {
 
-    notify(data?.error || "Subscription failed", "error");
-    return null;
-  }
-};
+    if (!requireLogin()) return;
 
+    if (!cartItems.length)
+      return notify("Cart empty", "info");
 
+    const item = cartItems[0];
 
-  // 🔥 Checkout
-const handleCheckout = async () => {
-  if (!requireLogin()) return;
-  if (!cartItems.length) return notify("Cart empty", "info");
+    setLoading(true);
 
-  const item = cartItems[0];
+    try {
 
-  setLoading(true);
+      const alreadyActive = await checkActiveSubscription(item.planId);
 
-  try {
-    const alreadyActive = await checkActiveSubscription(item.planId);
+      if (alreadyActive) {
+        notify("Plan already active.", "info");
+        navigate("/my-subscrption");
+        return;
+      }
 
-    if (alreadyActive) {
-      notify("Plan already active.", "info");
+      const sub = await createSubscription(item.planId, item.price);
+
+      if (!sub) return;
+
+      notify("Subscription activated successfully!", "success");
+
+      localStorage.removeItem("orl_cart");
+      setCartItems([]);
+
       navigate("/my-subscrption");
-      return;
+
+    } catch {
+      notify("Checkout failed", "error");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const sub = await createSubscription(item.planId, item.price);
-
-    if (!sub) return;
-
-    notify("Subscription activated successfully!", "success");
-
-    localStorage.removeItem("orl_cart");
-    setCartItems([]);
-
-    navigate("/my-subscrption");
-
-  } catch (err) {
-    notify("Checkout failed", "error");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  /* ================= UI ================= */
 
   return (
     <>
@@ -246,57 +278,117 @@ const handleCheckout = async () => {
       )}
 
       <div className="min-h-screen bg-[#050B1E] text-white px-8 py-10">
+
         <h1 className="text-4xl font-semibold mb-10">
           Booking Details
         </h1>
 
-        <div className="flex flex-col lg:flex-row gap-10">
-          <div className="flex-1 border border-gray-700 rounded-2xl p-6 bg-[#0B1228]">
-            {cartItems.map((item, idx) => (
-              <div key={idx} className="flex gap-6">
-                <div className="w-32 h-24 bg-gray-300 rounded-xl"></div>
+        {!cartItems.length ? (
 
-                <div className="flex-1">
-                  <h2 className="text-2xl font-semibold flex items-center gap-3">
-                    {item.name}
-                    {subscriptionActive && (
-                      <span className="text-xs bg-green-600 px-2 py-1 rounded">
-                        Active
-                      </span>
-                    )}
-                  </h2>
-
-                  <p className="text-gray-400 mt-2 text-sm">
-                    {item.newdescription}
-                  </p>
-
-                  <button
-                    onClick={() => removeItem(idx)}
-                    className="mt-4 text-purple-400 hover:underline"
-                  >
-                    Remove
-                  </button>
-                </div>
-
-                <div className="text-2xl font-bold">
-                  ₹{item.price}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="w-full lg:w-[350px] border border-gray-700 rounded-2xl p-6 bg-[#0B1228]">
-            <h3 className="text-lg font-semibold mb-4">Total:</h3>
-            <p className="text-4xl font-bold mb-6">₹{totalAmount}</p>
+          <div className="text-center py-40">
+            <p className="text-gray-400 mb-6">
+              Your cart is empty
+            </p>
 
             <button
-              onClick={handleCheckout}
-              className="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-pink-500 to-purple-600 hover:scale-105 transition"
+              onClick={() => navigate("/")}
+              className="px-6 py-3 rounded-lg bg-purple-600"
             >
-              {subscriptionActive ? "View Subscription" : "Activate Plan"}
+              Browse Labs
             </button>
           </div>
-        </div>
+
+        ) : (
+
+          <div className="flex flex-col lg:flex-row gap-10">
+
+            {/* CART ITEMS */}
+
+            <div className="flex-1 border border-gray-700 rounded-2xl p-6 bg-[#0B1228]">
+
+              {cartItems.map((item, idx) => (
+
+                <div key={idx} className="flex gap-6 mb-6">
+
+                  <div className="w-32 h-24 bg-gray-300 rounded-xl"></div>
+
+                  <div className="flex-1">
+
+                    <h2 className="text-2xl font-semibold flex items-center gap-3">
+
+                      {item.name}
+
+                      {subscriptionActive && (
+                        <span className="text-xs bg-green-600 px-2 py-1 rounded">
+                          Active
+                        </span>
+                      )}
+
+                    </h2>
+
+                    <p className="text-gray-400 mb-4">
+                      {item.description}
+                    </p>
+
+                    <ul className="space-y-2">
+
+                      {item.features?.map((f, i) => (
+                        <li key={i} className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-green-400" />
+                          {f}
+                        </li>
+                      ))}
+
+                    </ul>
+
+                    <button
+                      onClick={() => removeItem(idx)}
+                      className="mt-4 text-purple-400 hover:underline"
+                    >
+                      Remove
+                    </button>
+
+                  </div>
+
+                  <div className="text-2xl font-bold">
+                    ₹{item.price}
+                  </div>
+
+                </div>
+
+              ))}
+
+            </div>
+
+            {/* SUMMARY */}
+
+            <div className="w-full lg:w-[350px] border border-gray-700 rounded-2xl p-6 bg-[#0B1228]">
+
+              <h3 className="text-lg font-semibold mb-4">
+                Total:
+              </h3>
+
+              <p className="text-4xl font-bold mb-6">
+                ₹{totalAmount}
+              </p>
+
+              <button
+                onClick={handleCheckout}
+                className="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-pink-500 to-purple-600 hover:scale-105 transition"
+              >
+
+                {subscriptionActive
+                  ? "View Subscription"
+                  : "Activate Plan"}
+
+              </button>
+
+            </div>
+
+          </div>
+
+        )}
+
       </div>
 
       <Footer />

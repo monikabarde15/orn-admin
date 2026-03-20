@@ -19,7 +19,7 @@ export default function BlogList() {
     return Array.isArray(res.data) ? res.data : res.data.results || [];
   };
 
-  const { data: allBlogs = [], isLoading } = useQuery({
+  const { data: allBlogs = [], isLoading, isFetching } = useQuery({
     queryKey: ["blogs"],
     queryFn: fetchBlogs
   });
@@ -53,12 +53,13 @@ export default function BlogList() {
             </span>
           </h1>
 
-          {isLoading ? (
+          {(isLoading || isFetching) ? (
 
-            <div className="grid grid-cols-3 gap-8">
-              {[1,2,3,4,5,6].map(i=>(
-                <div key={i} className="h-[250px] bg-[#1a1224] rounded-xl animate-pulse"/>
-              ))}
+            /* 🔵 Circular Loader */
+            <div className="flex justify-center items-center h-[300px]">
+
+              <div className="w-14 h-14 border-4 border-[#7b4dff] border-t-transparent rounded-full animate-spin"></div>
+
             </div>
 
           ) : (

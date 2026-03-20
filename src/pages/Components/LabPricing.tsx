@@ -28,17 +28,23 @@ const LabPricing = () => {
     }
   });
 
+  /* ================= PAGINATION ================= */
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+
   /* ================= FETCH PACKAGES ================= */
 
   useEffect(() => {
     const fetchPackages = async () => {
       try {
+        setLoading(true);
+
         const cached = localStorage.getItem("orl_packages");
 
         if (cached) {
           const parsed = JSON.parse(cached);
           setAllPackages(parsed);
-          setLoading(false);
         }
 
         const res = await api.get("/api/v1/packages/");
@@ -47,9 +53,9 @@ const LabPricing = () => {
         setAllPackages(data);
         localStorage.setItem("orl_packages", JSON.stringify(data));
 
-        setLoading(false);
       } catch (err) {
         console.error("Package fetch error:", err);
+      } finally {
         setLoading(false);
       }
     };
@@ -89,6 +95,15 @@ const LabPricing = () => {
     return [...map.values()];
   }, [billingType, allPackages]);
 
+  /* ================= PAGINATION LOGIC ================= */
+
+  const totalPages = Math.ceil(labs.length / itemsPerPage);
+
+  const paginatedLabs = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return labs.slice(start, start + itemsPerPage);
+  }, [labs, currentPage]);
+
   /* ================= FETCH USER INSTANCES ================= */
 
   useEffect(() => {
@@ -112,31 +127,31 @@ const LabPricing = () => {
   /* ================= ADD TO CART ================= */
 
   const addToCart = (lab) => {
-  const saved = JSON.parse(localStorage.getItem("orl_cart") || "[]");
+    const saved = JSON.parse(localStorage.getItem("orl_cart") || "[]");
 
-  if (saved.length > 0) {
-    notify("You can select only one plan at a time", "info");
-    return;
-  }
+    if (saved.length > 0) {
+      notify("You can select only one plan at a time", "info");
+      return;
+    }
 
-  const item = {
-    name: lab.name,
-    description: lab.description,
-    features: lab.features,
-    price: lab.price || 0,
-    billingType: billingType,
-    planId: lab.planId
+    const item = {
+      name: lab.name,
+      description: lab.description,
+      features: lab.features,
+      price: lab.price || 0,
+      billingType: billingType,
+      planId: lab.planId,
+    };
+
+    const updated = [item];
+
+    localStorage.setItem("orl_cart", JSON.stringify(updated));
+    setCartItems(updated);
+
+    notify("Added to cart", "success");
+
+    setTimeout(() => navigate("/cart"), 600);
   };
-
-  const updated = [item];
-
-  localStorage.setItem("orl_cart", JSON.stringify(updated));
-  setCartItems(updated);
-
-  notify("Added to cart", "success");
-
-  setTimeout(() => navigate("/cart"), 600);
-};
 
   const handlePlanClick = (lab) => {
     if (!token) {
@@ -175,11 +190,14 @@ const LabPricing = () => {
               { key: "free", label: "Free" },
               { key: "monthly", label: "Monthly" },
               { key: "yearly", label: "Yearly" },
-              { key: "hourly", label: "Pay as you go" },
+              { key: "hourly", label: "Pay per lab" },
             ].map((type) => (
               <button
                 key={type.key}
-                onClick={() => setBillingType(type.key)}
+                onClick={() => {
+                  setBillingType(type.key);
+                  setCurrentPage(1);
+                }}
                 className={`px-6 py-2 rounded-lg text-sm font-semibold transition ${
                   billingType === type.key
                     ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white"
@@ -193,24 +211,28 @@ const LabPricing = () => {
           </div>
         </div>
 
-        {/* LAB CARDS */}
+        {/* LOADER */}
 
         {loading ? (
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[1,2,3].map((i) => (
-              <div
-                key={i}
-                className="h-80 rounded-2xl bg-white/5 animate-pulse"
-              />
-            ))}
+          <div className="flex items-center justify-center min-h-[400px]">
+
+            <div className="relative">
+
+              <div className="absolute inset-0 blur-xl bg-gradient-to-r from-purple-500 to-blue-500 opacity-40 rounded-full"></div>
+
+              <div className="w-16 h-16 border-4 border-purple-500 border-t-blue-400 rounded-full animate-spin"></div>
+
+            </div>
+
           </div>
 
         ) : (
 
+          <>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
 
-            {labs.map((lab, idx) => (
+            {paginatedLabs.map((lab, idx) => (
 
               <div
                 key={idx}
@@ -263,6 +285,47 @@ const LabPricing = () => {
 
           </div>
 
+          {/* PAGINATION */}
+
+          {totalPages > 1 && (
+
+            <div className="flex justify-center mt-16 gap-2 flex-wrap">
+
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 disabled:opacity-40"
+              >
+                Prev
+              </button>
+
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`px-4 py-2 rounded-lg font-semibold ${
+                    currentPage === i + 1
+                      ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white"
+                      : "bg-white/5 border border-white/10 text-gray-400"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 disabled:opacity-40"
+              >
+                Next
+              </button>
+
+            </div>
+
+          )}
+
+          </>
         )}
 
       </div>

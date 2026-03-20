@@ -17,12 +17,31 @@ export default function BlogDetail() {
     return res.data;
   };
 
-  const { data: blog, isLoading } = useQuery({
+  const { data: blog, isLoading, isFetching } = useQuery({
     queryKey: ["blog", id],
     queryFn: fetchBlog
   });
 
-  if(isLoading) return null;
+  if (isLoading || isFetching) {
+    return (
+      <>
+        <Navbar />
+
+        <div className="min-h-screen bg-[#0b0718] text-white py-20 px-5 md:px-20">
+
+          <div className="flex justify-center items-center h-[300px]">
+
+            {/* SAME BLOG LIST LOADER */}
+            <div className="w-14 h-14 border-4 border-[#7b4dff] border-t-transparent rounded-full animate-spin"></div>
+
+          </div>
+
+        </div>
+
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>

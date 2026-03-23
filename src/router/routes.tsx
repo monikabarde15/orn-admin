@@ -330,14 +330,14 @@ const routes = [
         element: <RefoundPolicy />,
         layout:'web',
     },
-     {
-        path: '/posts',
-        element: <BlogListNew />,
-        layout:'web',
-    },
+    //  {
+    //     path: '/posts',
+    //     element: <BlogListNew />,
+    //     layout:'web',
+    // },
     {
         path: '/blogs',
-        element: <BlogList />,
+        element: <BlogListNew />,
         layout:'web',
     },
      {
@@ -347,7 +347,7 @@ const routes = [
     },
     {
         path: '/blog-detail/:id',
-        element: <BlogDetail />,
+        element: <BlogDetailNew />,
         layout:'web',
     },
      {

@@ -268,9 +268,9 @@ const ContactUs = () => {
 
           <div className="ready-card">
             <h3 className="ready-card-title">Signup</h3>
-            <p className="ready-card-text">
+            {/* <p className="ready-card-text">
               Join 250+ companies already growing with PrismDigital.
-            </p>
+            </p> */}
             <a href="/register">
               <button className="ready-card-btn">
                 Schedule a Free Consultation

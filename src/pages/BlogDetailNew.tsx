@@ -120,7 +120,7 @@ console.log(allBlogs.length,allBlogs,'latestBlogs=',latestBlogs);
           <div className="bg-[#110717] p-5 rounded-2xl border border-[#2b2136]">
 
             <h3 className="text-xl font-semibold mb-6 border-b border-[#2b2136] pb-3">
-              Latest posts
+              Latest Blogs
             </h3>
 
             <div className="flex flex-col gap-5">

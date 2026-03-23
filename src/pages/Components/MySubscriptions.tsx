@@ -112,7 +112,39 @@ export default function MySubscriptions() {
       setSubscriptionLocal(parsedPlan);
     }
   }, []);
+const handleUpgrade = async () => {
+  try {
+    setProcessing(true);
 
+    const token = localStorage.getItem("access_token");
+
+    const res = await api.post(
+      `/api/v1/users/subscriptions/${popupPlan.subscription_id}/upgrade/`,
+      {
+        new_package_id: popupPlan.package_id, // ya selected upgrade plan id
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    notify("Plan upgraded successfully", "success");
+
+    setShowPopup(false);
+
+    // refresh data
+    await fetchSubscriptions();
+    await fetchWallet();
+
+  } catch (error: any) {
+    console.log(error);
+    notify(error?.response?.data?.message || "Upgrade failed", "error");
+  } finally {
+    setProcessing(false);
+  }
+};
   const handleContinue = (plan: any) => {
     const existingPlan = JSON.parse(localStorage.getItem("subscriptionLocal") || "{}");
 
@@ -249,13 +281,14 @@ export default function MySubscriptions() {
               >
                 Skip
               </button>
-
-              <button
-                disabled={processing}
-                className="px-5 h-10 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white"
-              >
-                Upgrade Now
-              </button>
+            <button
+              onClick={handleUpgrade}
+              disabled={processing}
+              className="px-5 h-10 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white"
+            >
+              {processing ? "Processing..." : "Upgrade Now"}
+            </button>
+              
 
             </div>
 

@@ -20,6 +20,7 @@ interface Instance {
 /* ================= HELPERS ================= */
 
 const extractPackageFromName = (name?: string): string => {
+  console.log('name=',name);
   if (!name) return "linux";
   const lower = name.toLowerCase();
 

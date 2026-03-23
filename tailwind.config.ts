@@ -109,6 +109,7 @@ const config: Config = {
   },
   plugins: [
     forms({ strategy: "class" }),
+	require('@tailwindcss/typography'),
     typography,
     rotateX,
   ],

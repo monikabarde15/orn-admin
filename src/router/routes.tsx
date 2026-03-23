@@ -157,6 +157,9 @@ const ContactPage = lazy(() => import('../pages/Components/ContactPage'));
 const TermsCondition = lazy(() => import('../pages/Components/TermsCondition'));
 const RefoundPolicy = lazy(() => import('../pages/Components/RefoundPolicy'));
 const BlogList = lazy(() => import('../pages/BlogList'));
+const BlogListNew = lazy(() => import('../pages/BlogListNew'));
+const BlogDetailNew = lazy(() => import('../pages/BlogDetailNew'));
+
 const BlogDetail = lazy(() => import('../pages/BlogDetail'));
 const PageOfferService = lazy(() => import('../pages/Components/PageOfferService'));
 const LabDashboard = lazy(() => import('../pages/Components/LabDashboard'));
@@ -327,6 +330,11 @@ const routes = [
         element: <RefoundPolicy />,
         layout:'web',
     },
+     {
+        path: '/posts',
+        element: <BlogListNew />,
+        layout:'web',
+    },
     {
         path: '/blogs',
         element: <BlogList />,
@@ -340,6 +348,11 @@ const routes = [
     {
         path: '/blog-detail/:id',
         element: <BlogDetail />,
+        layout:'web',
+    },
+     {
+        path: '/blog-detail-post/:id',
+        element: <BlogDetailNew />,
         layout:'web',
     },
     {

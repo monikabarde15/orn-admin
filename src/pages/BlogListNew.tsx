@@ -96,7 +96,7 @@ export default function BlogListNew() {
                 </p>
 
                 <Link
-                  to={`/blog-detail-post/${featuredBlog.slug}`}
+                  to={`/blog-detail/${featuredBlog.slug}`}
                   className="inline-block bg-gradient-to-r from-[#7b4dff] to-[#3cb3ff] px-6 py-3 rounded-full text-black font-semibold w-fit"
                 >
                   Read More →
@@ -116,7 +116,7 @@ export default function BlogListNew() {
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
 
                 {blogsToShow.map((b) => (
-                  <Link key={b.slug} to={`/blog-detail-post/${b.slug}`}>
+                  <Link key={b.slug} to={`/blog-detail/${b.slug}`}>
                     <motion.div
                       whileHover={{ scale: 1.05 }}
                       className="bg-[#110717] rounded-2xl overflow-hidden border border-[#2b2136]"

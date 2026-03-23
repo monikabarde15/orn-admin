@@ -333,27 +333,27 @@ const routes = [
     },
     {
         path: '/blogs',
-        element: <BlogList />,
-        layout:'web',
-    },
-      {
-        path: '/posts',
         element: <BlogListNew />,
         layout:'web',
     },
+    //   {
+    //     path: '/posts',
+    //     element: <BlogListNew />,
+    //     layout:'web',
+    // },
      {
         path: '/lab',
         element: <LabDashboard />,
         layout:'web',
     },
-    {
-        path: '/blog-detail-post/:id',
-        element: <BlogDetailNew />,
-        layout:'web',
-    },
+    // {
+    //     path: '/blog-detail-post/:id',
+    //     element: <BlogDetailNew />,
+    //     layout:'web',
+    // },
     {
         path: '/blog-detail/:id',
-        element: <BlogDetail />,
+        element: <BlogDetailNew />,
         layout:'web',
     },
     {

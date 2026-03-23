@@ -106,10 +106,10 @@ console.log(allBlogs.length,allBlogs,'latestBlogs=',latestBlogs);
             {/* BACK BUTTON */}
             <div className="mt-8">
               <Link
-                to="/posts"
+                to="/blogs"
                 className="px-6 py-3 rounded-full bg-gradient-to-r from-[#7c4dff] to-[#3f95ff] text-black"
               >
-                ← Back to posts
+                ← Back to Blogs
               </Link>
             </div>
           </motion.div>
@@ -120,7 +120,7 @@ console.log(allBlogs.length,allBlogs,'latestBlogs=',latestBlogs);
           <div className="bg-[#110717] p-5 rounded-2xl border border-[#2b2136]">
 
             <h3 className="text-xl font-semibold mb-6 border-b border-[#2b2136] pb-3">
-              Latest posts
+              Latest Blogs
             </h3>
 
             <div className="flex flex-col gap-5">
@@ -132,7 +132,7 @@ console.log(allBlogs.length,allBlogs,'latestBlogs=',latestBlogs);
                 latestBlogs.map((b) => (
                   <Link
                     key={b.id}
-                    to={`/blog-detail-post/${b.slug}`}
+                    to={`/blog-detail/${b.slug}`}
                     className="flex gap-4 group"
                   >
                     <img
@@ -156,10 +156,10 @@ console.log(allBlogs.length,allBlogs,'latestBlogs=',latestBlogs);
 
           {/* 🔥 VIEW ALL BUTTON */}
           <Link
-            to="/posts"
+            to="/blogs"
             className="block mt-6 text-center py-3 rounded-xl bg-gradient-to-r from-[#7c4dff] to-[#3f95ff] text-black font-semibold"
           >
-            View All posts →
+            View All Blogs →
           </Link>
 
         </div>

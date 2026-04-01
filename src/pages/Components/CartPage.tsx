@@ -63,31 +63,43 @@ const CartPage = () => {
 
   /* ================= CHECK ACTIVE SUB ================= */
 
-  const checkActiveSubscription = async (planId, price) => {
-    try {
-      const res = await api.get(`/api/v1/users/subscriptions`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+ const checkActiveSubscription = async (planId, billingCycle) => {
+  try {
+    const res = await api.get(`/api/v1/users/subscriptions`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      const isActive = (res.data || []).some(
-        (sub) =>
-          sub.plan_id === planId &&
-          sub.active === true &&
-          Number(sub.price) === Number(price)
-      );
+    const subs = res.data || [];
 
-      setSubscriptionActive(isActive);
-      return isActive;
+    const matchedSubs = subs.filter(
+      (sub) =>
+        sub.package_id === planId ||
+        sub.billing_cycle === billingCycle
+    );
 
-    } catch {
+    if (!matchedSubs.length) {
+      setSubscriptionActive(false);
       return false;
     }
-  };
 
+    // latest subscription nikalo
+    const latestSub = matchedSubs.sort(
+      (a, b) => new Date(b.expires_at) - new Date(a.expires_at)
+    )[0];
+
+    const isActive = new Date(latestSub.expires_at) > new Date();
+
+    setSubscriptionActive(isActive);
+    return isActive;
+
+  } catch {
+    return false;
+  }
+};
   useEffect(() => {
     if (cartItems.length) {
       const item = cartItems[0];
-      checkActiveSubscription(item.planId, item.price);
+      checkActiveSubscription(item.planId,item.billing_cycle);
     }
   }, [cartItems]);
 
@@ -221,22 +233,32 @@ const CartPage = () => {
   };
 
   /* ================= CHECKOUT ================= */
+const getUniqueCart = (items) => {
+  const map = new Map();
 
-  const handleCheckout = async () => {
-    if (!requireLogin()) return;
+  items.forEach((item) => {
+    if (!map.has(item.planId)) {
+      map.set(item.planId, item);
+    }
+  });
 
-    if (!cartItems.length)
-      return notify("Cart empty", "info");
+  return Array.from(map.values());
+};
+ const handleCheckout = async () => {
+ 
+  if (!requireLogin()) return;
 
-    const item = cartItems[0];
+  if (!cartItems.length)
+    return notify("Cart empty", "info");
 
-    setLoading(true);
+  setLoading(true);
 
-    try {
-      const alreadyActive = await checkActiveSubscription(
-        item.planId,
-        item.price
-      );
+  try {
+    // ✅ remove duplicate plans
+    const uniqueCart = getUniqueCart(cartItems);
+
+    for (const item of uniqueCart) {
+       const alreadyActive = await checkActiveSubscription(item.planId,item.billing_cycle);
 
       if (alreadyActive) {
         notify("Plan already active.", "info");
@@ -244,23 +266,25 @@ const CartPage = () => {
         return;
       }
 
+      // ✅ create subscription (payment ya wallet handle karega)
       const sub = await createSubscription(item.planId, item.price);
 
       if (!sub) return;
-
-      notify("Subscription activated successfully!", "success");
-
-      localStorage.removeItem("orl_cart");
-      setCartItems([]);
-
-      navigate("/my-subscrption");
-
-    } catch {
-      notify("Checkout failed", "error");
-    } finally {
-      setLoading(false);
     }
-  };
+
+    notify("All plans processed successfully!", "success");
+
+    localStorage.removeItem("orl_cart");
+    setCartItems([]);
+
+    navigate("/my-subscrption");
+
+  } catch {
+    notify("Checkout failed", "error");
+  } finally {
+    setLoading(false);
+  }
+};
 
   /* ================= UI ================= */
 
@@ -356,9 +380,7 @@ const CartPage = () => {
                 onClick={handleCheckout}
                 className="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-pink-500 to-purple-600 hover:scale-105 transition"
               >
-                {subscriptionActive
-                  ? "View Subscription"
-                  : "Activate Plan"}
+                {subscriptionActive ? "View Subscription" : "Activate Plan"}
               </button>
             </div>
 

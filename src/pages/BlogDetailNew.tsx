@@ -1,98 +1,103 @@
 import React from "react";
 import axios from "axios";
 import { useParams, Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "./Components/Navbar";
 import Footer from "./Components/Footer";
 
-const VIT = import.meta.env.VITE_API_URL;
+const API = "https://dev.backend.onrequestlab.com";
 
-export default function BlogDetailNew() {
+export default function BlogDetailPage() {
 
-  const { id } = useParams();
+  const { slug: paramSlug } = useParams();
 
-  // 🔥 SINGLE BLOG
-  const fetchBlog = async () => {
-    const res = await axios.get(`${VIT}/api/v1/blog/${id}/`);
-    return res.data;
-  };
+  // 🔥 fallback slug (kabhi undefined ho to bhi chale)
+  const slug =
+    paramSlug ||
+    window.location.pathname.split("/")[2];
 
-  // 🔥 ALL BLOGS (SIDEBAR)
-  const fetchBlogs = async () => {
-    const res = await axios.get(`${VIT}/api/v1/blog/`);
-    return Array.isArray(res.data) ? res.data : res.data.results || [];
-  };
+  // ================= BLOG DETAIL =================
+  const { data: blog } = useQuery({
+    queryKey: ["blog", slug],
+    queryFn: async () => {
+      const res = await axios.get(`${API}/api/v1/blog/${slug}/`);
+      return res.data.data;
+    },
+    enabled: !!slug,
+    staleTime: Infinity,
+    cacheTime: Infinity,
+    refetchOnWindowFocus: false,
 
-  const { data: blog, isLoading } = useQuery({
-    queryKey: ["blog", id],
-    queryFn: fetchBlog
+    // ⚡ instant UI
+    placeholderData: {
+      title: "Loading...",
+      description: "<p>Loading content...</p>",
+      image: null,
+      createdAt: "",
+    },
   });
 
-  const { data: allBlogs = [] } = useQuery({
+  // ================= BLOG LIST =================
+  const { data: blogs = [] } = useQuery({
     queryKey: ["blogs"],
-    queryFn: fetchBlogs
+    queryFn: async () => {
+      const res = await axios.get(`${API}/api/v1/blog/`);
+      return res.data.data || res.data;
+    },
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    placeholderData: [],
   });
 
-  // 🔥 LATEST BLOGS (exclude current)
-  const latestBlogs = allBlogs.slice(0, 5);
+  // 🔥 latest blogs (exclude current)
+  const latestBlogs = blogs
+    .filter((b) => b.slug !== slug)
+    .slice(0, 5);
 
+  // 🔥 image fix
   const getImage = (img) => {
     if (!img) return "https://via.placeholder.com/800x400";
     if (img.startsWith("http")) return img;
-    return `${VIT}${img}`;
+    return `${API}${img}`;
   };
-console.log(allBlogs.length,allBlogs,'latestBlogs=',latestBlogs);
-  // 🔥 LOADER
-  if (isLoading || !blog) {
-    return (
-      <>
-        <Navbar />
-        <div className="min-h-screen bg-[#0b0718] flex justify-center items-center">
-          <div className="w-14 h-14 border-4 border-[#7b4dff] border-t-transparent rounded-full animate-spin"></div>
-        </div>
-        <Footer />
-      </>
-    );
-  }
 
   return (
     <>
       <Navbar />
 
-      <div className="bg-[#0b0718] text-white">
+      <div className="bg-[#0b0718] text-white min-h-screen">
 
-        {/* 🔥 HERO SECTION */}
+        {/* ================= HERO ================= */}
         <div className="relative h-[300px] md:h-[400px]">
-          <img
-            src={getImage(blog.thumbnail || blog.image)}
-            className="w-full h-full object-cover"
-          />
+
+          {blog?.image ? (
+            <img
+              src={getImage(blog.image)}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-[#1a1225] animate-pulse" />
+          )}
 
           <div className="absolute inset-0 bg-black/60 flex flex-col justify-center px-6 md:px-20">
-            <p className="text-sm text-gray-300 mb-2">
-              Home / Blogs
-            </p>
 
             <h1 className="text-2xl md:text-5xl font-bold max-w-3xl">
               {blog.title}
             </h1>
 
-            <p className="text-gray-400 mt-3 text-sm">
-              {blog.created_at?.slice(0, 10)}
+            <p className="text-gray-400 mt-2 text-sm">
+              {blog.createdAt?.slice(0, 10)}
             </p>
+
           </div>
         </div>
 
-        {/* 🔥 MAIN CONTENT */}
+        {/* ================= MAIN GRID ================= */}
         <div className="max-w-7xl mx-auto px-4 py-12 grid md:grid-cols-3 gap-10">
 
-          {/* 🔥 LEFT SIDE */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="md:col-span-2"
-          >
+          {/* ================= LEFT SIDE ================= */}
+          <div className="md:col-span-2">
+
             <div className="bg-[#110717] p-6 rounded-2xl border border-[#2b2136]">
 
               <div
@@ -101,9 +106,10 @@ console.log(allBlogs.length,allBlogs,'latestBlogs=',latestBlogs);
                   __html: blog.description,
                 }}
               />
+
             </div>
 
-            {/* BACK BUTTON */}
+            {/* BACK */}
             <div className="mt-8">
               <Link
                 to="/blogs"
@@ -112,57 +118,60 @@ console.log(allBlogs.length,allBlogs,'latestBlogs=',latestBlogs);
                 ← Back to Blogs
               </Link>
             </div>
-          </motion.div>
 
-         {/* 🔥 RIGHT SIDEBAR */}
-        <div className="sticky top-24 h-fit">
-
-          <div className="bg-[#110717] p-5 rounded-2xl border border-[#2b2136]">
-
-            <h3 className="text-xl font-semibold mb-6 border-b border-[#2b2136] pb-3">
-              Latest Blogs
-            </h3>
-
-            <div className="flex flex-col gap-5">
-              {(latestBlogs || []).length === 0 ? (
-                <p className="text-gray-400">Loading blogs...</p>
-              ) : latestBlogs.length === 0 ? (
-                <p className="text-gray-400">No blogs available</p>
-              ) : (
-                latestBlogs.map((b) => (
-                  <Link
-                    key={b.id}
-                    to={`/blog-detail/${b.slug}`}
-                    className="flex gap-4 group"
-                  >
-                    <img
-                      src={getImage(b.thumbnail || b.image)}
-                      className="w-20 h-20 object-cover rounded-lg"
-                    />
-
-                    <div>
-                      <p className="text-sm font-medium line-clamp-2">
-                        {b.title}
-                      </p>
-                      <span className="text-xs text-gray-400">
-                        {b.created_at?.slice(0, 10)}
-                      </span>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
           </div>
 
-          {/* 🔥 VIEW ALL BUTTON */}
-          <Link
-            to="/blogs"
-            className="block mt-6 text-center py-3 rounded-xl bg-gradient-to-r from-[#7c4dff] to-[#3f95ff] text-black font-semibold"
-          >
-            View All Blogs →
-          </Link>
+          {/* ================= RIGHT SIDEBAR ================= */}
+          <div className="sticky top-24 h-fit">
 
-        </div>
+            <div className="bg-[#110717] p-5 rounded-2xl border border-[#2b2136]">
+
+              <h3 className="text-xl font-semibold mb-5 border-b border-[#2b2136] pb-2">
+                Latest Blogs
+              </h3>
+
+              <div className="flex flex-col gap-5">
+
+                {latestBlogs.length === 0 ? (
+                  <p className="text-gray-400">Loading...</p>
+                ) : (
+                  latestBlogs.map((b) => (
+                    <Link
+                      key={b.blogId}
+                      to={`/blog-detail/${b.slug}`}
+                      className="flex gap-4 group"
+                    >
+                      <img
+                        src={getImage(b.image)}
+                        className="w-20 h-20 rounded-lg object-cover"
+                      />
+
+                      <div>
+                        <p className="text-sm font-medium group-hover:text-[#7c4dff]">
+                          {b.title}
+                        </p>
+
+                        <span className="text-xs text-gray-400">
+                          {b.createdAt?.slice(0, 10)}
+                        </span>
+                      </div>
+                    </Link>
+                  ))
+                )}
+
+              </div>
+            </div>
+
+            {/* VIEW ALL */}
+            <Link
+              to="/blogs"
+              className="block mt-6 text-center py-3 rounded-xl bg-gradient-to-r from-[#7c4dff] to-[#3f95ff] text-black font-semibold"
+            >
+              View All Blogs →
+            </Link>
+
+          </div>
+
         </div>
       </div>
 

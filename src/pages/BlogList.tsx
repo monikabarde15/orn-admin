@@ -14,25 +14,28 @@ export default function BlogList() {
 
   const [page, setPage] = useState(1);
 
-  const fetchBlogs = async () => {
-    const res = await axios.get(`${VIT}/api/v1/blog/`);
-    return Array.isArray(res.data) ? res.data : res.data.results || [];
+  // ================= BLOG API =================
+  
+
+  // ================= COURSE API =================
+  const fetchCourses = async () => {
+    const res = await axios.get(`${VIT}/course/courses/`);
+    return res.data.results || [];
   };
 
-  const { data: allBlogs = [], isLoading, isFetching } = useQuery({
-    queryKey: ["blogs"],
-    queryFn: fetchBlogs
+  
+  const { data: courses = [] } = useQuery({
+    queryKey: ["courses"],
+    queryFn: fetchCourses,
+    staleTime: Infinity,
   });
 
-  const blogsToShow = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    return allBlogs.slice(start, start + PAGE_SIZE);
-  }, [allBlogs, page]);
+  // ================= PAGINATION =================
 
-  const totalPages = Math.ceil(allBlogs.length / PAGE_SIZE);
-
+  // ================= IMAGE =================
   const getImage = (img) => {
     if (!img) return "https://via.placeholder.com/800x400";
+    if (typeof img === "object") return `https://${img.image}`;
     if (img.startsWith("http")) return img;
     return `${VIT}${img}`;
   };
@@ -46,95 +49,52 @@ export default function BlogList() {
 
         <div className="max-w-6xl mx-auto">
 
+          {/* ================= BLOG TITLE ================= */}
           <h1 className="text-4xl md:text-5xl font-extrabold mb-10">
-            Latest Blogs &
+            Latest 
             <span className="block bg-gradient-to-r from-[#7b4dff] to-[#3cb3ff] bg-clip-text text-transparent">
-              Tutorials
+              Courses
             </span>
           </h1>
 
-          {(isLoading || isFetching) ? (
+        
+          {/* ================= COURSE SECTION ================= */}
+         
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
 
-            /* 🔵 Circular Loader */
-            <div className="flex justify-center items-center h-[300px]">
+            {courses.map((c) => (
+              <div
+                key={c.id}
+                className="bg-[#110717] p-5 rounded-2xl border border-[#2b2136]"
+              >
 
-              <div className="w-14 h-14 border-4 border-[#7b4dff] border-t-transparent rounded-full animate-spin"></div>
+                <img
+                  src={getImage(c.thumbnail)}
+                  className="h-40 w-full object-cover rounded mb-3"
+                />
 
-            </div>
+                <h3 className="font-semibold text-lg">
+                  {c.title}
+                </h3>
 
-          ) : (
+                <p className="text-sm text-gray-400">
+                  {c.category} • {c.difficulty}
+                </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <p className="text-xs text-gray-500 mt-2">
+                  Duration: {c.duration}
+                </p>
 
-              {blogsToShow.map((b) => (
-
-                <Link key={b.slug} to={`/blog-detail/${b.slug}`}>
-
-                  <motion.article
-                    whileHover={{ scale: 1.04 }}
-                    className="bg-[#110717] rounded-2xl p-5 border border-[#2b2136]"
-                  >
-
-                    <div className="h-44 overflow-hidden rounded-lg mb-4">
-
-                      <img
-                        src={getImage(b.thumbnail || b.image || b.image_path)}
-                        alt={b.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                      />
-
-                    </div>
-
-                    <h3 className="text-xl font-semibold mb-2">
-                      {b.title}
-                    </h3>
-
-                    <p className="text-sm text-gray-400 mb-4 line-clamp-3">
-                      {b.excerpt ||
-                        b.short_description ||
-                        b.description?.replace(/<[^>]+>/g,"").slice(0,120)}
-                    </p>
-
-                    <span className="text-sm bg-gradient-to-r from-[#8f5bff] to-[#5ec2ff] text-black px-4 py-2 rounded-full">
-                      Read →
-                    </span>
-
-                  </motion.article>
-
+                <Link
+                  to={`/course-preview-details/${c.id}`}
+                  className="inline-block mt-4 px-4 py-2 bg-gradient-to-r from-[#7b4dff] to-[#3cb3ff] text-black rounded-full"
+                >
+                  View Course →
                 </Link>
+              </div>
+            ))}
 
-              ))}
-
-            </div>
-
-          )}
-
-          {totalPages > 1 && (
-            <div className="mt-12 flex justify-center gap-6">
-
-              <button
-                disabled={page===1}
-                onClick={()=>setPage(page-1)}
-                className="px-4 py-2 bg-[#1b1522] rounded"
-              >
-                Prev
-              </button>
-
-              <span className="text-gray-400">
-                Page {page} / {totalPages}
-              </span>
-
-              <button
-                disabled={page===totalPages}
-                onClick={()=>setPage(page+1)}
-                className="px-4 py-2 bg-[#1b1522] rounded"
-              >
-                Next
-              </button>
-
-            </div>
-          )}
+          </div>
 
         </div>
 

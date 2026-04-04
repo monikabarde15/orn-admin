@@ -150,13 +150,14 @@ const Courses = lazy(() => import('../pages/Components/Courses'));
 const MySubscription = lazy(() => import('../pages/Components/MySubscription'));
 
 const CertificatePage = lazy(() => import('../pages/Components/CertificatePage'));
-
+const CoursePreview = lazy(() => import('../pages/Components/CoursePreview'));
+const CoursePreviewDetails = lazy(() => import('../pages/Components/CoursePreviewDetails'));
 
 const PrivacyPolicy = lazy(() => import('../pages/Components/PrivacyPolicy'));
 const ContactPage = lazy(() => import('../pages/Components/ContactPage'));
 const TermsCondition = lazy(() => import('../pages/Components/TermsCondition'));
 const RefoundPolicy = lazy(() => import('../pages/Components/RefoundPolicy'));
-const BlogList = lazy(() => import('../pages/BlogList'));
+const CourseList = lazy(() => import('../pages/BlogList'));
 const BlogListNew = lazy(() => import('../pages/BlogListNew'));
 
 const BlogDetail = lazy(() => import('../pages/BlogDetail'));
@@ -212,6 +213,16 @@ const routes = [
           {
             path: '/certificate',
             element: <CertificatePage />,
+            layout:'web',
+        },
+         {
+            path: '/course-preview-details/:id',
+            element: <CoursePreviewDetails />,
+            layout:'web',
+        },
+         {
+            path: '/course-preview/:id',
+            element: <CoursePreview />,
             layout:'web',
         },
     {
@@ -336,11 +347,11 @@ const routes = [
         element: <BlogListNew />,
         layout:'web',
     },
-    //   {
-    //     path: '/posts',
-    //     element: <BlogListNew />,
-    //     layout:'web',
-    // },
+      {
+        path: '/course-list',
+        element: <CourseList />,
+        layout:'web',
+    },
      {
         path: '/lab',
         element: <LabDashboard />,

@@ -18,16 +18,7 @@ const LabPricing = () => {
   const [allPackages, setAllPackages] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [instances, setInstances] = useState([]);
-
-  const [cartItems, setCartItems] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("orl_cart")) || [];
-    } catch {
-      return [];
-    }
-  });
-
+  
   /* ================= PAGINATION ================= */
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -36,33 +27,24 @@ const LabPricing = () => {
   /* ================= FETCH PACKAGES ================= */
 
   useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        setLoading(true);
+  const fetchPackages = async () => {
+    try {
+      setLoading(true);
 
-        const cached = localStorage.getItem("orl_packages");
+      const res = await api.get("/api/v1/packages/");
+      const data = Array.isArray(res.data) ? res.data : [];
 
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          setAllPackages(parsed);
-        }
+      setAllPackages(data); // ✅ sirf state me store
 
-        const res = await api.get("/api/v1/packages/");
-        const data = Array.isArray(res.data) ? res.data : [];
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        setAllPackages(data);
-        localStorage.setItem("orl_packages", JSON.stringify(data));
-
-      } catch (err) {
-        console.error("Package fetch error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPackages();
-  }, []);
-
+  fetchPackages();
+}, []);
   /* ================= LAB FILTER (FAST) ================= */
 
   const labs = useMemo(() => {
@@ -77,18 +59,20 @@ const LabPricing = () => {
 
       if (!map.has(baseName)) {
         map.set(baseName, {
-          name: baseName,
-          description: pkg.description,
-          price: pkg.price,
-          billing_cycle: pkg.billing_cycle,
-          planId: pkg.package_id,
-          features: [
-            "Full Lab Access",
-            "SSH Access",
-            "Guided Lab Environment",
-            "Support Included",
-          ],
-        });
+        name: baseName,
+        description: pkg.description,
+        price: pkg.price,
+        billing_cycle: pkg.billing_cycle,
+        planId: pkg.package_id,
+        course_id: pkg.course_id, // ✅ ADD THIS
+        course_linked: pkg.course_linked, // optional but useful
+        features: [
+          "Full Lab Access",
+          "SSH Access",
+          "Guided Lab Environment",
+          "Support Included",
+        ],
+      });
       }
     }
 
@@ -106,23 +90,7 @@ const LabPricing = () => {
 
   /* ================= FETCH USER INSTANCES ================= */
 
-  useEffect(() => {
-    if (!token || !userId) return;
-
-    const fetchInstances = async () => {
-      try {
-        const res = await api.get(`/api/v1/lab/userinst/${userId}/`);
-        setInstances(res.data || []);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchInstances();
-
-    const poll = setInterval(fetchInstances, 30000);
-    return () => clearInterval(poll);
-  }, [token, userId]);
+  
 
   /* ================= ADD TO CART ================= */
 
@@ -141,6 +109,7 @@ const LabPricing = () => {
       price: lab.price || 0,
       billingType: billingType,
       planId: lab.planId,
+      course_id:lab.course_id,
     };
 
     const updated = [item];
@@ -162,7 +131,16 @@ const LabPricing = () => {
 
     addToCart(lab);
   };
+  const handleViewCourse = (lab) => {
+  console.log('lab=', lab);
 
+  if (!lab?.course_id) {
+    notify("Course not available for this lab", "error");
+    return;
+  }
+
+  navigate(`/course-preview/${lab.course_id}`);
+};
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-24 px-6">
       <ToastContainer />
@@ -266,18 +244,30 @@ const LabPricing = () => {
                   ))}
 
                 </ul>
-
+                <div className="flex flex-col gap-3">
                 <button
-                  onClick={() => handlePlanClick(lab)}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold hover:opacity-90"
-                >
+                onClick={() => handleViewCourse(lab)}
+                disabled={!lab.course_id}
+                className={`w-full py-3 rounded-xl border font-semibold transition ${
+                  lab.course_id
+                    ? "border-purple-400 text-purple-300 hover:bg-purple-500/10"
+                    : "border-gray-600 text-gray-500 cursor-not-allowed"
+                }`}
+              >
+                {lab.course_id ? "View Course" : "No Course Available"}
+              </button>
+                  <button
+                    onClick={() => handlePlanClick(lab)}
+                    className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold hover:opacity-90"
+                  >
 
-                  {billingType === "free" && "Start Free Lab"}
-                  {billingType === "hourly" && "Start Lab"}
-                  {(billingType === "monthly" || billingType === "yearly") &&
-                    "Subscribe"}
+                    {billingType === "free" && "Start Free Lab"}
+                    {billingType === "hourly" && "Start Lab"}
+                    {(billingType === "monthly" || billingType === "yearly") &&
+                      "Subscribe"}
 
-                </button>
+                  </button>
+                </div>
 
               </div>
 

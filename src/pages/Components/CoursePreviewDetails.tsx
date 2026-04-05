@@ -1,60 +1,34 @@
+
 import React, { useMemo } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
-import { useQuery } from "@tanstack/react-query";
-
+import { courses } from "../../mock/courses";
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
 
-const API = "https://dev.backend.onrequestlab.com";
-
 export default function CoursePreviewPage() {
-
   const { id } = useParams();
-
-  // ================= API =================
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["course-preview", id],
-    queryFn: async () => {
-      const res = await axios.get(`${API}/course/courses/${id}/preview/`);
-      return res.data;
-    },
-    enabled: !!id,
-    staleTime: Infinity,
-    cacheTime: Infinity,
-    refetchOnWindowFocus: false,
-  });
-
-  // ================= MEMO =================
+  const courseRaw = courses.find((c) => String(c.id) === String(id));
   const course = useMemo(() => {
-    if (!data) return null;
-
-    const totalChapters = data.modules?.reduce(
+    if (!courseRaw) return null;
+    const totalChapters = courseRaw.modules?.reduce(
       (acc, m) => acc + (m.chapters?.length || 0),
       0
     );
-
     return {
-      title: data.subscription_name || data.title,
-      description: data.description,
-      modules: data.modules || [],
-      totalModules: data.modules?.length || 0,
+      ...courseRaw,
+      title: courseRaw.subscription_name || courseRaw.title,
+      totalModules: courseRaw.modules?.length || 0,
       totalChapters,
-      price: data.price || "₹5,000",
-      thumbnail: data.thumbnail,
-      category: data.category,
-      difficulty: data.difficulty,
-      duration: data.duration,
-      instructor: data.instructor,
+      price: courseRaw.price || "₹5,000",
     };
-  }, [data]);
+  }, [courseRaw]);
 
   const bg =
     course?.thumbnail?.image
-      ? `https://${course.thumbnail.image}`
+      ? (course.thumbnail.image.startsWith('http') ? course.thumbnail.image : `https://${course.thumbnail.image}`)
       : "/assets/hero-bg.jpg";
 
-  if (isLoading || !course) {
+  if (!course) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black text-white">
         <div className="w-14 h-14 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>

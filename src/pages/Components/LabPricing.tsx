@@ -1,12 +1,14 @@
-import React, { useEffect, useState, useMemo } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import api from "../../services/api";
 
-const notify = (msg, type = "info") =>
-  toast[type](msg, { position: "top-center", autoClose: 2500 });
+import { courses } from "../../mock/courses";
+import React, { useEffect, useState, useMemo } from "react";
+
+const notify = (msg: string, type: "info" | "success" | "error" = "info") => {
+  (toast as any)[type](msg, { position: "top-center", autoClose: 2500 });
+};
 
 const LabPricing = () => {
   const navigate = useNavigate();
@@ -14,76 +16,53 @@ const LabPricing = () => {
   const token = localStorage.getItem("access_token");
   const userId = localStorage.getItem("userId");
 
-  const [billingType, setBillingType] = useState("free");
-  const [allPackages, setAllPackages] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [billingType, setBillingType] = useState<string>("free");
+
+  // No loading needed for mock data
+  const [loading] = useState<boolean>(false);
 
   
   /* ================= PAGINATION ================= */
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // For cart state (mock only, not persisted)
+  const [cartItems, setCartItems] = useState<any[]>([]);
   const itemsPerPage = 6;
 
   /* ================= FETCH PACKAGES ================= */
 
-  useEffect(() => {
-  const fetchPackages = async () => {
-    try {
-      setLoading(true);
-
-      const res = await api.get("/api/v1/packages/");
-      const data = Array.isArray(res.data) ? res.data : [];
-
-      setAllPackages(data); // ✅ sirf state me store
-
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchPackages();
-}, []);
+  // No effect needed for mock data
   /* ================= LAB FILTER (FAST) ================= */
 
-  const labs = useMemo(() => {
-    if (!allPackages.length) return [];
-
-    const map = new Map();
-
-    for (const pkg of allPackages) {
-      if (pkg.billing_cycle !== billingType) continue;
-
-      const baseName = pkg.name.split("-")[0].trim();
-
-      if (!map.has(baseName)) {
-        map.set(baseName, {
-        name: baseName,
-        description: pkg.description,
-        price: pkg.price,
-        billing_cycle: pkg.billing_cycle,
-        planId: pkg.package_id,
-        course_id: pkg.course_id, // ✅ ADD THIS
-        course_linked: pkg.course_linked, // optional but useful
-        features: [
-          "Full Lab Access",
-          "SSH Access",
-          "Guided Lab Environment",
-          "Support Included",
-        ],
-      });
-      }
-    }
-
-    return [...map.values()];
-  }, [billingType, allPackages]);
+  // Use mock courses as labs, grouped by plan
+  const labs = useMemo<any[]>(() => {
+    return courses
+      .filter((c) => c.plan === billingType)
+      .map((c) => ({
+        name: c.title,
+        description: c.description,
+        price: c.price ?? (c.duration === 'Free' ? 0 : c.duration),
+        billing_cycle: c.plan,
+        planId: c.id,
+        course_id: c.id,
+        course_linked: true,
+        features: c.features && Array.isArray(c.features) && c.features.length > 0
+          ? c.features
+          : [
+              "Full Lab Access",
+              "SSH Access",
+              "Guided Lab Environment",
+              "Support Included",
+            ],
+      }));
+  }, [billingType]);
 
   /* ================= PAGINATION LOGIC ================= */
 
   const totalPages = Math.ceil(labs.length / itemsPerPage);
 
-  const paginatedLabs = useMemo(() => {
+  const paginatedLabs = useMemo<any[]>(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return labs.slice(start, start + itemsPerPage);
   }, [labs, currentPage]);
@@ -94,7 +73,7 @@ const LabPricing = () => {
 
   /* ================= ADD TO CART ================= */
 
-  const addToCart = (lab) => {
+  const addToCart = (lab: any) => {
     const saved = JSON.parse(localStorage.getItem("orl_cart") || "[]");
 
     if (saved.length > 0) {
@@ -122,7 +101,7 @@ const LabPricing = () => {
     setTimeout(() => navigate("/cart"), 600);
   };
 
-  const handlePlanClick = (lab) => {
+  const handlePlanClick = (lab: any) => {
     if (!token) {
       notify("Please login to continue", "error");
       navigate("/login");
@@ -131,7 +110,7 @@ const LabPricing = () => {
 
     addToCart(lab);
   };
-  const handleViewCourse = (lab) => {
+  const handleViewCourse = (lab: any) => {
   console.log('lab=', lab);
 
   if (!lab?.course_id) {
@@ -151,7 +130,7 @@ const LabPricing = () => {
 
         <div className="text-center mb-16">
           <h2 className="text-5xl font-extrabold bg-gradient-to-r from-purple-400 to-blue-300 bg-clip-text text-transparent">
-            Simple pricing. No surprise fees.
+            Simple pricing. 3 Days money back Guarantee.
           </h2>
 
           <p className="text-gray-400 mt-6 text-xl">

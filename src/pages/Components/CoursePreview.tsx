@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+
 import { useParams } from "react-router-dom";
-import api from "../../services/api";
+import { courses } from "../../mock/courses";
 
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
@@ -14,25 +14,11 @@ import WhoIsThisForSection from "./WhoIsThisForSection";
 import WhyChooseSection from "./WhyChooseSection";
 import CtaSection from "./CtaSection";
 
+
 const CoursePreview = () => {
   const { id } = useParams();
-
-  const [course, setCourse] = useState(null);
-
-  useEffect(() => {
-    if (!id) return;
-
-    const fetchCourse = async () => {
-      try {
-        const res = await api.get(`/course/courses/${id}/preview/`);
-        setCourse(res.data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchCourse();
-  }, [id]);
+  // Find course by id (id from params is string)
+  const course = courses.find((c) => String(c.id) === String(id));
 
   return (
     <main className="min-h-screen">

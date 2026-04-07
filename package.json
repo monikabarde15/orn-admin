@@ -13,6 +13,11 @@
         "test:coverage": "vitest run --coverage",
         "selenium:test": "node tests/selenium_browser_test.js",
         "selenium:demo": "node tests/demo_selenium_test.js",
+        "selenium:visible-demo": "node demo_visible_testing.js",
+        "selenium:journey": "node tests/complete_user_journey_test.js",
+        "selenium:human": "node tests/complete_user_journey_test.js",
+        "selenium:visible": "node tests/complete_user_journey_test.js --visible",
+        "selenium:fast": "node tests/complete_user_journey_test.js --fast",
         "selenium:quick": "./run_selenium_tests.sh",
         "daily:test": "daily_selenium_tests.bat"
     },
@@ -91,7 +96,7 @@
     "devDependencies": {
         "@headlessui/react": "^1.7.3",
         "@tailwindcss/forms": "^0.5.3",
-        "@tailwindcss/typography": "^0.5.7",
+        "@tailwindcss/typography": "^0.5.19",
         "@types/node": "^20.0.0",
         "@types/react": "^18.0.27",
         "@types/react-copy-to-clipboard": "^5.0.4",

@@ -1,0 +1,15 @@
+{
+  "totalTests": 1,
+  "passedTests": 0,
+  "failedTests": 1,
+  "errors": [
+    {
+      "test": "Overall test suite",
+      "status": "FAIL",
+      "details": "session not created: Chrome instance exited. Examine ChromeDriver verbose log to determine the cause.",
+      "timestamp": "2026-02-03T08:54:48.902Z"
+    }
+  ],
+  "startTime": "2026-02-03T08:53:59.529Z",
+  "endTime": "2026-02-03T08:54:48.903Z"
+}

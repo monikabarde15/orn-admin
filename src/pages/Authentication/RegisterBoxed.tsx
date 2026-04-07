@@ -166,12 +166,30 @@ const RegisterBoxed = () => {
       }
     }
 
-  } catch (error: any) {
-    toast.error(
-      error.response?.data?.message || "Registration failed",
-      { position: "top-center" }
-    );
-  } finally {
+  }catch (error: any) {
+
+  const errorMessage =
+    error.response?.data?.error ||
+    error.response?.data?.message ||
+    "Registration failed";
+
+  // ✅ Handle OTP cooldown error
+  if (errorMessage.includes("Please wait 2 minutes")) {
+    
+    toast.info("OTP already sent. Redirecting to OTP screen...", {
+      position: "top-center",
+    });
+
+    setTimeout(() => {
+      navigate("/otp");
+    }, 800);
+
+  } else {
+    toast.error(errorMessage, {
+      position: "top-center",
+    });
+  }
+} finally {
     setLoading(false);
   }
 };

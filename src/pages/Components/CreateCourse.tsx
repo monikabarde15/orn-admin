@@ -72,9 +72,6 @@ const fetchSubscriptions = async (): Promise<Subscription[]> => {
   const res = await api.get("/api/v1/packages/")
   return res.data
 }
-
-
-
 // ============================================
 // MOCK API - Bypasses all real API calls
 // ============================================
@@ -422,20 +419,27 @@ function Select({
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
           <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
             {options.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value)
-                  setIsOpen(false)
-                }}
-                className={`w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors ${
-                  option.value === value ? "bg-blue-50 text-blue-600" : "text-gray-900"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => {
+                onChange(option.value)
+                setIsOpen(false)
+              }}
+              className={`w-full px-4 py-2.5 flex items-center justify-between hover:bg-gray-50 ${
+                option.value === value ? "bg-blue-50 text-blue-600" : "text-gray-900"
+              }`}
+            >
+              <span>{option.label}</span>
+
+              {/* ✅ TICK */}
+              {option.course_linked ? (
+                <span className="text-green-600 font-bold">✔</span>
+              ) : (
+                <span className="text-red-500 font-bold">✘</span>
+              )}
+            </button>
+          ))}
           </div>
         </>
       )}
@@ -546,7 +550,7 @@ function CourseForm({
   initialData?: CourseFormData
   isLoading?: boolean
 }) {
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
+  // const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
 
   const [formData, setFormData] = useState<CourseFormData>(
     initialData || {
@@ -563,10 +567,35 @@ function CourseForm({
   )
 
   /* ✅ useEffect ALWAYS outside useState */
-  useEffect(() => {
-    fetchSubscriptions().then(setSubscriptions)
-  }, [])
+  // useEffect(() => {
+  //   fetchSubscriptions().then(setSubscriptions)
+  // }, [])
+  const [subscriptions, setSubscriptions] = useState(() => {
+  const cached = localStorage.getItem("packages")
+  return cached ? JSON.parse(cached) : []
+})
+const hasFetched = useRef(false)
 
+useEffect(() => {
+  if (hasFetched.current) return
+  hasFetched.current = true
+
+  fetchSubscriptions().then(setSubscriptions)
+}, [])
+
+useEffect(() => {
+  const load = async () => {
+    try {
+      const data = await fetchSubscriptions()
+      setSubscriptions(data)
+    } catch (e) {
+      console.error(e)
+    } finally {
+    }
+  }
+
+  load()
+}, [])
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSubmit(formData)
@@ -603,16 +632,18 @@ function CourseForm({
       {/* ✅ SUBSCRIPTION DROPDOWN */}
       <div>
         <Label>Subscription *</Label>
-        <Select
-          value={formData.subscription_name}
-          onChange={(value) =>
-            setFormData({ ...formData, subscription_name: value })
-          } 
-          options={subscriptions.map((s) => ({
-            value: `${s.name} (${s.billing_cycle})`,
-            label: `${s.name} (${s.billing_cycle})`,
-          }))}
-        />
+       <Select
+  value={formData.subscription_name}
+  onChange={(value) =>
+    setFormData({ ...formData, subscription_name: value })
+  }
+  options={subscriptions.map((s) => ({
+    value: s.name,
+    label: s.name,
+    course_linked: s.course_linked, // ✅ IMPORTANT
+  }))}
+/>
+
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">

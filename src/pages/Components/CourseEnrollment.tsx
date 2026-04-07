@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import {
@@ -49,13 +50,14 @@ const getAction = (name = "") => {
 const getLatestInstance = (list: any[]) => {
   if (!list || !list.length) return null;
 
-  return [...list].sort(
-    (a, b) =>
-      new Date(b.timestamp).getTime() -
-      new Date(a.timestamp).getTime()
-  )[0];
+  return [...list]
+    .filter((i) => i.isDeleted !== true) // 🔥 important fix
+    .sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() -
+        new Date(a.timestamp).getTime()
+    )[0];
 };
-
 /* ================= TYPES ================= */
 
 interface Chapter {
@@ -91,9 +93,9 @@ interface Subscription {
 /* ================= COMPONENT ================= */
 
 const CourseEnrollment: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const { slug } = useParams();
+  const navigate = useNavigate();
 
+const { id, slug } = useParams();
   console.log(slug);
 
   const [course, setCourse] = useState<Course | null>(null);
@@ -115,25 +117,27 @@ const CourseEnrollment: React.FC = () => {
   /* ================= FETCH COURSE ================= */
 
   useEffect(() => {
-    const fetchCourse = async () => {
-      try {
-        const res = await api.get(
-          `/course/courses/${id}/`,
-          { headers }
-        );
-        setCourse(res.data);
-        setModules(res.data?.modules || []);
-        setThumbnail(res.data?.thumbnail?.image || "");
-      } catch (e) {
-        console.error("Course fetch failed", e);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchCourse = async () => {
+    try {
+      const res = await api.get(`/course/courses/${id}/`, { headers });
 
-    fetchCourse();
-  }, [id]);
+      setCourse(res.data);
+      setModules(res.data?.modules || []);
+      setThumbnail(res.data?.thumbnail?.image || "");
 
+    } catch (e) {
+      console.error("Course fetch failed", e);
+
+      // ✅ handle error
+      setCourse(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (id) fetchCourse(); // ✅ important
+
+}, [id]);
   /* ================= FETCH SUBSCRIPTION + WALLET ================= */
 
   useEffect(() => {
@@ -217,48 +221,51 @@ const CourseEnrollment: React.FC = () => {
 
   /* ================= INSTANCE LIST + POLLING ================= */
 
-  const fetchInstances = async () => {
-    const res = await api.get(
-      `api/v1/lab/userinst/${userId}`,
-      { headers }
-    );
-    return res.data || [];
-  };
+const fetchInstances = async () => {
+  const res = await api.get(
+    `api/v1/lab/userinst/${userId}`,
+    { headers }
+  );
 
+  const raw = res.data;
+
+  // 🔥 handle all cases
+  if (Array.isArray(raw)) return raw;
+  if (Array.isArray(raw?.data)) return raw.data;
+
+  console.log("❌ Unexpected response 👉", raw);
+  return [];
+};
   const waitForLatestInstanceReady = () =>
-    new Promise<void>((resolve, reject) => {
-      const interval = setInterval(async () => {
-        try {
-          const list = await fetchInstances();
-          const latest = getLatestInstance(list);
+  new Promise<void>((resolve, reject) => {
+    const interval = setInterval(async () => {
+      try {
+        const list = await fetchInstances();
 
-          if (!latest) return;
+        if (!Array.isArray(list)) return;
 
-          // ❌ ignore deleted instances
-          if (latest.isDeleted) return;
+        const latest = list
+          .filter((i) => i.status === "Launched" && i.isDeleted !== true)
+          .sort(
+            (a, b) =>
+              new Date(b.timestamp).getTime() -
+              new Date(a.timestamp).getTime()
+          )[0];
 
-          console.log(
-            "LATEST INSTANCE:",
-            latest.status,
-            latest.timestamp
-          );
+        console.log("CHECK 👉", latest);
 
-          // ✅ SUCCESS
-          if (latest.status === "Launched") {
-            clearInterval(interval);
-            resolve();
-          }
+        if (!latest) return;
 
-          // ❌ FAILURE
-          if (latest.status === "Failed") {
-            clearInterval(interval);
-            reject("Instance failed");
-          }
-        } catch (e) {
-          console.error("Instance polling failed", e);
-        }
-      }, 5000);
-    });
+        console.log("✅ Instance mil gaya:", latest);
+
+        clearInterval(interval);
+        resolve();
+
+      } catch (e) {
+        console.error("Instance polling failed", e);
+      }
+    }, 3000);
+  });
 
   /* ================= LAUNCH LAB ================= */
 
@@ -299,7 +306,8 @@ const CourseEnrollment: React.FC = () => {
       await waitForLatestInstanceReady();
 
       // ✅ Redirect ONLY when launched
-      window.location.href = `/lab?user`;
+      navigate(`/lab?user`);
+      // window.location.href = `/lab?user`;
     } catch (err) {
       console.error("Launch failed", err);
       alert("Lab launch failed");
@@ -318,12 +326,16 @@ const CourseEnrollment: React.FC = () => {
   }
 
   if (!course) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-red-400">
-        Course not found
-      </div>
-    );
-  }
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center text-center text-white bg-slate-950">
+      <div className="text-5xl mb-4">❌</div>
+      <h1 className="text-2xl font-bold ">Course Not Found</h1>
+      <p className="text-gray-400 mt-2">
+        Invalid course ID or API error
+      </p>
+    </div>
+  );
+}
 
   return (
     <>

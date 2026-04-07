@@ -69,38 +69,46 @@ const LabDashboard: React.FC = () => {
 
   /* ================= FETCH INSTANCE ================= */
 
-  useEffect(() => {
-    const fetchInstance = async () => {
-      if (!token || !userId) {
-        setLoading(false);
-        return;
-      }
+useEffect(() => {
+  const fetchInstance = async () => {
+    if (!token || !userId) {
+      setLoading(false);
+      return;
+    }
 
-      try {
-        const res = await api.get(`/api/v1/lab/userinst/${userId}/`);
-        const instances: Instance[] = res.data || [];
+    try {
+      const res = await api.get(`/api/v1/lab/userinst/${userId}/`);
 
-        // ✅ latest non-deleted instance
-        const activeInstance =
-          instances
-            .filter((i) => i.isDeleted !== true)
-            .sort(
-              (a, b) =>
-                new Date(b.timestamp || "").getTime() -
-                new Date(a.timestamp || "").getTime()
-            )[0] || null;
+      const raw = res.data;
 
-        setInstance(activeInstance);
-      } catch (err) {
-        console.error("Error fetching instance:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+      const instances: Instance[] = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.data)
+        ? raw.data
+        : [];
 
-    fetchInstance();
-  }, [token, userId]);
+      console.log("INSTANCES 👉", instances);
 
+      const activeInstance =
+        instances
+          .filter((i) => i.isDeleted !== true)
+          .sort(
+            (a, b) =>
+              new Date(b.timestamp || "").getTime() -
+              new Date(a.timestamp || "").getTime()
+          )[0] || null;
+
+      setInstance(activeInstance);
+
+    } catch (err) {
+      console.error("Error fetching instance:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchInstance();
+}, [token, userId]);
   /* ================= RESIZE LOGIC ================= */
 
   useEffect(() => {

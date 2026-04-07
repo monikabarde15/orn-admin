@@ -12,23 +12,10 @@ const LabPricing = () => {
   const navigate = useNavigate();
 
   const token = localStorage.getItem("access_token");
-  const userId = localStorage.getItem("userId");
 
   const [billingType, setBillingType] = useState("free");
   const [allPackages, setAllPackages] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const [instances, setInstances] = useState([]);
-
-  const [cartItems, setCartItems] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("orl_cart")) || [];
-    } catch {
-      return [];
-    }
-  });
-
-  /* ================= PAGINATION ================= */
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
@@ -40,21 +27,20 @@ const LabPricing = () => {
       try {
         setLoading(true);
 
-        const cached = localStorage.getItem("orl_packages");
-
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          setAllPackages(parsed);
-        }
-
         const res = await api.get("/api/v1/packages/");
-        const data = Array.isArray(res.data) ? res.data : [];
+
+        console.log("API RESPONSE:", res.data);
+
+        const data = Array.isArray(res.data?.data)
+          ? res.data.data
+          : Array.isArray(res.data)
+          ? res.data
+          : [];
 
         setAllPackages(data);
-        localStorage.setItem("orl_packages", JSON.stringify(data));
-
       } catch (err) {
-        console.error("Package fetch error:", err);
+        console.error("API ERROR:", err);
+        notify("Failed to load packages", "error");
       } finally {
         setLoading(false);
       }
@@ -63,39 +49,33 @@ const LabPricing = () => {
     fetchPackages();
   }, []);
 
-  /* ================= LAB FILTER (FAST) ================= */
+  /* ================= FILTER LABS ================= */
 
   const labs = useMemo(() => {
     if (!allPackages.length) return [];
 
-    const map = new Map();
-
-    for (const pkg of allPackages) {
-      if (pkg.billing_cycle !== billingType) continue;
-
-      const baseName = pkg.name.split("-")[0].trim();
-
-      if (!map.has(baseName)) {
-        map.set(baseName, {
-          name: baseName,
-          description: pkg.description,
-          price: pkg.price,
-          billing_cycle: pkg.billing_cycle,
-          planId: pkg.package_id,
-          features: [
-            "Full Lab Access",
-            "SSH Access",
-            "Guided Lab Environment",
-            "Support Included",
-          ],
-        });
-      }
-    }
-
-    return [...map.values()];
+    return allPackages
+      .filter(
+        (pkg) =>
+          pkg.billing_cycle?.toLowerCase() === billingType.toLowerCase()
+      )
+      .map((pkg) => ({
+        name: pkg.name || "Unnamed Lab",
+        description: pkg.description || "No description available",
+        price: pkg.price || 0,
+        billing_cycle: pkg.billing_cycle,
+        planId: pkg.package_id,
+        course_id: pkg.course_id,
+        features: [
+          "Full Lab Access",
+          "SSH Access",
+          "Guided Lab Environment",
+          "Support Included",
+        ],
+      }));
   }, [billingType, allPackages]);
 
-  /* ================= PAGINATION LOGIC ================= */
+  /* ================= PAGINATION ================= */
 
   const totalPages = Math.ceil(labs.length / itemsPerPage);
 
@@ -103,26 +83,6 @@ const LabPricing = () => {
     const start = (currentPage - 1) * itemsPerPage;
     return labs.slice(start, start + itemsPerPage);
   }, [labs, currentPage]);
-
-  /* ================= FETCH USER INSTANCES ================= */
-
-  useEffect(() => {
-    if (!token || !userId) return;
-
-    const fetchInstances = async () => {
-      try {
-        const res = await api.get(`/api/v1/lab/userinst/${userId}/`);
-        setInstances(res.data || []);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchInstances();
-
-    const poll = setInterval(fetchInstances, 30000);
-    return () => clearInterval(poll);
-  }, [token, userId]);
 
   /* ================= ADD TO CART ================= */
 
@@ -138,15 +98,13 @@ const LabPricing = () => {
       name: lab.name,
       description: lab.description,
       features: lab.features,
-      price: lab.price || 0,
-      billingType: billingType,
+      price: lab.price,
+      billingType,
       planId: lab.planId,
+      course_id: lab.course_id,
     };
 
-    const updated = [item];
-
-    localStorage.setItem("orl_cart", JSON.stringify(updated));
-    setCartItems(updated);
+    localStorage.setItem("orl_cart", JSON.stringify([item]));
 
     notify("Added to cart", "success");
 
@@ -163,6 +121,15 @@ const LabPricing = () => {
     addToCart(lab);
   };
 
+  const handleViewCourse = (lab) => {
+    if (!lab?.course_id) {
+      notify("Course not available", "error");
+      return;
+    }
+
+    navigate(`/course-preview/${lab.course_id}`);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-24 px-6">
       <ToastContainer />
@@ -170,22 +137,18 @@ const LabPricing = () => {
       <div className="max-w-7xl mx-auto">
 
         {/* HEADER */}
-
         <div className="text-center mb-16">
           <h2 className="text-5xl font-extrabold bg-gradient-to-r from-purple-400 to-blue-300 bg-clip-text text-transparent">
             Simple pricing. No surprise fees.
           </h2>
-
           <p className="text-gray-400 mt-6 text-xl">
             Choose the perfect lab and start practicing today
           </p>
         </div>
 
         {/* BILLING TOGGLE */}
-
         <div className="flex justify-center mb-12">
           <div className="inline-flex bg-white/5 border border-white/10 rounded-xl p-1">
-
             {[
               { key: "free", label: "Free" },
               { key: "monthly", label: "Monthly" },
@@ -207,127 +170,116 @@ const LabPricing = () => {
                 {type.label}
               </button>
             ))}
-
           </div>
         </div>
 
         {/* LOADER */}
-
         {loading ? (
-
-          <div className="flex items-center justify-center min-h-[400px]">
-
-            <div className="relative">
-
-              <div className="absolute inset-0 blur-xl bg-gradient-to-r from-purple-500 to-blue-500 opacity-40 rounded-full"></div>
-
-              <div className="w-16 h-16 border-4 border-purple-500 border-t-blue-400 rounded-full animate-spin"></div>
-
-            </div>
-
+          <div className="flex justify-center min-h-[300px] items-center">
+            <div className="w-12 h-12 border-4 border-purple-500 border-t-blue-400 rounded-full animate-spin"></div>
           </div>
-
         ) : (
-
           <>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* EMPTY STATE */}
+            {!labs.length && (
+              <p className="text-center text-gray-400 text-lg">
+                No labs available for this plan
+              </p>
+            )}
 
-            {paginatedLabs.map((lab, idx) => (
+            {/* CARDS */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {paginatedLabs.map((lab, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:border-purple-500 transition"
+                >
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    {lab.name}
+                  </h3>
 
-              <div
-                key={idx}
-                className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:border-purple-500 transition"
-              >
+                  <p className="text-purple-300 mb-6">
+                    {lab.description}
+                  </p>
 
-                <h3 className="text-3xl font-bold text-white mb-2">
-                  {lab.name}
-                </h3>
+                  <div className="text-2xl font-bold text-white mb-6">
+                    {billingType === "free" && "Free"}
+                    {billingType === "hourly" && `₹${lab.price}/hr`}
+                    {billingType === "monthly" && `₹${lab.price}/month`}
+                    {billingType === "yearly" && `₹${lab.price}/year`}
+                  </div>
 
-                <p className="text-purple-300 mb-6">
-                  {lab.description}
-                </p>
+                  <ul className="space-y-2 mb-6">
+                    {lab.features.map((f, i) => (
+                      <li key={i} className="flex gap-2 text-gray-300">
+                        <Check className="w-4 h-4 text-green-400" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
 
-                <div className="text-3xl font-bold text-white mb-6">
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={() => handleViewCourse(lab)}
+                      disabled={!lab.course_id}
+                      className="w-full py-2 rounded-lg border border-purple-400 text-purple-300 hover:bg-purple-500/10 disabled:opacity-40"
+                    >
+                      {lab.course_id
+                        ? "View Course"
+                        : "No Course Available"}
+                    </button>
 
-                  {billingType === "free" && "Free"}
-                  {billingType === "hourly" && `₹${lab.price}/hr`}
-                  {billingType === "monthly" && `₹${lab.price}/month`}
-                  {billingType === "yearly" && `₹${lab.price}/year`}
-
+                    <button
+                      onClick={() => handlePlanClick(lab)}
+                      className="w-full py-3 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold"
+                    >
+                      {billingType === "free"
+                        ? "Start Free Lab"
+                        : billingType === "hourly"
+                        ? "Start Lab"
+                        : "Subscribe"}
+                    </button>
+                  </div>
                 </div>
-
-                <ul className="space-y-3 mb-8">
-
-                  {lab.features.map((f, i) => (
-                    <li key={i} className="flex gap-2 text-gray-300">
-                      <Check className="w-4 h-4 text-green-400" />
-                      {f}
-                    </li>
-                  ))}
-
-                </ul>
-
-                <button
-                  onClick={() => handlePlanClick(lab)}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold hover:opacity-90"
-                >
-
-                  {billingType === "free" && "Start Free Lab"}
-                  {billingType === "hourly" && "Start Lab"}
-                  {(billingType === "monthly" || billingType === "yearly") &&
-                    "Subscribe"}
-
-                </button>
-
-              </div>
-
-            ))}
-
-          </div>
-
-          {/* PAGINATION */}
-
-          {totalPages > 1 && (
-
-            <div className="flex justify-center mt-16 gap-2 flex-wrap">
-
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => p - 1)}
-                className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 disabled:opacity-40"
-              >
-                Prev
-              </button>
-
-              {[...Array(totalPages)].map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`px-4 py-2 rounded-lg font-semibold ${
-                    currentPage === i + 1
-                      ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white"
-                      : "bg-white/5 border border-white/10 text-gray-400"
-                  }`}
-                >
-                  {i + 1}
-                </button>
               ))}
-
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => p + 1)}
-                className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 disabled:opacity-40"
-              >
-                Next
-              </button>
-
             </div>
 
-          )}
+            {/* PAGINATION */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-10 gap-2">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                  className="px-3 py-1 bg-white/10 rounded disabled:opacity-40"
+                >
+                  Prev
+                </button>
 
+                {[...Array(totalPages)].map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`px-3 py-1 rounded ${
+                      currentPage === i + 1
+                        ? "bg-purple-500 text-white"
+                        : "bg-white/10 text-gray-300"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  className="px-3 py-1 bg-white/10 rounded disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </>
         )}
-
       </div>
     </div>
   );

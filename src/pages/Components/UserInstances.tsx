@@ -63,13 +63,26 @@ export default function LabPricing() {
   };
 
   const fetchInstances = async () => {
-    try {
-      const res = await api.get(`/api/v1/lab/userinst/${userId}/`);
-      setInstances(res.data || []);
-    } catch {
-      notify("Failed to load instances", "error");
+  try {
+    const res = await api.get(`/api/v1/lab/userinst/${userId}/`);
+
+    const data = res.data;
+
+    // ✅ ensure array
+    if (Array.isArray(data)) {
+      setInstances(data);
+    } else if (Array.isArray(data.results)) {
+      setInstances(data.results);
+    } else if (Array.isArray(data.data)) {
+      setInstances(data.data);
+    } else {
+      setInstances([]);
     }
-  };
+
+  } catch {
+    notify("Failed to load instances", "error");
+  }
+};
 
   useEffect(() => {
     const loadData = async () => {

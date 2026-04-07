@@ -289,36 +289,35 @@ const generateCertificate = async () => {
     // ✅ NEW certificate created
     navigate(`/certificate-view/${res.data.id}`);
   } catch (error: any) {
-    console.error("CERTIFICATE ERROR", error);
+  console.error("FULL ERROR 👉", error);
 
-    // ✅ HANDLE: Certificate already exists
-    const bunnyError = error?.response?.data?.bunny_error;
+  // 🔥 correct path
+  const bunnyError = error?.response?.data?.error?.bunny_error;
 
-    if (bunnyError) {
-      try {
-        // backend string ko object me convert
-        const parsed =
-          typeof bunnyError === "string"
-            ? JSON.parse(
-                bunnyError.replace(/'/g, '"') // 🔥 important
-              )
-            : bunnyError;
+  console.log("Bunny Raw 👉", bunnyError); // ab ye print hoga
 
-        if (parsed?.certificate_id) {
-          // 🔥 Existing certificate → redirect
-          navigate(`/certificate-view/${parsed.certificate_id}`);
-          return;
-        }
-      } catch (e) {
-        console.error("Error parsing bunny_error", e);
+  if (bunnyError) {
+    try {
+      const parsed =
+        typeof bunnyError === "string"
+          ? JSON.parse(bunnyError.replace(/'/g, '"'))
+          : bunnyError;
+
+      console.log("Parsed 👉", parsed);
+      console.log("Certificate ID 👉", parsed?.certificate_id);
+
+      if (parsed?.certificate_id) {
+        navigate(`/certificate-view/${parsed.certificate_id}`);
+        return;
       }
-    }
 
-    // ❌ real error case
-    alert("Something error!");
-  } finally {
-    setCertLoading(false); // loader OFF
+    } catch (e) {
+      console.error("Parsing failed ❌", e);
+    }
   }
+
+  alert("Something error!");
+}
 };
 
 

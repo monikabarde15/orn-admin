@@ -15,7 +15,8 @@ export default function BlogListNew() {
 
   const fetchBlogs = async () => {
     const res = await axios.get(`${VIT}/api/v1/blog/`);
-    return Array.isArray(res.data) ? res.data : res.data.results || [];
+    // return Array.isArray(res.data) ? res.data : res.data.results || [];
+    return res.data?.data || [];
   };
 
   const { data: allBlogs = [], isLoading } = useQuery({

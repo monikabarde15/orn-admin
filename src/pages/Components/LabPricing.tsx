@@ -13,7 +13,7 @@ const LabPricing = () => {
 
   const token = localStorage.getItem("access_token");
   const userId = localStorage.getItem("userId");
-
+  const [CartItems,setCartItems]=useState([]);
   const [billingType, setBillingType] = useState("free");
   const [allPackages, setAllPackages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -119,8 +119,9 @@ const LabPricing = () => {
 
     notify("Added to cart", "success");
 
-    setTimeout(() => navigate("/cart"), 600);
-  };
+setTimeout(() => {
+  window.location.href = "/cart";
+}, 600);  };
 
   const handlePlanClick = (lab) => {
     if (!token) {

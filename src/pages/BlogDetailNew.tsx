@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Navbar from "./Components/Navbar";
 import Footer from "./Components/Footer";
 
-const API = "https://dev.backend.onrequestlab.com";
+const API = import.meta.env.VITE_API_URL;
 
 export default function BlogDetailPage() {
 

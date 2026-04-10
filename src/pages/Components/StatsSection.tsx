@@ -55,7 +55,7 @@ export default function StatsSection() {
       
       {/* HEADER */}
       <div style={{ marginBottom: "clamp(30px,5vw,50px)" }}>
-        <span style={badgeStyle}>COMPANY STATS</span>
+        {/* <span style={badgeStyle}>COMPANY STATS</span> */}
 
         <h2 style={titleStyle}>
           The Foundation of Our Success

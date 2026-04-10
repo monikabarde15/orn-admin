@@ -67,7 +67,7 @@ const LabPricing = () => {
         course_id: pkg.course_id, // ✅ ADD THIS
         course_linked: pkg.course_linked, // optional but useful
         features: [
-          "Full Lab Access",
+          "Cancel any time",
           "SSH Access",
           "Guided Lab Environment",
           "Support Included",
@@ -156,7 +156,8 @@ setTimeout(() => {
           </h2>
 
           <p className="text-gray-400 mt-6 text-xl">
-            Choose the perfect lab and start practicing today
+            Choose the perfect lab and start practicing today 
+            {/* <p className="text-purple-300 mb-6">(Regular user visit 5k)</p> */}
           </p>
         </div>
 

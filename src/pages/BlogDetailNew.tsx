@@ -82,11 +82,11 @@ export default function BlogDetailPage() {
           <div className="absolute inset-0 bg-black/60 flex flex-col justify-center px-6 md:px-20">
 
             <h1 className="text-2xl md:text-5xl font-bold max-w-3xl">
-              {blog.title}
+               {blog?.title || "Loading..."}
             </h1>
 
             <p className="text-gray-400 mt-2 text-sm">
-              {blog.createdAt?.slice(0, 10)}
+              {blog?.createdAt?.slice(0, 10) || ""}
             </p>
 
           </div>
@@ -103,7 +103,7 @@ export default function BlogDetailPage() {
               <div
                 className="prose prose-invert max-w-none text-gray-300"
                 dangerouslySetInnerHTML={{
-                  __html: blog.description,
+                  __html: blog?.description || "<p>Loading...</p>",
                 }}
               />
 

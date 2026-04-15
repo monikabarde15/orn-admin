@@ -216,7 +216,7 @@ const routes = [
             layout:'web',
         },
     {
-        path: '/course-preview/:id/:slug',
+        path: '/course-preview/:id/:slug?',
         element: <CourseEnrollment />,
         layout: 'web',
     },

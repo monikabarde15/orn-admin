@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+// import axios from "axios";
 import {
   PlayCircle,
   X,
@@ -20,12 +20,12 @@ import { validateWalletAddAmount } from "../../utils/walletAmount";
 /* ================= CONFIG ================= */
 
 
-  const token = localStorage.getItem("access_token");
+//   const token = localStorage.getItem("access_token");
   const userId = localStorage.getItem("userId");
 
-const headers = {
-  Authorization: `Bearer ${token}`,
-};
+// const headers = {
+//   Authorization: `Bearer ${token}`,
+// };
 
 /* ================= HELPERS ================= */
 
@@ -120,7 +120,8 @@ const { id, slug } = useParams();
   useEffect(() => {
   const fetchCourse = async () => {
     try {
-      const res = await api.get(`/course/courses/${id}/`, { headers });
+      // const res = await api.get(`/course/courses/${id}/`, { headers });
+      const res = await api.get(`/course/courses/${id}/`);
 
       setCourse(res.data);
       setModules(res.data?.modules || []);
@@ -147,8 +148,10 @@ const { id, slug } = useParams();
     const fetchAll = async () => {
       try {
         const [subsRes, walletRes] = await Promise.all([
-          api.get(`api/v1/users/subscriptions/`, { headers }),
-          api.get(`api/v1/users/wallet/balance/`, { headers }),
+          // api.get(`api/v1/users/subscriptions/`, { headers }),
+          api.get(`/api/v1/users/subscriptions/`),
+          // api.get(`api/v1/users/wallet/balance/`, { headers }),
+          api.get(`/api/v1/users/wallet/balance/`),
         ]);
 
         const sub = subsRes.data.find(
@@ -181,11 +184,13 @@ const { id, slug } = useParams();
     const loaded = await loadRazorpay();
     if (!loaded) throw new Error("Razorpay load failed");
 
-    const orderRes = await api.post(
-      `api/v1/users/create-order/`,
-      { amount },
-      { headers }
-    );
+    const orderRes = await api.post(`/api/v1/users/create-order/`, { amount });
+    // api.post(
+    //   `api/v1/users/create-order/`,
+    //   { amount },
+    //   { headers }
+    // );
+    
 
     const order = orderRes.data;
 
@@ -199,14 +204,12 @@ const { id, slug } = useParams();
 
         handler: async (res: any) => {
           try {
-            await api.post(
-              `api/v1/users/verify-payment/`,
+            await api.post(`/api/v1/users/verify-payment/`,
               {
                 razorpay_payment_id: res.razorpay_payment_id,
                 razorpay_order_id: res.razorpay_order_id,
                 razorpay_signature: res.razorpay_signature,
               },
-              { headers }
             );
             resolve();
           } catch {
@@ -224,10 +227,7 @@ const { id, slug } = useParams();
   /* ================= INSTANCE LIST + POLLING ================= */
 
 const fetchInstances = async () => {
-  const res = await api.get(
-    `api/v1/lab/userinst/${userId}`,
-    { headers }
-  );
+  const res = await api.get(`/api/v1/lab/userinst/${userId}/`);
 
   const raw = res.data;
 
@@ -304,14 +304,11 @@ const fetchInstances = async () => {
       }
 
       // 🚀 Deploy
-      await api.post(
-        `api/v1/lab/deploy/${action}/${slug}/`,
+      await api.post(`/api/v1/lab/deploy/${action}/${slug || ''}/`,
         {
           user_id: userId,
           payment_id: subscription.subscription_id,
-        },
-        { headers }
-      );
+        });
 
       // ⏳ Wait for LATEST launched instance
       await waitForLatestInstanceReady();

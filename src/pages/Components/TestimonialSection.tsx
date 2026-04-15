@@ -3,56 +3,56 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const testimonials = [
   {
-    quote: "I recently completed the 21-day learning module, and I must say, it exceeded my expectations! The course materials were detailed and easy to follow, and the self-practice labs allowed me to gain hands-on experience at my own pace. The Red Hat Linux High-Availability Cluster Lab was particularly impressive—it gave me the confidence to handle real-world scenarios.",
+    quote: "OnRequestLab's Kubernetes course was exactly what I needed to get hands-on with real clusters. The labs are practical and easy to follow. Highly recommended for anyone wanting to master K8s!",
     author: "Andy Smith",
-    role: "Los Angeles, CA",
+    role: "Systems Engineer",
     rating: 5,
-    company: "Tech Solutions Inc"
+    company: "Tech Solutions Inc."
   },
   {
-    quote: "The team's expertise in social media marketing is unmatched. They grew our Instagram following by 300% and engagement is through the roof. The ROI we've seen has been incredible and beyond what we anticipated.",
+    quote: "I used OnRequestLab to learn Docker and Red Hat Linux for my certification. The self-paced labs and instant feedback made all the difference. I passed my exam on the first try!",
     author: "Michael Rodriguez",
-    role: "Marketing Director",
+    role: "IT Specialist",
     rating: 5,
     company: "FashionBrand"
   },
   {
-    quote: "Working with PrismDigital was a game-changer. Their strategic approach and attention to detail delivered results beyond our expectations. Every campaign was meticulously planned and executed.",
+    quote: "The support team at OnRequestLab answered all my questions quickly. The platform is perfect for busy professionals who want to upskill in cloud and DevOps tech.",
     author: "Emily Thompson",
-    role: "Founder",
+    role: "Student",
     rating: 5,
-    company: "StartupX"
+    company: "University of California"
   },
   {
-    quote: "Exceptional service and incredible results. The campaign they created for our product launch reached 40M+ people and drove massive sales. The team was professional and responsive throughout.",
+    quote: "The High-Availability Cluster Lab was the highlight of my training. I now use these skills at work every day. Thank you OnRequestLab!",
     author: "David Kim",
-    role: "CMO",
+    role: "Linux Administrator",
     rating: 5,
     company: "EcommPlus"
   },
   {
-    quote: "PrismDigital doesn't just deliver campaigns - they deliver growth. Our conversion rates have increased by 85% since partnering with them. Best decision we've made for our marketing.",
+    quote: "OnRequestLab's real-world scenarios helped me land a DevOps job. The Docker and Kubernetes labs are the best I've seen online.",
     author: "Lisa Anderson",
-    role: "VP Marketing",
+    role: "DevOps Engineer",
     rating: 5,
     company: "RetailCo"
   },
   {
-    quote: "The best marketing agency we've ever worked with. Professional, creative, and most importantly - they get results. Their data-driven approach has transformed our business.",
+    quote: "I love how OnRequestLab lets me practice at my own pace. The progress tracking and detailed explanations made learning Linux fun and effective.",
     author: "James Wilson",
-    role: "Director",
+    role: "Network Engineer",
     rating: 5,
     company: "MediaGroup"
   },
   {
-    quote: "Outstanding platform for continuous learning. The hands-on labs and real-world scenarios have significantly improved my technical skills. I feel much more confident in my abilities now.",
+    quote: "The continuous learning platform at OnRequestLab gave me the confidence to tackle cloud projects at work. The labs are challenging but rewarding.",
     author: "Priya Sharma",
-    role: "DevOps Engineer",
+    role: "Cloud Engineer",
     rating: 5,
     company: "CloudTech"
   },
   {
-    quote: "The customer support is phenomenal. Every question was answered promptly and the team went above and beyond to ensure our success. Highly recommend to anyone serious about growth.",
+    quote: "OnRequestLab's customer support went above and beyond to help me with my lab setup. I recommend them to anyone looking to advance their Linux and DevOps skills.",
     author: "Robert Chang",
     role: "Product Manager",
     rating: 5,

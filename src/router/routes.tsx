@@ -169,6 +169,7 @@ const AboutUs = lazy(() => import('../pages/Components/AboutUs'));
 const OurServices = lazy(() => import('../pages/Components/OurServices'));
 const Support = lazy(() => import('../pages/Components/Support'));
 const WalletHistory = lazy(() => import('../pages/Components/WalletHistory'));
+const WalletAddFunds = lazy(() => import('../pages/Components/WalletAddFunds'));
 
 const UserInstances = lazy(() => import('../pages/Components/UserInstances'));
 
@@ -224,6 +225,11 @@ const routes = [
         element: <WalletHistory />,
         layout:'web',
     },
+    {
+        path: '/wallet/add-funds',
+        element: <WalletAddFunds />,
+        layout:'web',
+      },
     {
         path: '/courses-list',
         element: <Courses />,

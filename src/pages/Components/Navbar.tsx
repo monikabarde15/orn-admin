@@ -244,7 +244,8 @@ const profileImage = profile?.profile_image
               <p className="wallet-line">
                 <Wallet size={16} /> {loadingWallet ? "Loading..." : `₹${walletBalance}`}
               </p> 
-              {/* <button className="blue-btn" onClick={() => navigateTo("/wallet-history")}>Wallet History</button> */}
+              <button className="blue-btn" onClick={() => navigateTo("/wallet/add-funds")}>Add Funds</button>
+              <button className="blue-btn" onClick={() => navigateTo("/wallet-history")}>Wallet History</button>
                <button className="blue-btn" onClick={() => navigateTo("/my-subscrption")}>My Subscrption</button>
                 <button className="blue-btn" onClick={() => navigateTo("/certificate")}>My Certificatons</button>
               
@@ -327,10 +328,14 @@ const profileImage = profile?.profile_image
                   <div className="dropdown-wallet">
                     <Wallet size={16} /> <span>{loadingWallet ? "Loading..." : `₹${walletBalance}`}</span>
                   </div>
+
+                  <div className="dropdown-item" onClick={() => navigateTo("/wallet/add-funds")}>
+                    <Wallet size={16} /> <span>Add Funds</span>
+                  </div>
                  
-                  {/* <div className="dropdown-item" onClick={() => navigateTo("/wallet-history")}>
+                  <div className="dropdown-item" onClick={() => navigateTo("/wallet-history")}>
                     <Wallet size={16} /> <span>Wallet History</span>
-                  </div> */}
+                  </div>
                   <div className="dropdown-item" onClick={() => navigateTo("/your-instances")}>
                     <Laptop size={16} /> <span>My Instances</span>
                   </div>

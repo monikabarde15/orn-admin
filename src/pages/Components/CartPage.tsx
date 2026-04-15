@@ -8,6 +8,7 @@ import { toast, ToastContainer } from "react-toastify";
 import { Check } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
 import api from "../../services/api";
+import { validateWalletAddAmount } from "../../utils/walletAmount";
 
 const CartPage = () => {
   const navigate = useNavigate();
@@ -139,7 +140,8 @@ const CartPage = () => {
 
       const options = {
         key: order.key_id,
-        amount: order.amount * 100,
+        // amount: order.amount * 100,
+        amount: order.amount,
         currency: "INR",
         name: "OnRequestLab",
         description: "Plan Payment",
@@ -205,6 +207,12 @@ const CartPage = () => {
 
         const remaining =
           (data.required || price) - (data.balance || 0);
+
+        const amountValidationError = validateWalletAddAmount(remaining);
+        if (amountValidationError) {
+          notify(amountValidationError, "error");
+          return null;
+        }
 
         notify(`Pay remaining ₹${remaining}`, "info");
 

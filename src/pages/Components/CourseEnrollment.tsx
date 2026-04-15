@@ -15,6 +15,7 @@ import api from "../../services/api";
 
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../../pages/Components/Footer";
+import { validateWalletAddAmount } from "../../utils/walletAmount";
 
 /* ================= CONFIG ================= */
 
@@ -191,7 +192,8 @@ const { id, slug } = useParams();
     return new Promise<void>((resolve, reject) => {
       new (window as any).Razorpay({
         key: order.key_id,
-        amount: order.amount * 100,
+        // amount: order.amount * 100,
+        amount: order.amount,
         currency: "INR",
         order_id: order.order_id,
 
@@ -288,8 +290,17 @@ const fetchInstances = async () => {
       const price = subscription.price || 0;
 
       // 💰 Wallet / Razorpay
+      // if (wallet < price) {
+      //   await openRazorpay(price - wallet);
+      // }
       if (wallet < price) {
-        await openRazorpay(price - wallet);
+        const remaining = price - wallet;
+        const amountValidationError = validateWalletAddAmount(remaining);
+        if (amountValidationError) {
+          alert(amountValidationError);
+          return;
+        }
+        await openRazorpay(remaining);
       }
 
       // 🚀 Deploy

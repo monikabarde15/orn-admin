@@ -10,6 +10,18 @@ import "react-toastify/dist/ReactToastify.css";
 import api from "../../services/api";
 import { validateWalletAddAmount } from "../../utils/walletAmount";
 
+const currencySymbols: Record<string, string> = {
+  INR: "₹",
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+};
+
+const getCurrencySymbol = (currency?: string | null) => {
+  const raw = (currency || "INR").toString().split("-")[0].trim().toUpperCase();
+  return currencySymbols[raw] || raw || "₹";
+};
+
 const CartPage = () => {
   const navigate = useNavigate();
 
@@ -59,6 +71,11 @@ const CartPage = () => {
 
   const totalAmount = cartItems.reduce(
     (sum, i) => sum + Number(i.price || 0),
+    0
+  );
+
+  const totalDisplayAmount = cartItems.reduce(
+    (sum, i) => sum + Number(i.displayPrice ?? i.price ?? 0),
     0
   );
 
@@ -345,7 +362,8 @@ const CartPage = () => {
                   </div>
 
                   <div className="text-2xl font-bold">
-                    ₹{item.price}
+                    {getCurrencySymbol(item.currency)}
+                    {Number(item.displayPrice ?? item.price ?? 0)}
                   </div>
                 </div>
               ))}
@@ -357,7 +375,8 @@ const CartPage = () => {
               </h3>
 
               <p className="text-4xl font-bold mb-6">
-                ₹{totalAmount}
+                {getCurrencySymbol(cartItems[0]?.currency)}
+                {Number(totalDisplayAmount)}
               </p>
 
               <button

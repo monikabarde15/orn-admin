@@ -8,6 +8,18 @@ import { Wallet, User, LogOut, Laptop, ShoppingCart, Lock, DollarSign } from "lu
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 
+const currencySymbols: Record<string, string> = {
+  INR: "₹",
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+};
+
+const getCurrencySymbol = (currency?: string | null) => {
+  const raw = (currency || "INR").toString().split("-")[0].trim().toUpperCase();
+  return currencySymbols[raw] || raw || "₹";
+};
+
 const Navbar = () => {
           const navigate = useNavigate();
   
@@ -24,6 +36,40 @@ const [profileLoading, setProfileLoading] = useState(true);
 
 const [walletBalance, setWalletBalance] = useState<number | null>(null);
 const [loadingWallet, setLoadingWallet] = useState(false);
+
+const currencyOptions = ["INR", "USD", "EUR"];
+const [selectedCurrency, setSelectedCurrency] = useState<string>(
+  () => localStorage.getItem("orl_currency") || "INR"
+);
+
+useEffect(() => {
+  if (isLoggedIn && profile?.currency) {
+    const normalized = profile.currency.toString().split("-")[0].trim().toUpperCase();
+    if (currencyOptions.includes(normalized)) {
+      setSelectedCurrency(normalized);
+      localStorage.setItem("orl_currency", normalized);
+    }
+  }
+}, [isLoggedIn, profile]);
+
+const handleCurrencyChange = async (e: any) => {
+  const next = e?.target?.value;
+  if (!next || !currencyOptions.includes(next)) return;
+
+  setSelectedCurrency(next);
+  localStorage.setItem("orl_currency", next);
+  window.dispatchEvent(new Event("orlcurrencychange"));
+
+  // Persist for authenticated users (best effort; UI already updates via query param).
+  try {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      await api.patch("/api/v1/users/profile/update/", { currency: next });
+    }
+  } catch (err) {
+    console.error("Currency persist failed:", err);
+  }
+};
 
 // const fetchProfile = async () => {
 //   try {
@@ -215,16 +261,22 @@ const profileImage = profile?.profile_image
                 {cartItems.length === 0 ? <p>No items added</p> : cartItems.map((item, idx) => (
                   <div key={idx} className="cart-item-row">
                     <span>{item.name}</span>
-                    <strong> ₹ {item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0}</strong>
+                    <strong>
+                      {getCurrencySymbol(item.currency)}
+                      {Number(item.displayPrice ?? item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0)}
+                    </strong>
                   </div>
                 ))}
                 <div className="cart-total-row">
                   <span className="cart-total-label">Total</span>
                   <div className="vertical-line"></div>
                   <strong className="cart-total-amount">
-                    ₹ {cartItems.reduce((total, item) => {
-                      return total + (item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0);
-                    }, 0).toFixed(2)}
+                    {getCurrencySymbol(cartItems[0]?.currency)}
+                    {cartItems
+                      .reduce((total, item) => {
+                        return total + Number(item.displayPrice ?? item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0);
+                      }, 0)
+                      .toFixed(2)}
                   </strong>
                 </div>
 
@@ -240,6 +292,29 @@ const profileImage = profile?.profile_image
                 <p>{(user?.name || "").slice(0, 5) + (user?.name?.length > 2 ? "..." : "")}</p>
               </div>
 
+              {/* Currency Selector */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <DollarSign size={16} />
+                <select
+                  value={selectedCurrency}
+                  onChange={handleCurrencyChange}
+                  style={{
+                    background: "transparent",
+                    color: "#fff",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: 8,
+                    padding: "6px 10px",
+                    outline: "none",
+                  }}
+                >
+                  {currencyOptions.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
                   
               <p className="wallet-line">
                 <Wallet size={16} /> {loadingWallet ? "Loading..." : `₹${walletBalance}`}
@@ -253,9 +328,38 @@ const profileImage = profile?.profile_image
               <button className="red-btn" onClick={handleLogout}>Logout</button>
             </div>
           ) : (
-            <button className="navbar-btn mobile-login-btn">
-              <a href="/login">Login</a> / <a href="/register">Signup</a>
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <DollarSign size={16} />
+                <select
+                  value={selectedCurrency}
+                  onChange={handleCurrencyChange}
+                  style={{
+                    background: "transparent",
+                    color: "#fff",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: 8,
+                    padding: "6px 10px",
+                    outline: "none",
+                  }}
+                >
+                  {currencyOptions.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Icon-only auth button (keeps space for currency) */}
+              <button
+                className="navbar-btn mobile-login-btn"
+                onClick={() => navigateTo("/login")}
+                title="Login"
+              >
+                <User size={18} />
+              </button>
+            </div>
           )}
         </div>
 
@@ -282,22 +386,51 @@ const profileImage = profile?.profile_image
                 {cartItems.length === 0 ? <p>No items added</p> : cartItems.map((item, idx) => (
                   <div key={idx} className="cart-item-row">
                     <span>{item.name}</span>
-                    <strong> ₹ {item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0}</strong>
+                    <strong>
+                      {getCurrencySymbol(item.currency)}
+                      {Number(item.displayPrice ?? item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0)}
+                    </strong>
                   </div>
                 ))}
                 <hr />
                 <div className="cart-total-row">
                   <span className="cart-total-label">Total</span>
                  &nbsp;&nbsp; <strong className="cart-total-amount">
-                      ₹ {cartItems.reduce((total, item) => {
-                      return total + (item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0);
-                    }, 0).toFixed(2)}
+                      {getCurrencySymbol(cartItems[0]?.currency)}
+                      {cartItems
+                        .reduce((total, item) => {
+                          return total + Number(item.displayPrice ?? item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0);
+                        }, 0)
+                        .toFixed(2)}
                   </strong>
                 </div>
 
                 <button className="blue-btn w-full" onClick={() => navigateTo("/cart")}>Go to Cart</button>
               </div>
             )}
+          </div>
+
+          {/* Currency Selector */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 8px" }}>
+            <DollarSign size={18} />
+            <select
+              value={selectedCurrency}
+              onChange={handleCurrencyChange}
+              style={{
+                background: "transparent",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: 8,
+                padding: "6px 10px",
+                outline: "none",
+              }}
+            >
+              {currencyOptions.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Profile */}
@@ -358,8 +491,12 @@ const profileImage = profile?.profile_image
               )}
             </div>
           ) : (
-            <button className="navbar-btn">
-              <a href="/login">Login</a> / <a href="/register">Signup</a>
+            <button
+              className="navbar-btn"
+              onClick={() => navigateTo("/login")}
+              title="Login"
+            >
+              <User size={18} />
             </button>
           )}
         </div>

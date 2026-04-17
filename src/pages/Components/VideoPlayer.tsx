@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { Award, Star } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -26,6 +26,7 @@ interface Quiz {
 
 interface Chapter {
   id: string;
+  title?: string;
   video?: string | null;
   file?: string | null;
   quizzes?: Quiz[];
@@ -41,6 +42,23 @@ interface FlowItem {
   type: "video" | "pdf" | "quiz";
   data: any;
   moduleId: string;
+}
+
+interface VideoFlowData {
+  url: string;
+  chapterId: string;
+  chapterTitle: string;
+}
+
+interface VideoProgressItem {
+  id: number;
+  chapter: number | null;
+  video_url: string;
+  current_seconds: number;
+  watched_seconds: number;
+  is_completed: boolean;
+  completed_at: string | null;
+  last_watched_at: string;
 }
 
 type Step = "learning" | "review" | "certificate";
@@ -63,11 +81,17 @@ export default function CourseTestFinal() {
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
 const [progressId, setProgressId] = useState<number | null>(null);
-const [loadingProgress, setLoadingProgress] = useState(true);
 const [certLoading, setCertLoading] = useState(false);
 const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+const [videoProgressMap, setVideoProgressMap] = useState<Record<string, VideoProgressItem>>({});
+const [suggestedNextVideoIndex, setSuggestedNextVideoIndex] = useState<number | null>(null);
+const videoRef = useRef<HTMLVideoElement | null>(null);
+const lastSavedSecondRef = useRef<number>(-1);
 
   const current = flow[flowIndex];
+  const currentVideo = current?.type === "video" ? (current.data as VideoFlowData) : null;
+  const currentVideoProgress = currentVideo ? videoProgressMap[currentVideo.url] : undefined;
+  const resumeSeconds = currentVideoProgress?.current_seconds ?? 0;
   const isActive = (idx: number) => idx === flowIndex;
   const isCompleted = (idx: number) => idx < flowIndex;
 
@@ -80,7 +104,11 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
         if (c.video?.endsWith(".mp4")) {
           items.push({
             type: "video",
-            data: "https://" + c.video,
+            data: {
+              url: "https://" + c.video,
+              chapterId: String(c.id),
+              chapterTitle: c.title || "Video Lecture",
+            } as VideoFlowData,
             moduleId: m.id,
           });
         }
@@ -157,6 +185,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   if (nextIndex < flow.length) {
     setFlowIndex(nextIndex);
+    setSuggestedNextVideoIndex(null);
     await saveProgress(nextIndex, false);
   } else {
     await saveProgress(flowIndex, true);
@@ -180,13 +209,122 @@ useEffect(() => {
       }
     } catch (err) {
       console.error("Progress fetch error", err);
-    } finally {
-      setLoadingProgress(false);
     }
   };
 
   loadProgress();
 }, [courseId, userId]);
+
+useEffect(() => {
+  if (!courseId || !userId) return;
+
+  const loadVideoProgress = async () => {
+    try {
+      const res = await api.get(`/course/courses/${courseId}/video-progress/`);
+      const list: VideoProgressItem[] = Array.isArray(res.data) ? res.data : [];
+      const map: Record<string, VideoProgressItem> = {};
+      list.forEach((item) => {
+        map[item.video_url] = item;
+      });
+      setVideoProgressMap(map);
+    } catch (err) {
+      console.error("Video progress fetch error", err);
+    }
+  };
+
+  loadVideoProgress();
+}, [courseId, userId]);
+
+const getNextVideoIndex = (startIndex: number) => {
+  for (let i = startIndex + 1; i < flow.length; i += 1) {
+    if (flow[i]?.type === "video") return i;
+  }
+  return -1;
+};
+
+const saveVideoProgress = async (
+  videoUrl: string,
+  chapterId: string,
+  currentSeconds: number,
+  watchedSeconds: number,
+  isCompleted = false
+) => {
+  if (!courseId || !userId) return;
+
+  try {
+    const res = await api.post(`/course/courses/${courseId}/video-progress/`, {
+      chapter: Number(chapterId),
+      video_url: videoUrl,
+      current_seconds: Math.max(0, Math.floor(currentSeconds)),
+      watched_seconds: Math.max(0, Math.floor(watchedSeconds)),
+      is_completed: isCompleted,
+    });
+
+    if (res.data?.video_url) {
+      setVideoProgressMap((prev) => ({
+        ...prev,
+        [res.data.video_url]: res.data,
+      }));
+    }
+  } catch (err) {
+    console.error("Video progress save error", err);
+  }
+};
+
+const handleVideoTimeUpdate = () => {
+  if (!currentVideo || !videoRef.current) return;
+  const currentSeconds = Math.floor(videoRef.current.currentTime || 0);
+  if (currentSeconds === lastSavedSecondRef.current) return;
+  // Save every 5 seconds for balance between UX and API calls.
+  if (currentSeconds > 0 && currentSeconds % 5 === 0) {
+    lastSavedSecondRef.current = currentSeconds;
+    const watched = Math.max(
+      currentSeconds,
+      videoProgressMap[currentVideo.url]?.watched_seconds || 0
+    );
+    saveVideoProgress(
+      currentVideo.url,
+      currentVideo.chapterId,
+      currentSeconds,
+      watched,
+      false
+    );
+  }
+};
+
+const handleVideoEnded = async () => {
+  if (!currentVideo || !videoRef.current) return;
+  const duration = Math.floor(videoRef.current.duration || 0);
+  await saveVideoProgress(
+    currentVideo.url,
+    currentVideo.chapterId,
+    duration,
+    duration,
+    true
+  );
+
+  const nextVideoIndex = getNextVideoIndex(flowIndex);
+  setSuggestedNextVideoIndex(nextVideoIndex >= 0 ? nextVideoIndex : null);
+};
+
+useEffect(() => {
+  if (!currentVideo || !videoRef.current) return;
+
+  const desired = Math.max(0, Math.floor(resumeSeconds));
+  if (desired > 0) {
+    // Ensure seek happens after metadata is available.
+    const seek = () => {
+      if (!videoRef.current) return;
+      videoRef.current.currentTime = desired;
+    };
+    if (videoRef.current.readyState >= 1) {
+      seek();
+    } else {
+      videoRef.current.onloadedmetadata = seek;
+    }
+  }
+}, [currentVideo?.url, resumeSeconds]);
+
 const saveProgress = async (index: number, completed = false) => {
   if (!userId || !courseId) return;
 
@@ -325,6 +463,7 @@ const handlePrev = () => {
   if (flowIndex > 0) {
     setFlowIndex((p) => p - 1);
     setStep("learning");
+    setSuggestedNextVideoIndex(null);
   }
 };
 
@@ -345,6 +484,7 @@ const SidebarItem = ({
       onClick={async () => {
         setFlowIndex(idx);
         setStep("learning");
+        setSuggestedNextVideoIndex(null);
         await saveProgress(idx, false);
       }}
       className={`w-full text-left px-3 py-2 rounded-md text-sm flex justify-between
@@ -426,7 +566,8 @@ const SidebarItem = ({
               <SidebarItem
                 label="🎥 Video Lecture"
                 target={(f) =>
-                  f.type === "video" && f.data.includes(chapter.video!)
+                  f.type === "video" &&
+                  (f.data as VideoFlowData).chapterId === String(chapter.id)
                 }
               />
             )}
@@ -481,13 +622,47 @@ const SidebarItem = ({
   <div className="w-full max-w-6xl px-4">
     <div className="bg-black rounded-xl overflow-hidden shadow-lg h-[60vh] max-h-[520px]">
       <video
-        src={current.data}
+        ref={videoRef}
+        src={currentVideo?.url || ""}
         controls
         className="w-full h-full object-contain"
+        onTimeUpdate={handleVideoTimeUpdate}
+        onEnded={handleVideoEnded}
       />
     </div>
   </div>
 </div>
+
+    {resumeSeconds > 0 && (
+      <p className="text-sm text-slate-300 mt-3">
+        Resumed from {Math.floor(resumeSeconds / 60)}m {resumeSeconds % 60}s
+      </p>
+    )}
+
+    {currentVideoProgress?.is_completed && (
+      <p className="text-sm text-green-400 mt-2">
+        Completed: {currentVideo?.chapterTitle}
+      </p>
+    )}
+
+    {suggestedNextVideoIndex !== null && (
+      <div className="mt-4 p-4 rounded-lg border border-slate-700 bg-slate-800/50 flex items-center justify-between">
+        <div>
+          <p className="text-green-300 font-semibold">Video completed</p>
+          <p className="text-slate-300 text-sm">Suggested next: the next video lecture</p>
+        </div>
+        <button
+          onClick={async () => {
+            setFlowIndex(suggestedNextVideoIndex);
+            setSuggestedNextVideoIndex(null);
+            await saveProgress(suggestedNextVideoIndex, false);
+          }}
+          className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg"
+        >
+          Play Next Video
+        </button>
+      </div>
+    )}
 
 
     <div className="flex justify-between mt-4">

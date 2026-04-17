@@ -61,8 +61,13 @@ const submitForm = async (e: React.FormEvent) => {
 
     if (data.user && data.access) {
 
+      // Login Time Validation
+      localStorage.setItem("login_at", String(Date.now()));
+      localStorage.setItem("session_expires_at", String(Date.now() + SESSION_TIME_MS));
+      localStorage.removeItem("logout_at");
+
       // ✅ SAVE SESSION EXPIRY TIME
-      
+ 
 
       // ✅ COOKIES (SHORT LIVED)
       document.cookie = `username=${encodeURIComponent(data.user.username)}; path=/;`;

@@ -27,20 +27,48 @@ const Navbar = () => {
   const [profileMenu, setProfileMenu] = useState(false);
   const [cartItems, setCartItems] = useState(JSON.parse(localStorage.getItem("orl_cart") || "[]"));
   const [cartOpen, setCartOpen] = useState(false);
-const logoutTimerRef = useRef<any>(null);
+  const logoutTimerRef = useRef<any>(null);
 
 
-const [isLoggedIn, setIsLoggedIn] = useState(false);
-const [profile, setProfile] = useState<any>(null);
-const [profileLoading, setProfileLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
 
-const [walletBalance, setWalletBalance] = useState<number | null>(null);
-const [loadingWallet, setLoadingWallet] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [loadingWallet, setLoadingWallet] = useState(false);
 
-const currencyOptions = ["INR", "USD", "EUR"];
-const [selectedCurrency, setSelectedCurrency] = useState<string>(
-  () => localStorage.getItem("orl_currency") || "INR"
-);
+  const currencyOptions = ["INR", "USD", "EUR"];
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(
+    () => localStorage.getItem("orl_currency") || "INR"
+  );
+
+  useEffect(() => {
+    if (logoutTimerRef.current) {
+      clearTimeout(logoutTimerRef.current);
+      logoutTimerRef.current = null;
+    }
+
+    const expiresAtRaw = localStorage.getItem("session_expires_at");
+    if (!expiresAtRaw) return;
+
+    const expiresAt = Number(expiresAtRaw);
+    if (!Number.isFinite(expiresAt)) return;
+
+    const delay = expiresAt - Date.now();
+    if (delay <= 0) {
+      handleLogout();
+      return;
+    }
+
+    logoutTimerRef.current = setTimeout(() => {
+      handleLogout();
+    }, delay);
+
+    return () => {
+      if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 useEffect(() => {
   if (isLoggedIn && profile?.currency) {
@@ -183,10 +211,20 @@ useEffect(() => {
 
 const handleLogout = async () => {
   try {
-    await api.post("/api/v1/users/auth/logout/");
+    // await api.post("/api/v1/users/auth/logout/");
+    const refresh = localStorage.getItem("refresh_token");
+    if (refresh) {
+      await api.post("/api/v1/users/logout/", { refresh });
+    } else {
+      await api.post("/api/v1/users/logout/", { refresh: "" });
+    }
   } catch (err) {
     console.warn("Logout API failed:", err);
   } finally {
+    localStorage.setItem("logout_at", String(Date.now()));
+    localStorage.removeItem("session_expires_at");
+    localStorage.removeItem("login_at");
+
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("userId");

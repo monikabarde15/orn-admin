@@ -3,23 +3,33 @@ import "react-toastify/dist/ReactToastify.css";
 import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-import { courses } from "../../mock/courses";
-import React, { useEffect, useState, useMemo } from "react";
-
-const notify = (msg: string, type: "info" | "success" | "error" = "info") => {
-  (toast as any)[type](msg, { position: "top-center", autoClose: 2500 });
+const currencySymbols: Record<string, string> = {
+  INR: "₹",
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
 };
+
+const getCurrencySymbol = (currency?: string | null) => {
+  const raw = (currency || "INR").toString().split("-")[0].trim().toUpperCase();
+  return currencySymbols[raw] || raw || "₹";
+};
+
+const notify = (msg, type = "info") =>
+  toast[type](msg, { position: "top-center", autoClose: 2500 });
 
 const LabPricing = () => {
   const navigate = useNavigate();
 
   const token = localStorage.getItem("access_token");
   const userId = localStorage.getItem("userId");
-
-  const [billingType, setBillingType] = useState<string>("free");
-
-  // No loading needed for mock data
-  const [loading] = useState<boolean>(false);
+  const [CartItems,setCartItems]=useState([]);
+  const [billingType, setBillingType] = useState("free");
+  const [selectedCurrency, setSelectedCurrency] = useState(
+    () => localStorage.getItem("orl_currency") || "INR"
+  );
+  const [allPackages, setAllPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   
   /* ================= PAGINATION ================= */
@@ -31,32 +41,73 @@ const LabPricing = () => {
   const itemsPerPage = 6;
 
   /* ================= FETCH PACKAGES ================= */
+  useEffect(() => {
+    const handler = () => {
+      setSelectedCurrency(localStorage.getItem("orl_currency") || "INR");
+    };
 
-  // No effect needed for mock data
+    window.addEventListener("orlcurrencychange", handler);
+    return () => window.removeEventListener("orlcurrencychange", handler);
+  }, []);
+
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        setLoading(true);
+        setCurrentPage(1);
+
+        const res = await api.get(
+          `/api/v1/packages/?currency=${encodeURIComponent(selectedCurrency)}`
+        );
+        const data = Array.isArray(res.data) ? res.data : [];
+
+        setAllPackages(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPackages();
+  }, [selectedCurrency]);
   /* ================= LAB FILTER (FAST) ================= */
 
-  // Use mock courses as labs, grouped by plan
-  const labs = useMemo<any[]>(() => {
-    return courses
-      .filter((c) => c.plan === billingType)
-      .map((c) => ({
-        name: c.title,
-        description: c.description,
-        price: c.price ?? (c.duration === 'Free' ? 0 : c.duration),
-        billing_cycle: c.plan,
-        planId: c.id,
-        course_id: c.id,
-        course_linked: true,
-        features: c.features && Array.isArray(c.features) && c.features.length > 0
-          ? c.features
-          : [
-              "Full Lab Access",
-              "SSH Access",
-              "Guided Lab Environment",
-              "Support Included",
-            ],
-      }));
-  }, [billingType]);
+  const labs = useMemo(() => {
+    if (!allPackages.length) return [];
+
+    const map = new Map();
+
+    for (const pkg of allPackages) {
+      if (pkg.billing_cycle !== billingType) continue;
+
+      const baseName = pkg.name.split("-")[0].trim();
+
+      if (!map.has(baseName)) {
+        map.set(baseName, {
+        name: baseName,
+        description: pkg.description,
+          // `price` is the base INR amount (used for checkout/payment).
+          price: pkg.price,
+          // `displayPrice` is the converted UI amount in the selected currency.
+          displayPrice: pkg.display_price ?? pkg.price,
+        billing_cycle: pkg.billing_cycle,
+        planId: pkg.package_id,
+        course_id: pkg.course_id, // ✅ ADD THIS
+        course_linked: pkg.course_linked, // optional but useful
+          currency: pkg.currency ?? "INR",
+        features: [
+          "Cancel any time",
+          "SSH Access",
+          "Guided Lab Environment",
+          "Support Included",
+        ],
+      });
+      }
+    }
+
+    return [...map.values()];
+  }, [billingType, allPackages]);
 
   /* ================= PAGINATION LOGIC ================= */
 
@@ -86,6 +137,8 @@ const LabPricing = () => {
       description: lab.description,
       features: lab.features,
       price: lab.price || 0,
+      displayPrice: lab.displayPrice ?? lab.price ?? 0,
+      currency: lab.currency ?? "INR",
       billingType: billingType,
       planId: lab.planId,
       course_id:lab.course_id,
@@ -98,8 +151,9 @@ const LabPricing = () => {
 
     notify("Added to cart", "success");
 
-    setTimeout(() => navigate("/cart"), 600);
-  };
+setTimeout(() => {
+  window.location.href = "/cart";
+}, 600);  };
 
   const handlePlanClick = (lab: any) => {
     if (!token) {
@@ -134,7 +188,8 @@ const LabPricing = () => {
           </h2>
 
           <p className="text-gray-400 mt-6 text-xl">
-            Choose the perfect lab and start practicing today
+            Choose the perfect lab and start practicing today 
+            {/* <p className="text-purple-300 mb-6">(Regular user visit 5k)</p> */}
           </p>
         </div>
 
@@ -207,9 +262,9 @@ const LabPricing = () => {
                 <div className="text-3xl font-bold text-white mb-6">
 
                   {billingType === "free" && "Free"}
-                  {billingType === "hourly" && `₹${lab.price}/hr`}
-                  {billingType === "monthly" && `₹${lab.price}/month`}
-                  {billingType === "yearly" && `₹${lab.price}/year`}
+                  {billingType === "hourly" && `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/hr`}
+                  {billingType === "monthly" && `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/month`}
+                  {billingType === "yearly" && `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/year`}
 
                 </div>
 

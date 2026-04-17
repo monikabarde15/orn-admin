@@ -68,58 +68,9 @@ interface Lesson {
 }
 
 
-// const fetchSubscriptions = async (): Promise<Subscription[]> => {
-//   const res = await api.get("/api/v1/packages/")
-//   return res.data
-// }
-//With comobo sort by name 6 pakage 20march2026
-// const fetchSubscriptions = async (): Promise<any[]> => {
-//   const res = await api.get("/api/v1/packages/")
-
-//   // ✅ REMOVE DUPLICATES BY NAME
-//   const uniqueMap = new Map()
-
-//   res.data.forEach((pkg: any) => {
-//     if (!uniqueMap.has(pkg.name)) {
-//       uniqueMap.set(pkg.name, pkg)
-//     }
-//   })
-
-//   return Array.from(uniqueMap.values())
-// }
-
-const fetchSubscriptions = async (): Promise<any[]> => {
-  const cached = localStorage.getItem("packages")
-
-  if (cached) {
-    return JSON.parse(cached)
-  }
-
+const fetchSubscriptions = async (): Promise<Subscription[]> => {
   const res = await api.get("/api/v1/packages/")
-
-  const filtered = res.data.filter((pkg: any) => !pkg.is_combo)
-
-  const map = new Map()
-
-  filtered.forEach((pkg: any) => {
-    if (!map.has(pkg.name)) {
-      map.set(pkg.name, {
-        name: pkg.name,
-        course_linked: pkg.course_linked,
-      })
-    } else {
-      if (pkg.course_linked) {
-        map.get(pkg.name).course_linked = true
-      }
-    }
-  })
-
-  const finalData = Array.from(map.values())
-
-  // ✅ SAVE CACHE
-  localStorage.setItem("packages", JSON.stringify(finalData))
-
-  return finalData
+  return res.data
 }
 // ============================================
 // MOCK API - Bypasses all real API calls

@@ -6,6 +6,8 @@ const MessagesList = lazy(() => import('../pages/MessagesList'));
 const AdminMessages = lazy(() => import('../pages/AdminMessages'));
 const BlogAdmin = lazy(() => import('../pages/BlogAdmin'));
 
+const AdminNotificationsBroadcast = lazy(() => import('../pages/AdminNotificationsBroadcast'));
+
 
 const ChangePasswordPortal = lazy(() => import('../pages/ChangePassword'));
 const AdminChangePassword = lazy(() => import('../pages/AdminChangePassword'));
@@ -172,6 +174,7 @@ const AboutUs = lazy(() => import('../pages/Components/AboutUs'));
 const OurServices = lazy(() => import('../pages/Components/OurServices'));
 const Support = lazy(() => import('../pages/Components/Support'));
 const WalletHistory = lazy(() => import('../pages/Components/WalletHistory'));
+const WalletAddFunds = lazy(() => import('../pages/Components/WalletAddFunds'));
 
 const UserInstances = lazy(() => import('../pages/Components/UserInstances'));
 
@@ -228,7 +231,7 @@ const routes = [
             layout:'web',
         },
     {
-        path: '/course-preview/:id/:slug',
+        path: '/course-preview/:id/:slug?',
         element: <CourseEnrollment />,
         layout: 'web',
     },
@@ -237,6 +240,11 @@ const routes = [
         element: <WalletHistory />,
         layout:'web',
     },
+    {
+        path: '/wallet/add-funds',
+        element: <WalletAddFunds />,
+        layout:'web',
+      },
     {
         path: '/courses-list',
         element: <Courses />,
@@ -273,6 +281,10 @@ const routes = [
         path: '/admin-change-password',
         element: <AdminChangePassword />,
 
+    },
+    {
+        path: '/admin-notifications',
+        element: <AdminNotificationsBroadcast />,
     },
     {
         path: '/payment-list',
@@ -349,6 +361,11 @@ const routes = [
         element: <RefoundPolicy />,
         layout:'web',
     },
+    //  {
+    //     path: '/posts',
+    //     element: <BlogListNew />,
+    //     layout:'web',
+    // },
     {
         path: '/blogs',
         element: <BlogListNew />,

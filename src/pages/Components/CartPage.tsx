@@ -29,6 +29,9 @@ const CartPage = () => {
   const [loading, setLoading] = useState(false);
   const [loaderSeconds, setLoaderSeconds] = useState(0);
   const [subscriptionActive, setSubscriptionActive] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState(
+    () => localStorage.getItem("orl_currency") || "INR"
+  );
 
   const loaderRef = useRef(null);
 
@@ -53,6 +56,51 @@ const CartPage = () => {
     const stored = JSON.parse(localStorage.getItem("orl_cart") || "[]");
     setCartItems(stored);
   }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      setSelectedCurrency(localStorage.getItem("orl_currency") || "INR");
+    };
+
+    window.addEventListener("orlcurrencychange", handler);
+    return () => window.removeEventListener("orlcurrencychange", handler);
+  }, []);
+
+  useEffect(() => {
+    const syncCartCurrency = async () => {
+      if (!cartItems.length) return;
+
+      try {
+        const res = await api.get(
+          `/api/v1/packages/?currency=${encodeURIComponent(selectedCurrency)}`
+        );
+        const packages = Array.isArray(res.data) ? res.data : [];
+        if (!packages.length) return;
+
+        const packageMap = new Map(
+          packages.map((pkg: any) => [Number(pkg.package_id), pkg])
+        );
+
+        const updatedItems = cartItems.map((item: any) => {
+          const pkg = packageMap.get(Number(item.planId));
+          if (!pkg) return item;
+
+          return {
+            ...item,
+            displayPrice: pkg.display_price ?? pkg.price ?? item.displayPrice ?? item.price,
+            currency: pkg.currency ?? selectedCurrency,
+          };
+        });
+
+        setCartItems(updatedItems);
+        localStorage.setItem("orl_cart", JSON.stringify(updatedItems));
+      } catch (err) {
+        console.error("Cart currency sync failed:", err);
+      }
+    };
+
+    syncCartCurrency();
+  }, [selectedCurrency, cartItems.length]);
 
   /* ================= LOADER ================= */
 

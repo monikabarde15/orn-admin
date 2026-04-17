@@ -1,9 +1,7 @@
-import React, { useEffect, useState, useMemo } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import api from "../../services/api";
 
 const currencySymbols: Record<string, string> = {
   INR: "₹",
@@ -36,7 +34,10 @@ const LabPricing = () => {
   
   /* ================= PAGINATION ================= */
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // For cart state (mock only, not persisted)
+  const [cartItems, setCartItems] = useState<any[]>([]);
   const itemsPerPage = 6;
 
   /* ================= FETCH PACKAGES ================= */
@@ -112,7 +113,7 @@ const LabPricing = () => {
 
   const totalPages = Math.ceil(labs.length / itemsPerPage);
 
-  const paginatedLabs = useMemo(() => {
+  const paginatedLabs = useMemo<any[]>(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return labs.slice(start, start + itemsPerPage);
   }, [labs, currentPage]);
@@ -123,7 +124,7 @@ const LabPricing = () => {
 
   /* ================= ADD TO CART ================= */
 
-  const addToCart = (lab) => {
+  const addToCart = (lab: any) => {
     const saved = JSON.parse(localStorage.getItem("orl_cart") || "[]");
 
     if (saved.length > 0) {
@@ -154,7 +155,7 @@ setTimeout(() => {
   window.location.href = "/cart";
 }, 600);  };
 
-  const handlePlanClick = (lab) => {
+  const handlePlanClick = (lab: any) => {
     if (!token) {
       notify("Please login to continue", "error");
       navigate("/login");
@@ -163,7 +164,7 @@ setTimeout(() => {
 
     addToCart(lab);
   };
-  const handleViewCourse = (lab) => {
+  const handleViewCourse = (lab: any) => {
   console.log('lab=', lab);
 
   if (!lab?.course_id) {
@@ -183,7 +184,7 @@ setTimeout(() => {
 
         <div className="text-center mb-16">
           <h2 className="text-5xl font-extrabold bg-gradient-to-r from-purple-400 to-blue-300 bg-clip-text text-transparent">
-            Simple pricing. No surprise fees.
+            Simple pricing. 3 Days money back Guarantee.
           </h2>
 
           <p className="text-gray-400 mt-6 text-xl">

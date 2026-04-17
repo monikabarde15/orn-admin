@@ -293,25 +293,26 @@ const userID = JSON.parse(localStorage.getItem("userId") || "{}");
                                     <IconEdit />
                                 </Link>
                             </li>
-                           {
-  userID < 2 ? (
+{userID < 2 ? (
+    <>
+        <li>
+            <Link to="/admin-messages" className="block p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:text-primary hover:bg-white-light/90 dark:hover:bg-dark/60">
+                <IconChatNotification />
+            </Link>
+        </li>
+        <li>
+            <Link to="/admin-notifications" className="block p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:text-primary hover:bg-white-light/90 dark:hover:bg-dark/60">
+                <IconBellBing />
+            </Link>
+        </li>
+    </>
+) : (
     <li>
-      <Link to="/admin-messages" className="block p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:text-primary hover:bg-white-light/90 dark:hover:bg-dark/60">
-        <IconChatNotification />
-      </Link>
+        <Link to="/Messages" className="hidden p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:text-primary hover:bg-white-light/90 dark:hover:bg-dark/60" />
     </li>
-    <li>
-        <Link to="/admin-notifications" className="block p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:text-primary hover:bg-white-light/90 dark:hover:bg-dark/60">
-        <IconBellBing />
-        </Link>
-    </li>
-  ) : (
-    <li>
-      <Link to="/Messages" className="hidden p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:text-primary hover:bg-white-light/90 dark:hover:bg-dark/60">
-      </Link>
-    </li>
-  )
-}
+)}
+
+
 
                         </ul>
                     </div>

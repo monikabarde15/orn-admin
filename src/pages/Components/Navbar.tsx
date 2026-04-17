@@ -308,7 +308,11 @@ const profileImage = profile?.profile_image
                   }}
                 >
                   {currencyOptions.map((c) => (
-                    <option key={c} value={c}>
+                    <option
+                      key={c}
+                      value={c}
+                      style={{ backgroundColor: "#111827", color: "#ffffff" }}
+                    >
                       {c}
                     </option>
                   ))}
@@ -344,7 +348,11 @@ const profileImage = profile?.profile_image
                   }}
                 >
                   {currencyOptions.map((c) => (
-                    <option key={c} value={c}>
+                    <option
+                      key={c}
+                      value={c}
+                      style={{ backgroundColor: "#111827", color: "#ffffff" }}
+                    >
                       {c}
                     </option>
                   ))}
@@ -426,7 +434,11 @@ const profileImage = profile?.profile_image
               }}
             >
               {currencyOptions.map((c) => (
-                <option key={c} value={c}>
+                <option
+                  key={c}
+                  value={c}
+                  style={{ backgroundColor: "#111827", color: "#ffffff" }}
+                >
                   {c}
                 </option>
               ))}

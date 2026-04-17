@@ -4,9 +4,10 @@ import logoimg from "../../../public/assets/orllogo.png";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
-import { Wallet, User, LogOut, Laptop, ShoppingCart, Lock, DollarSign } from "lucide-react";
+import { Wallet, User, LogOut, Laptop, ShoppingCart, Lock, DollarSign, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
+import { fetchNotifications, fetchUnreadCount, markNotificationRead } from "../../services/notifications";
 
 const currencySymbols: Record<string, string> = {
   INR: "₹",
@@ -28,6 +29,12 @@ const Navbar = () => {
   const [cartItems, setCartItems] = useState(JSON.parse(localStorage.getItem("orl_cart") || "[]"));
   const [cartOpen, setCartOpen] = useState(false);
   const logoutTimerRef = useRef<any>(null);
+
+  const notifRef = useRef<HTMLDivElement | null>(null);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifItems, setNotifItems] = useState<any[]>([]);
 
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -167,6 +174,51 @@ const fetchWalletBalance = async () => {
     setLoadingWallet(false);
   }
 };
+
+const loadUnread = async () => {
+  try {
+    const count = await fetchUnreadCount();
+    setUnreadCount(count);
+  } catch (e) {
+    // ignore (don’t toast on navbar polling)
+  }
+};
+
+const loadNotifications = async () => {
+  setNotifLoading(true);
+  try {
+    const list = await fetchNotifications();
+    setNotifItems(list || []);
+  } catch (e) {
+    setNotifItems([]);
+  } finally {
+    setNotifLoading(false);
+  }
+};
+
+const openNotifications = async () => {
+  setNotifOpen((v) => !v);
+};
+
+useEffect(() => {
+  if (!isLoggedIn) {
+    setUnreadCount(0);
+    setNotifItems([]);
+    setNotifOpen(false);
+    return;
+  }
+
+  loadUnread();
+  const t = setInterval(loadUnread, 30000);
+  return () => clearInterval(t);
+}, [isLoggedIn]);
+
+useEffect(() => {
+  if (isLoggedIn && notifOpen) {
+    loadNotifications();
+  }
+}, [isLoggedIn, notifOpen]);
+
 const menuRef = useRef(null);
 const cartRef = useRef(null); // ✅ REQUIRED
 useEffect(() => {
@@ -177,6 +229,10 @@ useEffect(() => {
 
     if (cartRef.current && !cartRef.current.contains(e.target)) {
       setCartOpen(false);
+    }
+
+    if (notifRef.current && !notifRef.current.contains(e.target)) {
+      setNotifOpen(false);
     }
   };
 
@@ -482,6 +538,109 @@ const profileImage = profile?.profile_image
               ))}
             </select>
           </div>
+
+          {isLoggedIn && (
+            <div ref={notifRef} style={{ position: "relative", marginLeft: 8 }}>
+              <button
+                type="button"
+                className="navbar-btn"
+                onClick={openNotifications}
+                title="Notifications"
+                style={{ position: "relative" }}
+              >
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: -4,
+                      right: -4,
+                      minWidth: 18,
+                      height: 18,
+                      padding: "0 6px",
+                      borderRadius: 999,
+                      background: "#ef4444",
+                      color: "#fff",
+                      fontSize: 11,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      lineHeight: "18px",
+                    }}
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {notifOpen && (
+                <div
+                  className="clean-card"
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: "calc(100% + 10px)",
+                    width: 360,
+                    maxWidth: "85vw",
+                    zIndex: 9999,
+                    background: "#fff",
+                    borderRadius: 12,
+                    padding: 12,
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                    <strong style={{ fontSize: 14 }}>Notifications</strong>
+                    <button
+                      type="button"
+                      onClick={() => setNotifOpen(false)}
+                      style={{ fontSize: 14, opacity: 0.7 }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {notifLoading ? (
+                    <div style={{ padding: 10, color: "#6b7280" }}>Loading…</div>
+                  ) : notifItems.length === 0 ? (
+                    <div style={{ padding: 10, color: "#6b7280" }}>No notifications</div>
+                  ) : (
+                    <div style={{ maxHeight: 360, overflowY: "auto" }}>
+                      {notifItems.map((n) => (
+                        <button
+                          key={n.id}
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await markNotificationRead(n.id);
+                              await loadUnread();
+                              await loadNotifications();
+                            } catch (e) {
+                              // ignore
+                            }
+                          }}
+                          style={{
+                            width: "100%",
+                            textAlign: "left",
+                            padding: 10,
+                            borderRadius: 10,
+                            marginBottom: 8,
+                            background: n.is_read ? "rgba(0,0,0,0.03)" : "rgba(59,130,246,0.10)",
+                          }}
+                        >
+                          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>{n.title}</div>
+                          <div style={{ fontSize: 12, color: "#374151" }}>{n.message}</div>
+                          <div style={{ fontSize: 11, color: "#6b7280", marginTop: 6 }}>
+                            {n.created_at ? new Date(n.created_at).toLocaleString() : ""}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Profile */}
           {isLoggedIn ? (

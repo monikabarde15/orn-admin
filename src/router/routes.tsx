@@ -6,6 +6,8 @@ const MessagesList = lazy(() => import('../pages/MessagesList'));
 const AdminMessages = lazy(() => import('../pages/AdminMessages'));
 const BlogAdmin = lazy(() => import('../pages/BlogAdmin'));
 
+const AdminNotificationsBroadcast = lazy(() => import('../pages/AdminNotificationsBroadcast'));
+
 
 const ChangePasswordPortal = lazy(() => import('../pages/ChangePassword'));
 const AdminChangePassword = lazy(() => import('../pages/AdminChangePassword'));
@@ -266,6 +268,10 @@ const routes = [
         path: '/admin-change-password',
         element: <AdminChangePassword />,
 
+    },
+    {
+        path: '/admin-notifications',
+        element: <AdminNotificationsBroadcast />,
     },
     {
         path: '/payment-list',

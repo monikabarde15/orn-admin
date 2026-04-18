@@ -96,6 +96,7 @@ const LabPricing = () => {
         course_id: pkg.course_id, // ✅ ADD THIS
         course_linked: pkg.course_linked, // optional but useful
         currency: pkg.currency ?? "INR",
+        freeUsed: Boolean((pkg as any).free_used),
         features: [
           "Cancel any time",
           "SSH Access",
@@ -301,10 +302,11 @@ setTimeout(() => {
               </button>
                   <button
                     onClick={() => handlePlanClick(lab)}
-                    className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold hover:opacity-90"
+                    disabled={billingType === "free" && lab.freeUsed === true}
+                    className={`w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
 
-                    {billingType === "free" && "Start Free Lab"}
+                    {billingType === "free" && (lab.freeUsed ? "Already Used" : "Start Free Lab")}
                     {billingType === "hourly" && "Start Lab"}
                     {(billingType === "monthly" || billingType === "yearly") &&
                       "Subscribe"}

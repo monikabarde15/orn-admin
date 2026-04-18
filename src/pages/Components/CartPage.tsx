@@ -81,14 +81,39 @@ const CartPage = () => {
           packages.map((pkg: any) => [Number(pkg.package_id), pkg])
         );
 
+        // const updatedItems = cartItems.map((item: any) => {
+        //   const pkg = packageMap.get(Number(item.planId));
+        //   if (!pkg) return item;
+
+        //   return {
+        //     ...item,
+        //     displayPrice: pkg.display_price ?? pkg.price ?? item.displayPrice ?? item.price,
+        //     currency: pkg.currency ?? selectedCurrency,
+        //   };
+        // });
+
         const updatedItems = cartItems.map((item: any) => {
           const pkg = packageMap.get(Number(item.planId));
           if (!pkg) return item;
-
+          const nextCurrency = pkg.currency ?? selectedCurrency;
+          // Keep hourly “hours-based” displayPrice consistent when currency changes.
+          if (item.billingType === "hourly") {
+            const baseTotalMinutes = Number(pkg.total_minutes ?? item.totalMinutes ?? 0);
+            const baseHours = baseTotalMinutes > 0 ? baseTotalMinutes / 60 : 1;
+            const hours = Number(item.hours ?? 1);
+            const perHourDisplay = Number(pkg.display_price ?? pkg.price ?? 0) / baseHours;
+            const nextDisplayPrice = perHourDisplay * hours;
+            return {
+              ...item,
+              currency: nextCurrency,
+              totalMinutes: baseTotalMinutes,
+              displayPrice: nextDisplayPrice,
+            };
+          }
           return {
             ...item,
             displayPrice: pkg.display_price ?? pkg.price ?? item.displayPrice ?? item.price,
-            currency: pkg.currency ?? selectedCurrency,
+            currency: nextCurrency,
           };
         });
 
@@ -248,7 +273,7 @@ const CartPage = () => {
 
   /* ================= CREATE SUB ================= */
 
-  const createSubscription = async (planId, price) => {
+  const createSubscription = async (planId, price, payload: any = {}) => {
     try {
       const res = await api.post(
         `/api/v1/users/subscriptions/create/${planId}/`,
@@ -317,7 +342,13 @@ const CartPage = () => {
         return;
       }
 
-      const sub = await createSubscription(item.planId, item.price);
+      const payload =
+        item.billingType === "hourly"
+          ? { hours: Number(item.hours ?? 1) }
+          : {};
+      const sub = await createSubscription(item.planId, item.price, payload);
+
+      // const sub = await createSubscription(item.planId, item.price);
 
       if (!sub) return;
 
@@ -426,6 +457,61 @@ const CartPage = () => {
                 {getCurrencySymbol(cartItems[0]?.currency)}
                 {Number(totalDisplayAmount)}
               </p>
+
+              {cartItems[0]?.billingType === "hourly" && (
+                <div className="mb-5">
+                  <label className="block text-sm text-gray-300 mb-2">
+                    Hours
+                  </label>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={Number(cartItems[0]?.hours ?? 1)}
+                      onChange={(e) => {
+                        const hours = Math.max(1, Number(e.target.value || 1));
+
+                        const item = cartItems[0] as any;
+                        const baseTotalMinutes = Number(item.totalMinutes ?? 0);
+                        const baseHours = baseTotalMinutes > 0 ? baseTotalMinutes / 60 : 1;
+
+                        const perHourINR = Number(item.price ?? 0) / baseHours;
+                        const perHourDisplay = Number(item.displayPrice ?? item.price ?? 0) / (Number(item.hours ?? 1) || 1);
+
+                        const nextItem = {
+                          ...item,
+                          hours,
+                          // store computed minutes so backend can create correct subscription minutes
+                          totalMinutes: baseTotalMinutes,
+                          // keep INR price aligned with base per-hour rate
+                          price: Math.round(perHourINR * hours),
+                          // keep UI price aligned to current currency per-hour rate
+                          displayPrice: perHourDisplay * hours,
+                        };
+
+                        const updated = [nextItem];
+                        setCartItems(updated as any);
+                        localStorage.setItem("orl_cart", JSON.stringify(updated));
+                      }}
+                      className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white outline-none"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => notify("Hours updated", "success")}
+                      className="px-4 py-2 rounded-lg bg-white/10 border border-white/10 text-white hover:bg-white/15 transition"
+                    >
+                      Update hours
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-gray-400 mt-2">
+                    Total will update based on hourly rate.
+                  </p>
+                </div>
+              )}
 
               <button
                 onClick={handleCheckout}

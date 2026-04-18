@@ -86,15 +86,16 @@ const LabPricing = () => {
         map.set(baseName, {
         name: baseName,
         description: pkg.description,
-          // `price` is the base INR amount (used for checkout/payment).
-          price: pkg.price,
-          // `displayPrice` is the converted UI amount in the selected currency.
-          displayPrice: pkg.display_price ?? pkg.price,
+        // `price` is the base INR amount (used for checkout/payment).
+        price: pkg.price,
+        // `displayPrice` is the converted UI amount in the selected currency.
+        displayPrice: pkg.display_price ?? pkg.price,
+        totalMinutes: Number(pkg.total_minutes ?? 0),
         billing_cycle: pkg.billing_cycle,
         planId: pkg.package_id,
         course_id: pkg.course_id, // ✅ ADD THIS
         course_linked: pkg.course_linked, // optional but useful
-          currency: pkg.currency ?? "INR",
+        currency: pkg.currency ?? "INR",
         features: [
           "Cancel any time",
           "SSH Access",
@@ -141,6 +142,9 @@ const LabPricing = () => {
       billingType: billingType,
       planId: lab.planId,
       course_id:lab.course_id,
+      totalMinutes: Number((lab as any).totalMinutes ?? 0),
+      // Frontend will use this to compute scaled price/minutes for hourly.
+      hours: billingType === "hourly" ? 1 : undefined,
     };
 
     const updated = [item];
@@ -261,7 +265,13 @@ setTimeout(() => {
                 <div className="text-3xl font-bold text-white mb-6">
 
                   {billingType === "free" && "Free"}
-                  {billingType === "hourly" && `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/hr`}
+                  {/* {billingType === "hourly" && `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/hr`} */}
+                  {billingType === "hourly" && (() => {
+                    const totalMinutes = Number((lab as any).totalMinutes ?? 0);
+                    const baseHours = totalMinutes > 0 ? totalMinutes / 60 : 1;
+                    const hourlyRate = Number(lab.displayPrice ?? lab.price ?? 0) / baseHours;
+                    return `${getCurrencySymbol(lab.currency)}${hourlyRate.toFixed(2)}/hr`;
+                  })()}
                   {billingType === "monthly" && `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/month`}
                   {billingType === "yearly" && `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/year`}
 

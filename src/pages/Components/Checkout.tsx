@@ -5,6 +5,18 @@ console.log(import.meta.env.VITE_API_URL);
 const VIT=import.meta.env.VITE_API_URL;
 const API_BASE = `${VIT}/api/v1`;
 
+const currencySymbols: Record<string, string> = {
+  INR: "₹",
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+};
+
+const getCurrencySymbol = (currency?: string | null) => {
+  const raw = (currency || "INR").toString().split("-")[0].trim().toUpperCase();
+  return currencySymbols[raw] || raw || "₹";
+};
+
 // Razorpay loader
 const loadRazorpayScript = () =>
   new Promise<boolean>((resolve) => {
@@ -147,7 +159,8 @@ const Checkout: React.FC<CheckoutProps> = () => {
       <div className="max-w-md w-full bg-gray-800 rounded-2xl p-8 shadow-2xl space-y-6">
         <h2 className="text-3xl font-bold text-center text-white">Checkout</h2>
         <p className="text-center text-lg text-gray-300">
-          Total: ₹{item?.price || 0}
+          Total: {getCurrencySymbol(item?.currency)}{" "}
+          {Number(item?.displayPrice ?? item?.price ?? 0)}
         </p>
         <button
           onClick={payAndLaunch}

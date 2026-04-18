@@ -36,6 +36,8 @@ import IconMenuPages from '../Icon/Menu/IconMenuPages';
 import IconMenuAuthentication from '../Icon/Menu/IconMenuAuthentication';
 import IconMenuDocumentation from '../Icon/Menu/IconMenuDocumentation';
 
+import IconBellBing from '../Icon/IconBellBing';
+
 interface MenuItem {
   key?: string;
   label: string;
@@ -204,6 +206,7 @@ if (is_superuser) {
       { path: "/admin-feedback-list", label: "Feedback List", icon: IconFeedbackList, permission: "FeedbackListNew" },
       { path: "/admin-change-password", label: "Change Password", icon: IconSettings, permission: "contacts" },
       { path: "/admin-messages", label: "Support", icon: IconMessage2, permission: "contacts" },
+      { path: "/admin-notifications", label: "Notifications", icon: IconBellBing, permission: "notifications" },
     ],
   });
 } else {

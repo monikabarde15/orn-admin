@@ -27,7 +27,7 @@ const LabPricing = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   // For cart state (mock only, not persisted)
-  const [cartItems, setCartItems] = useState<any[]>([]);
+  // const [cartItems, setCartItems] = useState<any[]>([]);
   const itemsPerPage = 6;
 
   /* ================= FETCH PACKAGES ================= */

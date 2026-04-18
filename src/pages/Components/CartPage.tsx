@@ -8,6 +8,19 @@ import { toast, ToastContainer } from "react-toastify";
 import { Check } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
 import api from "../../services/api";
+import { validateWalletAddAmount } from "../../utils/walletAmount";
+
+const currencySymbols: Record<string, string> = {
+  INR: "₹",
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+};
+
+const getCurrencySymbol = (currency?: string | null) => {
+  const raw = (currency || "INR").toString().split("-")[0].trim().toUpperCase();
+  return currencySymbols[raw] || raw || "₹";
+};
 
 const CartPage = () => {
   const navigate = useNavigate();
@@ -16,6 +29,9 @@ const CartPage = () => {
   const [loading, setLoading] = useState(false);
   const [loaderSeconds, setLoaderSeconds] = useState(0);
   const [subscriptionActive, setSubscriptionActive] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState(
+    () => localStorage.getItem("orl_currency") || "INR"
+  );
 
   const loaderRef = useRef(null);
 
@@ -41,6 +57,51 @@ const CartPage = () => {
     setCartItems(stored);
   }, []);
 
+  useEffect(() => {
+    const handler = () => {
+      setSelectedCurrency(localStorage.getItem("orl_currency") || "INR");
+    };
+
+    window.addEventListener("orlcurrencychange", handler);
+    return () => window.removeEventListener("orlcurrencychange", handler);
+  }, []);
+
+  useEffect(() => {
+    const syncCartCurrency = async () => {
+      if (!cartItems.length) return;
+
+      try {
+        const res = await api.get(
+          `/api/v1/packages/?currency=${encodeURIComponent(selectedCurrency)}`
+        );
+        const packages = Array.isArray(res.data) ? res.data : [];
+        if (!packages.length) return;
+
+        const packageMap = new Map(
+          packages.map((pkg: any) => [Number(pkg.package_id), pkg])
+        );
+
+        const updatedItems = cartItems.map((item: any) => {
+          const pkg = packageMap.get(Number(item.planId));
+          if (!pkg) return item;
+
+          return {
+            ...item,
+            displayPrice: pkg.display_price ?? pkg.price ?? item.displayPrice ?? item.price,
+            currency: pkg.currency ?? selectedCurrency,
+          };
+        });
+
+        setCartItems(updatedItems);
+        localStorage.setItem("orl_cart", JSON.stringify(updatedItems));
+      } catch (err) {
+        console.error("Cart currency sync failed:", err);
+      }
+    };
+
+    syncCartCurrency();
+  }, [selectedCurrency, cartItems.length]);
+
   /* ================= LOADER ================= */
 
   useEffect(() => {
@@ -61,45 +122,38 @@ const CartPage = () => {
     0
   );
 
+  const totalDisplayAmount = cartItems.reduce(
+    (sum, i) => sum + Number(i.displayPrice ?? i.price ?? 0),
+    0
+  );
+
   /* ================= CHECK ACTIVE SUB ================= */
 
- const checkActiveSubscription = async (planId, billingCycle) => {
-  try {
-    const res = await api.get(`/api/v1/users/subscriptions`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  const checkActiveSubscription = async (planId, price) => {
+    try {
+      const res = await api.get(`/api/v1/users/subscriptions`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    const subs = res.data || [];
+      const isActive = (res.data || []).some(
+        (sub) =>
+          sub.plan_id === planId &&
+          sub.active === true &&
+          Number(sub.price) === Number(price)
+      );
 
-    const matchedSubs = subs.filter(
-      (sub) =>
-        sub.package_id === planId ||
-        sub.billing_cycle === billingCycle
-    );
+      setSubscriptionActive(isActive);
+      return isActive;
 
-    if (!matchedSubs.length) {
-      setSubscriptionActive(false);
+    } catch {
       return false;
     }
+  };
 
-    // latest subscription nikalo
-    const latestSub = matchedSubs.sort(
-      (a, b) => new Date(b.expires_at) - new Date(a.expires_at)
-    )[0];
-
-    const isActive = new Date(latestSub.expires_at) > new Date();
-
-    setSubscriptionActive(isActive);
-    return isActive;
-
-  } catch {
-    return false;
-  }
-};
   useEffect(() => {
     if (cartItems.length) {
       const item = cartItems[0];
-      checkActiveSubscription(item.planId,item.billing_cycle);
+      checkActiveSubscription(item.planId, item.price);
     }
   }, [cartItems]);
 
@@ -151,7 +205,8 @@ const CartPage = () => {
 
       const options = {
         key: order.key_id,
-        amount: order.amount * 100,
+        // amount: order.amount * 100,
+        amount: order.amount,
         currency: "INR",
         name: "OnRequestLab",
         description: "Plan Payment",
@@ -218,6 +273,12 @@ const CartPage = () => {
         const remaining =
           (data.required || price) - (data.balance || 0);
 
+        const amountValidationError = validateWalletAddAmount(remaining);
+        if (amountValidationError) {
+          notify(amountValidationError, "error");
+          return null;
+        }
+
         notify(`Pay remaining ₹${remaining}`, "info");
 
         setTimeout(() => {
@@ -233,32 +294,22 @@ const CartPage = () => {
   };
 
   /* ================= CHECKOUT ================= */
-const getUniqueCart = (items) => {
-  const map = new Map();
 
-  items.forEach((item) => {
-    if (!map.has(item.planId)) {
-      map.set(item.planId, item);
-    }
-  });
+  const handleCheckout = async () => {
+    if (!requireLogin()) return;
 
-  return Array.from(map.values());
-};
- const handleCheckout = async () => {
- 
-  if (!requireLogin()) return;
+    if (!cartItems.length)
+      return notify("Cart empty", "info");
 
-  if (!cartItems.length)
-    return notify("Cart empty", "info");
+    const item = cartItems[0];
 
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    // ✅ remove duplicate plans
-    const uniqueCart = getUniqueCart(cartItems);
-
-    for (const item of uniqueCart) {
-       const alreadyActive = await checkActiveSubscription(item.planId,item.billing_cycle);
+    try {
+      const alreadyActive = await checkActiveSubscription(
+        item.planId,
+        item.price
+      );
 
       if (alreadyActive) {
         notify("Plan already active.", "info");
@@ -266,25 +317,23 @@ const getUniqueCart = (items) => {
         return;
       }
 
-      // ✅ create subscription (payment ya wallet handle karega)
       const sub = await createSubscription(item.planId, item.price);
 
       if (!sub) return;
+
+      notify("Subscription activated successfully!", "success");
+
+      localStorage.removeItem("orl_cart");
+      setCartItems([]);
+
+      navigate("/my-subscrption");
+
+    } catch {
+      notify("Checkout failed", "error");
+    } finally {
+      setLoading(false);
     }
-
-    notify("All plans processed successfully!", "success");
-
-    localStorage.removeItem("orl_cart");
-    setCartItems([]);
-
-    navigate("/my-subscrption");
-
-  } catch {
-    notify("Checkout failed", "error");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   /* ================= UI ================= */
 
@@ -361,7 +410,8 @@ const getUniqueCart = (items) => {
                   </div>
 
                   <div className="text-2xl font-bold">
-                    ₹{item.price}
+                    {getCurrencySymbol(item.currency)}
+                    {Number(item.displayPrice ?? item.price ?? 0)}
                   </div>
                 </div>
               ))}
@@ -373,14 +423,17 @@ const getUniqueCart = (items) => {
               </h3>
 
               <p className="text-4xl font-bold mb-6">
-                ₹{totalAmount}
+                {getCurrencySymbol(cartItems[0]?.currency)}
+                {Number(totalDisplayAmount)}
               </p>
 
               <button
                 onClick={handleCheckout}
                 className="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-pink-500 to-purple-600 hover:scale-105 transition"
               >
-                {subscriptionActive ? "View Subscription" : "Activate Plan"}
+                {subscriptionActive
+                  ? "View Subscription"
+                  : "Activate Plan"}
               </button>
             </div>
 

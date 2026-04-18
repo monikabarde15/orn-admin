@@ -11,6 +11,8 @@ import ClusterLabCard from '../Components/ClusterLabCard';
 import Footer from '../Components/Footer';
 import FAQ from '../Components/FAQ';
 import HeroVideo from '../Components/HeroVideo';
+import StatsSection from '../Components/StatsSection';
+
 import LabPricing from '../Components/LabPricing';
 import { HomeMetaTags } from '../../pages/Pages/HomeMetaTags';
 
@@ -27,6 +29,7 @@ const HomePage = () => (
     {/* <ClusterLabCard /> */}
     {/* <ProcessSection /> */}
     <OfferService />
+    <StatsSection />
     <LabPricing />
     <TestimonialSection />
     <ContactUs />

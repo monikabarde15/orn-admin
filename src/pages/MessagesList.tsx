@@ -143,7 +143,23 @@ export default function SupportChat({ user }) {
           {/* HEADER */}
           <div className="bg-indigo-600 text-white flex justify-between items-center px-4 py-3">
             <h3 className="font-semibold">💬 Support Chat</h3>
-            <button onClick={() => setOpen(false)}>✕</button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  try {
+                    await api.post("/api/v1/support/chats/transcript/email/", { email });
+                    alert("Transcript emailed successfully");
+                  } catch (e) {
+                    console.error(e);
+                    alert("Failed to email transcript");
+                  }
+                }}
+                className="text-xs bg-white/20 px-3 py-1 rounded hover:bg-white/30 transition"
+              >
+                Email transcript
+              </button>
+              <button onClick={() => setOpen(false)}>✕</button>
+            </div>
           </div>
 
           {/* EMAIL INPUT */}

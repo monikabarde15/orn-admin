@@ -9,7 +9,8 @@ export default function SupportChat({ user }) {
   );
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
-  const [attachments, setAttachments] = useState([]);
+  // const [attachments, setAttachments] = useState([]);
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [open, setOpen] = useState(false);
   const chatEndRef = useRef(null);
 
@@ -62,10 +63,18 @@ export default function SupportChat({ user }) {
     if (!email) return alert("Enter email");
 
     try {
-      const res = await api.post(API_BASE, {
-        message,
-        email,
-        attachments,
+      // const res = await api.post(API_BASE, {
+      //   message,
+      //   email,
+      //   attachments,
+      // });
+
+      const form = new FormData();
+      form.append("message", message);
+      form.append("email", email);
+      attachments.forEach((file) => form.append("attachments", file));
+      const res = await api.post(API_BASE, form, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       const newMsg = {
@@ -83,16 +92,26 @@ export default function SupportChat({ user }) {
   };
 
   // file select
-  const handleFileSelect = (e) => {
+  // const handleFileSelect = (e) => {
+  //   const files = Array.from(e.target.files || []);
+  //   const fileData = files.map((f) => ({
+  //     name: f.name,
+  //     url: URL.createObjectURL(f),
+  //   }));
+  //   setAttachments((prev) => [...prev, ...fileData]);
+  // };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const fileData = files.map((f) => ({
-      name: f.name,
-      url: URL.createObjectURL(f),
-    }));
-    setAttachments((prev) => [...prev, ...fileData]);
+    setAttachments((prev) => [...prev, ...files]);
+    e.target.value = "";
   };
 
-  const removeAttachment = (name) => {
+  // const removeAttachment = (name) => {
+  //   setAttachments((prev) => prev.filter((f) => f.name !== name));
+  // };
+
+  const removeAttachment = (name: string) => {
     setAttachments((prev) => prev.filter((f) => f.name !== name));
   };
 

@@ -715,3 +715,7 @@ pre.hljs {
 .prose p {
   color: #cbd5e1;
 }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #f7f9fa;
+}

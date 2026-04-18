@@ -183,6 +183,7 @@ const CreateCourseForm = lazy(() =>
 )
 const CoursesListPage = lazy(() => import('../pages/Components/CoursesListPage'));
 const VideoPlayer = lazy(() => import('../pages/Components/VideoPlayer'));
+const CoursePlayer  = lazy(() => import('../pages/Components/CoursePlayer'));
 
 const EditCoursePage = lazy(() =>
   import("../pages/Components/EditCoursePage")
@@ -245,6 +246,11 @@ const routes = [
     {
         path: '/course/:id',
         element: <VideoPlayer />,
+        layout: 'web',
+    },
+     {
+        path: '/learn/:id',
+        element: <CoursePlayer  />,
         layout: 'web',
     },
     {

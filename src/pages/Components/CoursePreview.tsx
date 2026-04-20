@@ -1,6 +1,6 @@
-
 import { useParams } from "react-router-dom";
-import { courses } from "../../mock/courses";
+import { useEffect, useState, useRef } from "react";
+import api from "../../services/api";
 
 import Navbar from "../../pages/Components/Navbar";
 import Footer from "../Components/Footer";
@@ -14,17 +14,56 @@ import WhoIsThisForSection from "./WhoIsThisForSection";
 import WhyChooseSection from "./WhyChooseSection";
 import CtaSection from "./CtaSection";
 
-
 const CoursePreview = () => {
   const { id } = useParams();
-  // Find course by id (id from params is string)
-  const course = courses.find((c) => String(c.id) === String(id));
+
+  const [course, setCourse] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // ✅ ADD THIS (important)
+  const hasFetched = useRef(false);
+
+  useEffect(() => {
+    // ✅ prevent double API call
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
+    const fetchCourse = async () => {
+      try {
+        const res = await api.get(`/course/courses/${id}/preview/`);
+        setCourse(res.data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchCourse();
+  }, [id]);
+
+  /* ================= UI ================= */
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white">
+        Loading course...
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        Course not found
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen">
       <Navbar />
 
-      {/* ✅ props pass */}
       <HeroCourseSection course={course} />
       <ComparisonSection course={course} />
       <LearnSection course={course} />

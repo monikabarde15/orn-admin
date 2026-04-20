@@ -7,7 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom"; // react-router-dom for redirect
 
 // Axios default configuration
-axios.defaults.baseURL = "https://backend.onrequestlab.com/api/v1/users";
+axios.defaults.baseURL = "https://dev.backend.onrequestlab.com/api/v1/users";
 axios.defaults.headers.common["accept"] = "application/json";
 axios.defaults.headers.common["Content-Type"] = "application/json";
 axios.defaults.headers.common["X-CSRFTOKEN"] = "2sffuGqjATmmKMpila2h0gg5sxHU2cBNpDtt6FsHiB627oLHumG1dST5zzDqqGT5";

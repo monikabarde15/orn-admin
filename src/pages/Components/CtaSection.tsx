@@ -1,9 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const CtaSection = ({ course }) => {
-
+  const navigate = useNavigate();
+const handleStart = (course) => {
+  if (!course?.id) {
+    console.error("Invalid course data", course);
+    return;
+  }
+  navigate(`/course/${course.id}`);
+};
   return (
     <section className="relative py-28 bg-[#0b0b1f] overflow-hidden">
 
@@ -55,7 +63,7 @@ const CtaSection = ({ course }) => {
           transition={{ delay: 0.4 }}
         >
           <motion.div whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.95 }}>
-            <Button className="text-lg px-10 py-7 font-bold gap-3 bg-gradient-to-r from-purple-500 to-cyan-500">
+            <Button className="text-lg px-10 py-7 font-bold gap-3 bg-gradient-to-r from-purple-500 to-cyan-500" onClick={() => handleStart(course)}>
               Start Course
               <ArrowRight className="w-5 h-5" />
             </Button>

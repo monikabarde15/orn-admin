@@ -7,6 +7,9 @@ import {
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import api from "../../services/api";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
+
 
 const VideoPlayer: React.FC = () => {
   const { id } = useParams();
@@ -14,6 +17,7 @@ const VideoPlayer: React.FC = () => {
   const [course, setCourse] = useState<any>(null);
   const [sections, setSections] = useState<any[]>([]);
   const [currentChapter, setCurrentChapter] = useState<any>(null);
+  const [certificateGenerated, setCertificateGenerated] = useState(false);
 
   // QUIZ
   const [quizList, setQuizList] = useState<any[]>([]);
@@ -117,23 +121,51 @@ const VideoPlayer: React.FC = () => {
 
   // 🔥 FEEDBACK + CERTIFICATE
   const handleFeedbackSubmit = async () => {
+  try {
+    // ✅ FEEDBACK
     await api.post(`/api/feedback/feedback_vc/`, {
       course: id,
-      feedback: feedbackText,
+      description: feedbackText,
+      user: 1,
     });
 
+    // ✅ CERTIFICATE CREATE
     await api.post(`/certificate/certificate/`, {
-      certificate: "Completed",
       title: course.title,
-      issue_date: new Date().toISOString().split("T")[0],
-      expiry_date: new Date().toISOString().split("T")[0],
-      is_active: true,
       user: 1,
       course: id,
     });
 
-    alert("🎉 Certificate Generated!");
-  };
+    setCertificateGenerated(true);
+
+  } catch (err: any) {
+    const errorData = err?.response?.data;
+
+    const raw = errorData?.error?.bunny_error;
+
+    if (raw) {
+      try {
+        // 🔥 FIX: single quotes → double quotes
+        const cleaned = raw.replace(/'/g, '"');
+
+        const parsed = JSON.parse(cleaned);
+
+        if (parsed?.certificate_id) {
+          const certId = parsed.certificate_id;
+
+          // ✅ REDIRECT
+          window.location.href = `/certificate-view/${certId}`;
+          return;
+        }
+
+      } catch (e) {
+        console.error("Still parse error", e);
+      }
+    }
+
+    console.error("Final Error:", err);
+  }
+};
 
   // 🔥 NEXT CHAPTER
   const goToNextChapter = () => {
@@ -159,8 +191,10 @@ const VideoPlayer: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex">
-
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-slate-900 text-white flex">
+      
       {/* MAIN */}
       <div className="flex-1 flex flex-col">
 
@@ -313,42 +347,68 @@ const VideoPlayer: React.FC = () => {
           )}
 
           {/* RESULT */}
-          {showResult && (
-            <div className="bg-green-100 p-4">
-              Score: {score}/{quizList.length}
+         {showResult && (
+  <div className="w-full mt-6 px-4">
+    <div className="max-w-2xl mx-auto bg-gradient-to-br from-purple-700 to-indigo-600 text-white rounded-2xl shadow-xl p-6">
 
-              <button
-                onClick={() => setShowFeedback(true)}
-                className="block mt-2 bg-purple-500 text-white px-3 py-1"
-              >
-                Feedback
-              </button>
+      <div className="text-center mb-4">
+        <h2 className="text-2xl font-bold">🎉 Great Job!</h2>
+        <p className="text-sm opacity-80">Quiz Completed Successfully</p>
+      </div>
 
-              <button
-                onClick={goToNextChapter}
-                className="block mt-2 bg-blue-500 text-white px-3 py-1"
-              >
-                Next Chapter ▶
-              </button>
-            </div>
-          )}
+      <div className="bg-white text-black rounded-xl p-5 mb-4">
+        <h3 className="text-lg font-semibold">Your Score</h3>
+        <div className="text-3xl font-bold text-green-600">
+          {score}/{quizList.length}
+        </div>
+      </div>
 
+      {!showFeedback && !certificateGenerated && (
+        <button
+          onClick={() => setShowFeedback(true)}
+          className="w-full bg-black text-white py-3 rounded-lg"
+        >
+          Give Feedback
+        </button>
+      )}
+
+      {showFeedback && !certificateGenerated && (
+        <div className="mt-4 bg-white text-black p-4 rounded-xl">
+          <textarea
+            value={feedbackText}
+            onChange={(e) => setFeedbackText(e.target.value)}
+            className="w-full border p-2 rounded mb-3"
+          />
+          <button
+            onClick={handleFeedbackSubmit}
+            className="w-full bg-purple-600 text-white py-2 rounded"
+          >
+            Submit & Generate Certificate
+          </button>
+        </div>
+      )}
+
+      {certificateGenerated && (
+        <div className="mt-5 bg-white text-black p-5 rounded-xl text-center">
+          <h3 className="text-xl font-bold">🎓 Certificate Ready!</h3>
+
+          <button className="bg-indigo-600 text-white px-4 py-2 rounded mt-3 mr-2">
+            Download
+          </button>
+
+          <button
+            onClick={goToNextChapter}
+            className="bg-green-500 text-white px-4 py-2 rounded mt-3"
+          >
+            Next ▶
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+)}
           {/* FEEDBACK */}
-          {showFeedback && (
-            <div>
-              <textarea
-                value={feedbackText}
-                onChange={(e) => setFeedbackText(e.target.value)}
-                className="w-full border p-2"
-              />
-              <button
-                onClick={handleFeedbackSubmit}
-                className="mt-2 bg-green-500 text-white px-3 py-1"
-              >
-                Submit
-              </button>
-            </div>
-          )}
+        
         </div>
       </div>
 
@@ -386,7 +446,10 @@ const VideoPlayer: React.FC = () => {
           ))}
         </div>
       )}
-    </div>
+    </div>  
+      <Footer/>
+    </>
+    
   );
 };
 

@@ -232,7 +232,7 @@ const routes = [
             layout:'web',
         },
     {
-        path: '/course-preview/:id/:slug?',
+        path: '/course-preview-list/:id/:slug?',
         element: <CourseEnrollment />,
         layout: 'web',
     },

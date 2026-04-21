@@ -94,58 +94,7 @@ const RegisterBoxed = () => {
     setApiErrors((prev: any) => ({ ...prev, [e.target.name]: "" }));
   };
 
-  // -------------------------------
-  // Submit
-  // -------------------------------
-  // const handleSubmit = async (e: any) => {
-  //   e.preventDefault();
-  //   if (!validate()) return;
-
-  //   const finalPhone = `${formData.country_code}${formData.phone}`;
-
-  //   setLoading(true);
-  //   try {
-  //     const response = await axios.post(
-  //       "https://backend.onrequestlab.com/api/v1/users/auth/registration/",
-  //       {
-  //         ...formData,
-  //         phone: finalPhone,
-  //         is_superuser: false,
-  //         is_staff: false,
-  //         is_active: true,
-  //       }
-  //     );
-
-  //     // Backend says OTP sent
-  //     if (response.data?.detail) {
-  //       sessionStorage.setItem("formData", JSON.stringify(formData));
-  //       localStorage.setItem("email", formData.email);
-
-  //       toast.success("OTP sent successfully!", { position: "top-center" });
-  //       navigate("/otp");
-  //     } else {
-  //       toast.success("Registration successful!", { position: "top-center" });
-  //       navigate("/");
-  //     }
-  //   } catch (error: any) {
-  //     if (error.response?.data) {
-  //       const serverErrors = error.response.data;
-
-  //       const formatted: any = {};
-  //       Object.keys(serverErrors).forEach((k) => {
-  //         formatted[k] = serverErrors[k][0];
-  //       });
-
-  //       setApiErrors(formatted);
-
-  //       toast.error("Fix red fields.", { position: "top-center" });
-  //     } else {
-  //       toast.error("Something went wrong.", { position: "top-center" });
-  //     }
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  
 const handleSubmit = async (e) => {
   e.preventDefault();
   if (!validate()) return;
@@ -164,7 +113,7 @@ const handleSubmit = async (e) => {
     };
 
     const response = await axios.post(
-      "https://backend.onrequestlab.com/api/v1/users/register/",
+      "https://dev.backend.onrequestlab.com/api/v1/users/register/",
       payload   // 🔥 Correct – no nesting
     );
 console.log('response=',response.data.user);

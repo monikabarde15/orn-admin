@@ -164,6 +164,9 @@ const Footer = () => {
 
       {/* Bottom Section */}
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 pt-6 text-center">
+        <div className="mb-2 md:mb-0 bg-[#2d2547] text-white px-4 py-2 rounded shadow inline-block">
+          Regular User Visits: <span className="font-bold">10,000</span>
+        </div>
         <p>© 2025 OnRequestLab. All rights reserved.</p>
         <p className="mt-3 md:mt-0">
           Design By{" "}

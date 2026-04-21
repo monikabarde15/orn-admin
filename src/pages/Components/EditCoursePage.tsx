@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState,useMemo } from "react"
 import { useParams } from "react-router-dom"
 import axios from "axios"
 import {
@@ -8,11 +8,7 @@ import {
   ChevronRight, ChevronDown, Check, Edit, Trash2, Upload, GripVertical
 } from "lucide-react"
 import { Toaster, toast } from "react-hot-toast"
-import api from "../../services/api"; // 👈 path adjust if needed
-
-/* ================= HELPERS ================= */
-
-
+import api from "../../services/api"; 
 
 const userId = localStorage.getItem("userId")
 
@@ -667,6 +663,23 @@ useEffect(() => {
     e.preventDefault()
     onSubmit(formData)
   }
+  const uniqueSubscriptions = useMemo(() => {
+  const map = new Map();
+
+  subscriptions.forEach((s) => {
+    if (!map.has(s.name)) {
+      map.set(s.name, s);
+    }
+  });
+
+  return Array.from(map.values());
+}, [subscriptions]);
+
+const selectedName = useMemo(() => {
+  if (!formData.subscription_name) return "";
+
+  return formData.subscription_name.split(" (")[0];
+}, [formData.subscription_name]);
 
   const addItem = (field: "learningOutcomes" | "prerequisites") => {
     setFormData({ ...formData, [field]: [...formData[field], ""] })
@@ -686,23 +699,31 @@ useEffect(() => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <Label>Subscription *</Label>
-        <Select
-  value={formData.subscription_name || ""}
-  onChange={(value) =>
-    setFormData({
-      ...formData,
-      subscription_name: value,
-    })
-  }
-  options={subscriptions.map((s) => ({
-    value: `${s.name} (${s.billing_cycle})`,
-    label: `${s.name} (${s.billing_cycle})`,
-  }))}
-/>
+  <Label>Subscription *</Label>
 
+  <Select
+    value={selectedName}
+    onChange={(value) => {
+      const selected = uniqueSubscriptions.find(s => s.name === value);
 
-      </div>
+      setFormData({
+        ...formData,
+        subscription_name: `${selected.name} (${selected.billing_cycle})`,
+      });
+    }}
+    options={uniqueSubscriptions.map((s) => {
+      const isSelected = selectedName === s.name;
+
+      return {
+        value: s.name,
+        label: isSelected
+          ? `❌ ${s.name}`   // selected
+          : `✔ ${s.name}`,  // available
+        disabled: isSelected,
+      };
+    })}
+  />
+</div>
       <div className="grid gap-6 md:grid-cols-2">
         <div className="md:col-span-2">
           <Label htmlFor="title">Course Title *</Label>

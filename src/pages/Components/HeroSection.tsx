@@ -1,9 +1,22 @@
 import heroImg from "/assets/onerequest/1.png";
 import Group from "/assets/onerequest/Group 37335.png";
+import { useNavigate } from "react-router-dom";
 
 
 
 export default function HeroSection() {
+    const navigate = useNavigate();
+
+  const handleClick = () => {
+    const user = localStorage.getItem("access_token"); // ya token check karo
+
+    if (user) {
+      navigate("/labs");
+    } else {
+      navigate("/register");
+    }
+  };
+
   return (
     <section className="relative overflow-hidden bg-[#1b1533]">
       
@@ -79,11 +92,10 @@ export default function HeroSection() {
             </p>
 
             <div className="mt-8 flex justify-center lg:justify-start">
-              <a href="/register">
-              <button className="px-8 py-3 bg-[#8b5cf6] rounded-xl font-semibold hover:bg-[#7c3aed] transition-all duration-300">
+              
+              <button className="px-8 py-3 bg-[#8b5cf6] rounded-xl font-semibold hover:bg-[#7c3aed] transition-all duration-300" onClick={handleClick}>
                 Book Your Lab Now →
               </button>
-              </a>
             </div>
 
           </div>

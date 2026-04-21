@@ -160,7 +160,7 @@ const handleUpgrade = async () => {
       return;
     }
 
-    navigate(`/course-preview/${plan.course_id}/${plan.package_id}`);
+    navigate(`/course-preview-list/${plan.course_id}/${plan.package_id}`);
   };
 
   /* ---------- UI ---------- */

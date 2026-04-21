@@ -19,7 +19,8 @@ const AdminSupportChat = () => {
   const msgChecksum = useRef(null);
 
   /* ---------------- Utility ---------------- */
-  const getChecksum = (data) => JSON.stringify(data).length;
+  // const getChecksum = (data) => JSON.stringify(data).length;
+  const getChecksum = (data) => JSON.stringify(data);
 
   /* ---------------- Fetch Chat List ---------------- */
   const loadChats = async (silent = false) => {

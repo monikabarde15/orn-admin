@@ -41,7 +41,46 @@ const LabPricing = () => {
     };
 
     fetchPackages();
-  }, []);
+  }, [selectedCurrency]);
+  /* ================= LAB FILTER (FAST) ================= */
+
+  const labs = useMemo(() => {
+    if (!allPackages.length) return [];
+
+    const map = new Map();
+
+    for (const pkg of allPackages) {
+      if (pkg.billing_cycle !== billingType) continue;
+
+      const baseName = pkg.name.split("-")[0].trim();
+
+      if (!map.has(baseName)) {
+        map.set(baseName, {
+        name: baseName,
+        description: pkg.description,
+        // `price` is the base INR amount (used for checkout/payment).
+        price: pkg.price,
+        // `displayPrice` is the converted UI amount in the selected currency.
+        displayPrice: pkg.display_price ?? pkg.price,
+        totalMinutes: Number(pkg.total_minutes ?? 0),
+        billing_cycle: pkg.billing_cycle,
+        planId: pkg.package_id,
+        course_id: pkg.course_id, // ✅ ADD THIS
+        course_linked: pkg.course_linked, // optional but useful
+        currency: pkg.currency ?? "INR",
+        freeUsed: Boolean((pkg as any).free_used),
+        features: [
+          "Cancel any time",
+          "SSH Access",
+          "Guided Lab Environment",
+          "Support Included",
+        ],
+      });
+      }
+    }
+
+    return [...map.values()];
+  }, [billingType, allPackages]);
 
   /* ================= MAP DATA (IMPORTANT) ================= */
   const labs = useMemo<any[]>(() => {
@@ -90,7 +129,10 @@ const LabPricing = () => {
       price: lab.price || 0,
       billingType,
       planId: lab.planId,
-      course_id: lab.course_id,
+      course_id:lab.course_id,
+      totalMinutes: Number((lab as any).totalMinutes ?? 0),
+      // Frontend will use this to compute scaled price/minutes for hourly.
+      hours: billingType === "hourly" ? 1 : undefined,
     };
 
     localStorage.setItem("orl_cart", JSON.stringify([item]));
@@ -174,8 +216,35 @@ const LabPricing = () => {
           </div>
         ) : (
           <>
-            {/* GRID */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+            {paginatedLabs.map((lab, idx) => (
+
+              <div
+                key={idx}
+                className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:border-purple-500 transition"
+              >
+
+                <h3 className="text-3xl font-bold text-white mb-2">
+                  {lab.name}
+                </h3>
+
+                <p className="text-purple-300 mb-6">
+                  {lab.description}
+                </p>
+
+                <div className="text-3xl font-bold text-white mb-6">
+
+                  {billingType === "free" && "Free"}
+                  {/* {billingType === "hourly" && `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/hr`} */}
+                  {billingType === "hourly" && (() => {
+                    const totalMinutes = Number((lab as any).totalMinutes ?? 0);
+                    const baseHours = totalMinutes > 0 ? totalMinutes / 60 : 1;
+                    const hourlyRate = Number(lab.displayPrice ?? lab.price ?? 0) / baseHours;
+                    return `${getCurrencySymbol(lab.currency)}${hourlyRate.toFixed(2)}/hr`;
+                  })()}
+                  {billingType === "monthly" && `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/month`}
+                  {billingType === "yearly" && `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/year`}
 
               {paginatedLabs.map((lab, idx) => (
                 <div
@@ -234,15 +303,16 @@ const LabPricing = () => {
               <div className="flex justify-center mt-16 gap-2 flex-wrap">
                 {[...Array(totalPages)].map((_, i) => (
                   <button
-                    key={i}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`px-4 py-2 rounded-lg font-semibold ${
-                      currentPage === i + 1
-                        ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white"
-                        : "bg-white/5 border border-white/10 text-gray-400"
-                    }`}
+                    onClick={() => handlePlanClick(lab)}
+                    disabled={billingType === "free" && lab.freeUsed === true}
+                    className={`w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
-                    {i + 1}
+
+                    {billingType === "free" && (lab.freeUsed ? "Already Used" : "Start Free Lab")}
+                    {billingType === "hourly" && "Start Lab"}
+                    {(billingType === "monthly" || billingType === "yearly") &&
+                      "Subscribe"}
+
                   </button>
                 ))}
               </div>

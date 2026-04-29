@@ -38,10 +38,6 @@ const LabPricing = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 6;
 
-  const [selectedCurrency, setSelectedCurrency] = useState<string>(
-    () => localStorage.getItem("orl_currency") || "INR"
-  );
-
   const currencySymbols: Record<string, string> = {
     INR: "₹",
     USD: "$",

@@ -263,8 +263,8 @@ const RegisterBoxed = () => {
           }))
         }
       >
-        {countryOptions.map((country) => (
-          <option key={country.code} value={country.dialCode}>
+        {countryOptions.map((country, idx) => (
+          <option key={`${country.dialCode}-${idx}`} value={country.dialCode}>
             {country.dialCode} ({country.name})
           </option>
         ))}

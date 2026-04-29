@@ -18,7 +18,7 @@ import Footer from "../Components/Footer";
 console.log(import.meta.env.VITE_API_URL);
 const VIT=import.meta.env.VITE_API_URL;
 const SESSION_TIME = 15 * 60;
-const SESSION_TIME_MS = 15 * 60 * 1000;
+const SESSION_TIME_MS = 24 * 60 * 60 * 1000;
 
 const LoginBoxed = () => {
   const dispatch = useDispatch();

@@ -148,22 +148,25 @@ const RegisterBoxed = () => {
       // -----------------------------
       // ✅ CALL RESEND OTP API
       // -----------------------------
-      const otpResponse = await axios.post(
-        `${VIT}/api/v1/users/auth/resend-otp/`,
-        { email: user.email },
-        { headers: { "Content-Type": "application/json" } }
-      );
+      // const otpResponse = await axios.post(
+      //   `${VIT}/api/v1/users/auth/resend-otp/`,
+      //   { email: user.email },
+      //   { headers: { "Content-Type": "application/json" } }
+      // );
 
-      if (otpResponse.data) {
-        toast.success("OTP Sent Successfully!", {
-          position: "top-center",
-        });
+      // if (otpResponse.data) {
+      //   toast.success("OTP Sent Successfully!", {
+      //     position: "top-center",
+      //   });
 
-        // ✅ Redirect only after OTP sent
-        setTimeout(() => {
-          navigate("/otp");
-        }, 800);
-      }
+        toast.success("OTP Sent Successfully!");
+        setTimeout(() => navigate("/otp"), 800);
+
+        // // ✅ Redirect only after OTP sent
+        // setTimeout(() => {
+        //   navigate("/otp");
+        // }, 800);
+      // }
     }
 
   }catch (error: any) {
@@ -263,8 +266,8 @@ const RegisterBoxed = () => {
           }))
         }
       >
-        {countryOptions.map((country) => (
-          <option key={country.code} value={country.dialCode}>
+        {countryOptions.map((country, idx) => (
+          <option key={`${country.dialCode}-${idx}`} value={country.dialCode}>
             {country.dialCode} ({country.name})
           </option>
         ))}

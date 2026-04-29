@@ -38,16 +38,29 @@ const LabPricing = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 6;
 
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(
+    () => localStorage.getItem("orl_currency") || "INR"
+  );
+
+  const currencySymbols: Record<string, string> = {
+    INR: "₹",
+    USD: "$",
+    EUR: "€",
+    GBP: "£",
+  };
+
+  const getCurrencySymbol = (currency?: string | null) => {
+    const raw = (currency || "INR").toString().split("-")[0].trim().toUpperCase();
+    return currencySymbols[raw] || raw || "₹";
+  };
+
   /* ================= FETCH PACKAGES ================= */
   useEffect(() => {
     const fetchPackages = async () => {
       try {
         setLoading(true);
 
-        // const res = await api.get("/api/v1/packages/");
-          const res = await api.get(
-  `/api/v1/packages/?currency=${encodeURIComponent(selectedCurrency)}`
-);
+        const res = await api.get(`/api/v1/packages/?currency=${encodeURIComponent(selectedCurrency)}`);
         const data = Array.isArray(res.data) ? res.data : [];
 
         setAllPackages(data);
@@ -63,13 +76,13 @@ const LabPricing = () => {
   }, [selectedCurrency]);
 
 
-    useEffect(() => {
-  const handler = () => {
-    setSelectedCurrency(localStorage.getItem("orl_currency") || "INR");
-  };
-  window.addEventListener("orlcurrencychange", handler);
-  return () => window.removeEventListener("orlcurrencychange", handler);
-}, []);
+  useEffect(() => {
+    const handler = () => {
+      setSelectedCurrency(localStorage.getItem("orl_currency") || "INR");
+    };
+    window.addEventListener("orlcurrencychange", handler);
+    return () => window.removeEventListener("orlcurrencychange", handler);
+  }, []);
   /* ================= LAB FILTER (FAST) ================= */
 
   const labs = useMemo(() => {
@@ -249,12 +262,10 @@ const LabPricing = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
 
             {paginatedLabs.map((lab, idx) => (
-
               <div
                 key={idx}
                 className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:border-purple-500 transition"
               >
-
                 <h3 className="text-3xl font-bold text-white mb-2">
                   {lab.name}
                 </h3>
@@ -263,7 +274,7 @@ const LabPricing = () => {
                   {lab.description}
                 </p>
 
-                                <div className="text-3xl font-bold text-white mb-6">
+                <div className="text-3xl font-bold text-white mb-6">
                   {billingType === "free" && "Free"}
                   {billingType === "hourly" && (() => {
                     const totalMinutes = Number((lab as any).totalMinutes ?? 0);
@@ -306,12 +317,11 @@ const LabPricing = () => {
                     {(billingType === "monthly" || billingType === "yearly") && "Subscribe"}
                   </button>
                 </div>
-                </div>
-              ))}
+              </div>
+            ))}
+          </div>   {/* closes the grid */}
 
-            </div>
-
-              {/* PAGINATION */}
+          {/* PAGINATION */}
           {totalPages > 1 && (
             <div className="flex justify-center mt-16 gap-2 flex-wrap">
               <button
@@ -345,7 +355,6 @@ const LabPricing = () => {
           )}
           </>
         )}
-
       </div>
     </div>
   );

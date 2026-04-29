@@ -9,6 +9,18 @@ const notify = (msg: string, type: "info" | "success" | "error" = "info") => {
   (toast as any)[type](msg, { position: "top-center", autoClose: 2500 });
 };
 
+const currencySymbols: Record<string, string> = {
+  INR: "₹",
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+};
+
+const getCurrencySymbol = (currency?: string | null) => {
+  const raw = (currency || "INR").toString().split("-")[0].trim().toUpperCase();
+  return currencySymbols[raw] || raw || "₹";
+};
+
 const LabPricing = () => {
   const navigate = useNavigate();
 
@@ -18,6 +30,10 @@ const LabPricing = () => {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [allPackages, setAllPackages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+    const [selectedCurrency, setSelectedCurrency] = useState<string>(
+      () => localStorage.getItem("orl_currency") || "INR"
+    );
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 6;
@@ -152,6 +168,8 @@ const LabPricing = () => {
       description: lab.description,
       features: lab.features,
       price: lab.price || 0,
+      displayPrice: lab.displayPrice ?? lab.price ?? 0, 
+      currency: lab.currency ?? "INR", 
       billingType,
       planId: lab.planId,
       course_id:lab.course_id,

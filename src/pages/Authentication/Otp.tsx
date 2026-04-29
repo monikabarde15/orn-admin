@@ -31,6 +31,14 @@ console.log('cookieEmail1',cookieEmailnew);
     if (cookieEmail) setEmail(decodeURIComponent(cookieEmail));
   }, []);
 
+  // Auth guard – redirect if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      navigate("/", { replace: true });
+    }
+  }, [navigate]);
+
   // SEND / RESEND OTP
   const handleSendOTP = async () => {
     if (!email.trim()) {
@@ -165,7 +173,8 @@ console.log('cookieEmail1',cookieEmailnew);
       toast.success("OTP Verified Successfully!", { position: "top-center" });
 
       setTimeout(() => {
-        window.location.href = data.user.id < 2 ? "/index" : "/login";
+        // window.location.href = data.user.id < 2 ? "/index" : "/login";
+        navigate(data.user.id < 2 ? "/index" : "/login", { replace: true });
       }, 1200);
     }
 

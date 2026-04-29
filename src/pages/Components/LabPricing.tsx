@@ -22,13 +22,29 @@ const LabPricing = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 6;
 
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(
+    () => localStorage.getItem("orl_currency") || "INR"
+  );
+
+  const currencySymbols: Record<string, string> = {
+    INR: "₹",
+    USD: "$",
+    EUR: "€",
+    GBP: "£",
+  };
+
+  const getCurrencySymbol = (currency?: string | null) => {
+    const raw = (currency || "INR").toString().split("-")[0].trim().toUpperCase();
+    return currencySymbols[raw] || raw || "₹";
+  };
+
   /* ================= FETCH PACKAGES ================= */
   useEffect(() => {
     const fetchPackages = async () => {
       try {
         setLoading(true);
 
-        const res = await api.get("/api/v1/packages/");
+        const res = await api.get(`/api/v1/packages/?currency=${encodeURIComponent(selectedCurrency)}`);
         const data = Array.isArray(res.data) ? res.data : [];
 
         setAllPackages(data);
@@ -42,6 +58,15 @@ const LabPricing = () => {
 
     fetchPackages();
   }, [selectedCurrency]);
+
+
+  useEffect(() => {
+    const handler = () => {
+      setSelectedCurrency(localStorage.getItem("orl_currency") || "INR");
+    };
+    window.addEventListener("orlcurrencychange", handler);
+    return () => window.removeEventListener("orlcurrencychange", handler);
+  }, []);
   /* ================= LAB FILTER (FAST) ================= */
 
   const labs = useMemo(() => {
@@ -83,27 +108,27 @@ const LabPricing = () => {
   }, [billingType, allPackages]);
 
   /* ================= MAP DATA (IMPORTANT) ================= */
-  const labs = useMemo<any[]>(() => {
-    return allPackages
-      .filter((p: any) => p.billing_cycle === billingType)
-      .map((p: any) => ({
-        name: p.name,
-        description: p.description,
-        price: p.price ?? 0,
-        billing_cycle: p.billing_cycle,
-        planId: p.id,
-        course_id: p.course_id,
-        features:
-          p.features && Array.isArray(p.features) && p.features.length > 0
-            ? p.features
-            : [
-                "Full Lab Access",
-                "SSH Access",
-                "Guided Lab Environment",
-                "Support Included",
-              ],
-      }));
-  }, [allPackages, billingType]);
+  // const labs = useMemo<any[]>(() => {
+  //   return allPackages
+  //     .filter((p: any) => p.billing_cycle === billingType)
+  //     .map((p: any) => ({
+  //       name: p.name,
+  //       description: p.description,
+  //       price: p.price ?? 0,
+  //       billing_cycle: p.billing_cycle,
+  //       planId: p.id,
+  //       course_id: p.course_id,
+  //       features:
+  //         p.features && Array.isArray(p.features) && p.features.length > 0
+  //           ? p.features
+  //           : [
+  //               "Full Lab Access",
+  //               "SSH Access",
+  //               "Guided Lab Environment",
+  //               "Support Included",
+  //             ],
+  //     }));
+  // }, [allPackages, billingType]);
 
   /* ================= PAGINATION ================= */
   const totalPages = Math.ceil(labs.length / itemsPerPage);
@@ -219,12 +244,10 @@ const LabPricing = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
 
             {paginatedLabs.map((lab, idx) => (
-
               <div
                 key={idx}
                 className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:border-purple-500 transition"
               >
-
                 <h3 className="text-3xl font-bold text-white mb-2">
                   {lab.name}
                 </h3>
@@ -234,9 +257,7 @@ const LabPricing = () => {
                 </p>
 
                 <div className="text-3xl font-bold text-white mb-6">
-
                   {billingType === "free" && "Free"}
-                  {/* {billingType === "hourly" && `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/hr`} */}
                   {billingType === "hourly" && (() => {
                     const totalMinutes = Number((lab as any).totalMinutes ?? 0);
                     const baseHours = totalMinutes > 0 ? totalMinutes / 60 : 1;
@@ -245,81 +266,77 @@ const LabPricing = () => {
                   })()}
                   {billingType === "monthly" && `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/month`}
                   {billingType === "yearly" && `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/year`}
-
-              {paginatedLabs.map((lab, idx) => (
-                <div
-                  key={idx}
-                  className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:border-purple-500 transition"
-                >
-                  <h3 className="text-3xl font-bold text-white mb-2">
-                    {lab.name}
-                  </h3>
-
-                  <p className="text-purple-300 mb-6">
-                    {lab.description}
-                  </p>
-
-                  <div className="text-3xl font-bold text-white mb-6">
-                    {billingType === "free" && "Free"}
-                    {billingType === "hourly" && `₹${lab.price}/hr`}
-                    {billingType === "monthly" && `₹${lab.price}/month`}
-                    {billingType === "yearly" && `₹${lab.price}/year`}
-                  </div>
-
-                  <ul className="space-y-3 mb-8">
-                    {lab.features.map((f, i) => (
-                      <li key={i} className="flex gap-2 text-gray-300">
-                        <Check className="w-4 h-4 text-green-400" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="flex flex-col gap-3">
-                    <button
-                      onClick={() => handleViewCourse(lab)}
-                      className="w-full py-3 rounded-xl border border-purple-400 text-purple-300 hover:bg-purple-500/10"
-                    >
-                      View Course
-                    </button>
-
-                    <button
-                      onClick={() => handlePlanClick(lab)}
-                      className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold hover:opacity-90"
-                    >
-                      {billingType === "free" && "Start Free Lab"}
-                      {billingType === "hourly" && "Start Lab"}
-                      {(billingType === "monthly" || billingType === "yearly") &&
-                        "Subscribe"}
-                    </button>
-                  </div>
                 </div>
-              ))}
 
-            </div>
+                <ul className="space-y-3 mb-8">
+                  {lab.features.map((f: string, i: number) => (
+                    <li key={i} className="flex gap-2 text-gray-300">
+                      <Check className="w-4 h-4 text-green-400" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
 
-            {/* PAGINATION */}
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-16 gap-2 flex-wrap">
-                {[...Array(totalPages)].map((_, i) => (
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => handleViewCourse(lab)}
+                    disabled={!lab.course_id}
+                    className={`w-full py-3 rounded-xl border font-semibold transition ${
+                      lab.course_id
+                        ? "border-purple-400 text-purple-300 hover:bg-purple-500/10"
+                        : "border-gray-600 text-gray-500 cursor-not-allowed"
+                    }`}
+                  >
+                    {lab.course_id ? "View Course" : "No Course Available"}
+                  </button>
                   <button
                     onClick={() => handlePlanClick(lab)}
                     disabled={billingType === "free" && lab.freeUsed === true}
-                    className={`w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-
                     {billingType === "free" && (lab.freeUsed ? "Already Used" : "Start Free Lab")}
                     {billingType === "hourly" && "Start Lab"}
-                    {(billingType === "monthly" || billingType === "yearly") &&
-                      "Subscribe"}
-
+                    {(billingType === "monthly" || billingType === "yearly") && "Subscribe"}
                   </button>
-                ))}
+                </div>
               </div>
-            )}
+            ))}
+          </div>   {/* closes the grid */}
+
+          {/* PAGINATION */}
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-16 gap-2 flex-wrap">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 disabled:opacity-40"
+              >
+                Prev
+              </button>
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`px-4 py-2 rounded-lg font-semibold ${
+                    currentPage === i + 1
+                      ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white"
+                      : "bg-white/5 border border-white/10 text-gray-400"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          )}
           </>
         )}
-
       </div>
     </div>
   );

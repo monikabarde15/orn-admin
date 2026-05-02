@@ -1,5 +1,6 @@
 
 import Navbar from '../../pages/Components/Navbar';
+/*test */
 import HeroSection from '../../pages/Components/HeroSection';
 import Services from '../../pages/Components/Services';
 import Portfilo from "../../pages/Components/Portfilo";

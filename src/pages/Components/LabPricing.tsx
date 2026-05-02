@@ -23,7 +23,6 @@ const getCurrencySymbol = (currency?: string | null) => {
 
 const LabPricing = () => {
   const navigate = useNavigate();
-
   const token = localStorage.getItem("access_token");
 
   const [billingType, setBillingType] = useState<string>("free");
@@ -31,35 +30,45 @@ const LabPricing = () => {
   const [allPackages, setAllPackages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-    const [selectedCurrency, setSelectedCurrency] = useState<string>(
-      () => localStorage.getItem("orl_currency") || "INR"
-    );
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(
+    () => localStorage.getItem("orl_currency") || "INR"
+  );
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 6;
 
-  const currencySymbols: Record<string, string> = {
-    INR: "₹",
-    USD: "$",
-    EUR: "€",
-    GBP: "£",
-  };
+  /* ================= 🚀 FAST FETCH ================= */
+  const cacheKey = `packages_${selectedCurrency}`;
 
-  const getCurrencySymbol = (currency?: string | null) => {
-    const raw = (currency || "INR").toString().split("-")[0].trim().toUpperCase();
-    return currencySymbols[raw] || raw || "₹";
-  };
-
-  /* ================= FETCH PACKAGES ================= */
   useEffect(() => {
     const fetchPackages = async () => {
       try {
         setLoading(true);
 
-        const res = await api.get(`/api/v1/packages/?currency=${encodeURIComponent(selectedCurrency)}`);
+        const cached = sessionStorage.getItem(cacheKey);
+
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          setAllPackages(parsed);
+
+          // 🔥 background refresh (no wait)
+          api.get(`/api/v1/packages/?currency=${selectedCurrency}`)
+            .then((res) => {
+              const data = Array.isArray(res.data) ? res.data : [];
+              sessionStorage.setItem(cacheKey, JSON.stringify(data));
+              setAllPackages(data);
+            });
+
+          setLoading(false);
+          return;
+        }
+
+        const res = await api.get(`/api/v1/packages/?currency=${selectedCurrency}`);
         const data = Array.isArray(res.data) ? res.data : [];
 
         setAllPackages(data);
+        sessionStorage.setItem(cacheKey, JSON.stringify(data));
+
       } catch (err) {
         console.error(err);
         notify("Failed to load packages", "error");
@@ -71,7 +80,7 @@ const LabPricing = () => {
     fetchPackages();
   }, [selectedCurrency]);
 
-
+  /* ================= CURRENCY CHANGE ================= */
   useEffect(() => {
     const handler = () => {
       setSelectedCurrency(localStorage.getItem("orl_currency") || "INR");
@@ -79,8 +88,8 @@ const LabPricing = () => {
     window.addEventListener("orlcurrencychange", handler);
     return () => window.removeEventListener("orlcurrencychange", handler);
   }, []);
-  /* ================= LAB FILTER (FAST) ================= */
 
+  /* ================= 🚀 FAST FILTER ================= */
   const labs = useMemo(() => {
     if (!allPackages.length) return [];
 
@@ -93,62 +102,36 @@ const LabPricing = () => {
 
       if (!map.has(baseName)) {
         map.set(baseName, {
-        name: baseName,
-        description: pkg.description,
-        // `price` is the base INR amount (used for checkout/payment).
-        price: pkg.price,
-        // `displayPrice` is the converted UI amount in the selected currency.
-        displayPrice: pkg.display_price ?? pkg.price,
-        totalMinutes: Number(pkg.total_minutes ?? 0),
-        billing_cycle: pkg.billing_cycle,
-        planId: pkg.package_id,
-        course_id: pkg.course_id, // ✅ ADD THIS
-        course_linked: pkg.course_linked, // optional but useful
-        currency: pkg.currency ?? "INR",
-        freeUsed: Boolean((pkg as any).free_used),
-        features: [
-          "Cancel any time",
-          "SSH Access",
-          "Guided Lab Environment",
-          "Support Included",
-        ],
-      });
+          name: baseName,
+          description: pkg.description,
+          price: pkg.price,
+          displayPrice: pkg.display_price ?? pkg.price,
+          totalMinutes: Number(pkg.total_minutes ?? 0),
+          billing_cycle: pkg.billing_cycle,
+          planId: pkg.package_id,
+          course_id: pkg.course_id,
+          currency: pkg.currency ?? "INR",
+          freeUsed: Boolean((pkg as any).free_used),
+          features: [
+            "Cancel any time",
+            "SSH Access",
+            "Guided Lab Environment",
+            "Support Included",
+          ],
+        });
       }
     }
 
     return [...map.values()];
   }, [billingType, allPackages]);
 
-  /* ================= MAP DATA (IMPORTANT) ================= */
-  // const labs = useMemo<any[]>(() => {
-  //   return allPackages
-  //     .filter((p: any) => p.billing_cycle === billingType)
-  //     .map((p: any) => ({
-  //       name: p.name,
-  //       description: p.description,
-  //       price: p.price ?? 0,
-  //       billing_cycle: p.billing_cycle,
-  //       planId: p.id,
-  //       course_id: p.course_id,
-  //       features:
-  //         p.features && Array.isArray(p.features) && p.features.length > 0
-  //           ? p.features
-  //           : [
-  //               "Full Lab Access",
-  //               "SSH Access",
-  //               "Guided Lab Environment",
-  //               "Support Included",
-  //             ],
-  //     }));
-  // }, [allPackages, billingType]);
-
   /* ================= PAGINATION ================= */
   const totalPages = Math.ceil(labs.length / itemsPerPage);
 
-  const paginatedLabs = useMemo<any[]>(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return labs.slice(start, start + itemsPerPage);
-  }, [labs, currentPage]);
+  const paginatedLabs = labs.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   /* ================= ADD TO CART ================= */
   const addToCart = (lab: any) => {
@@ -160,25 +143,14 @@ const LabPricing = () => {
     }
 
     const item = {
-      name: lab.name,
-      description: lab.description,
-      features: lab.features,
-      price: lab.price || 0,
-      displayPrice: lab.displayPrice ?? lab.price ?? 0, 
-      currency: lab.currency ?? "INR", 
+      ...lab,
       billingType,
-      planId: lab.planId,
-      course_id:lab.course_id,
-      totalMinutes: Number((lab as any).totalMinutes ?? 0),
-      // Frontend will use this to compute scaled price/minutes for hourly.
-      hours: billingType === "hourly" ? 1 : undefined,
     };
 
     localStorage.setItem("orl_cart", JSON.stringify([item]));
     setCartItems([item]);
 
     notify("Added to cart", "success");
-
     setTimeout(() => navigate("/cart"), 600);
   };
 
@@ -188,7 +160,6 @@ const LabPricing = () => {
       navigate("/login");
       return;
     }
-
     addToCart(lab);
   };
 
@@ -197,7 +168,6 @@ const LabPricing = () => {
       notify("Course not available for this lab", "error");
       return;
     }
-
     navigate(`/course-preview/${lab.course_id}`);
   };
 
@@ -205,6 +175,11 @@ const LabPricing = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-24 px-6">
       <ToastContainer />
+
+      {/* 🔥 TOP LOADER */}
+      {loading && (
+        <div className="fixed top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-blue-500 animate-pulse z-50" />
+      )}
 
       <div className="max-w-7xl mx-auto">
 
@@ -219,10 +194,9 @@ const LabPricing = () => {
           </p>
         </div>
 
-        {/* BILLING TOGGLE */}
+        {/* BILLING */}
         <div className="flex justify-center mb-12">
           <div className="inline-flex bg-white/5 border border-white/10 rounded-xl p-1">
-
             {[
               { key: "free", label: "Free" },
               { key: "monthly", label: "Monthly" },
@@ -244,111 +218,80 @@ const LabPricing = () => {
                 {type.label}
               </button>
             ))}
-
           </div>
         </div>
 
-        {/* LOADER */}
-        {loading ? (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="w-16 h-16 border-4 border-purple-500 border-t-blue-400 rounded-full animate-spin"></div>
+        {/* 🔥 SKELETON OR DATA */}
+        {allPackages.length === 0 ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[...Array(6)].map((_, idx) => (
+              <div
+                key={idx}
+                className="bg-white/5 border border-white/10 rounded-2xl p-8 animate-pulse"
+              >
+                <div className="h-6 bg-gray-600 rounded w-2/3 mb-3" />
+                <div className="h-4 bg-gray-700 rounded w-full mb-2" />
+                <div className="h-4 bg-gray-700 rounded w-5/6 mb-6" />
+                <div className="h-8 bg-gray-600 rounded w-1/2 mb-6" />
+                <div className="h-10 bg-gray-700 rounded w-full mb-3" />
+                <div className="h-10 bg-gray-600 rounded w-full" />
+              </div>
+            ))}
           </div>
         ) : (
           <>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-
-            {paginatedLabs.map((lab, idx) => (
-              <div
-                key={idx}
-                className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:border-purple-500 transition"
-              >
-                <h3 className="text-3xl font-bold text-white mb-2">
-                  {lab.name}
-                </h3>
-
-                <p className="text-purple-300 mb-6">
-                  {lab.description}
-                </p>
-
-                <div className="text-3xl font-bold text-white mb-6">
-                  {billingType === "free" && "Free"}
-                  {billingType === "hourly" && (() => {
-                    const totalMinutes = Number((lab as any).totalMinutes ?? 0);
-                    const baseHours = totalMinutes > 0 ? totalMinutes / 60 : 1;
-                    const hourlyRate = Number(lab.displayPrice ?? lab.price ?? 0) / baseHours;
-                    return `${getCurrencySymbol(lab.currency)}${hourlyRate.toFixed(2)}/hr`;
-                  })()}
-                  {billingType === "monthly" && `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/month`}
-                  {billingType === "yearly" && `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/year`}
-                </div>
-
-                <ul className="space-y-3 mb-8">
-                  {lab.features.map((f: string, i: number) => (
-                    <li key={i} className="flex gap-2 text-gray-300">
-                      <Check className="w-4 h-4 text-green-400" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="flex flex-col gap-3">
-                  <button
-                    onClick={() => handleViewCourse(lab)}
-                    disabled={!lab.course_id}
-                    className={`w-full py-3 rounded-xl border font-semibold transition ${
-                      lab.course_id
-                        ? "border-purple-400 text-purple-300 hover:bg-purple-500/10"
-                        : "border-gray-600 text-gray-500 cursor-not-allowed"
-                    }`}
-                  >
-                    {lab.course_id ? "View Course" : "No Course Available"}
-                  </button>
-                  <button
-                    onClick={() => handlePlanClick(lab)}
-                    disabled={billingType === "free" && lab.freeUsed === true}
-                    className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {billingType === "free" && (lab.freeUsed ? "Already Used" : "Start Free Lab")}
-                    {billingType === "hourly" && "Start Lab"}
-                    {(billingType === "monthly" || billingType === "yearly") && "Subscribe"}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>   {/* closes the grid */}
-
-          {/* PAGINATION */}
-          {totalPages > 1 && (
-            <div className="flex justify-center mt-16 gap-2 flex-wrap">
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => p - 1)}
-                className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 disabled:opacity-40"
-              >
-                Prev
-              </button>
-              {[...Array(totalPages)].map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`px-4 py-2 rounded-lg font-semibold ${
-                    currentPage === i + 1
-                      ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white"
-                      : "bg-white/5 border border-white/10 text-gray-400"
-                  }`}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {paginatedLabs.map((lab, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:border-purple-500 transition"
                 >
-                  {i + 1}
-                </button>
+                  <h3 className="text-3xl font-bold text-white mb-2">
+                    {lab.name}
+                  </h3>
+
+                  <p className="text-purple-300 mb-6">
+                    {lab.description}
+                  </p>
+
+                  <div className="text-3xl font-bold text-white mb-6">
+                    {billingType === "free" && "Free"}
+                    {billingType === "hourly" &&
+                      `${getCurrencySymbol(lab.currency)}${(lab.displayPrice).toFixed(2)}/hr`}
+                    {billingType === "monthly" &&
+                      `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/month`}
+                    {billingType === "yearly" &&
+                      `${getCurrencySymbol(lab.currency)}${lab.displayPrice}/year`}
+                  </div>
+
+                  <ul className="space-y-3 mb-8">
+                    {lab.features.map((f: string, i: number) => (
+                      <li key={i} className="flex gap-2 text-gray-300">
+                        <Check className="w-4 h-4 text-green-400" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={() => handleViewCourse(lab)}
+                      disabled={!lab.course_id}
+                      className="w-full py-3 rounded-xl border border-purple-400 text-purple-300"
+                    >
+                      {lab.course_id ? "View Course" : "No Course Available"}
+                    </button>
+
+                    <button
+                      onClick={() => handlePlanClick(lab)}
+                      className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white"
+                    >
+                      Start
+                    </button>
+                  </div>
+                </div>
               ))}
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => p + 1)}
-                className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 disabled:opacity-40"
-              >
-                Next
-              </button>
             </div>
-          )}
           </>
         )}
       </div>

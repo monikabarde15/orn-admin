@@ -22,6 +22,8 @@ const Blogs = lazy(() => import('../pages/Apps/Blogs'));
 const Mailbox = lazy(() => import('../pages/Apps/Mailbox'));
 const Notes = lazy(() => import('../pages/Apps/Notes'));
 const Contacts = lazy(() => import('../pages/Apps/Contacts'));
+const LandingPage = lazy(() => import('../pages/Apps/LandingPage'));
+
 const FeedbackListNew = lazy(() => import('../pages/Components/FeedbackListNew.tsx'));
 const PaymentList = lazy(() => import('../pages/Components/PaymentList.tsx'));
 const PaymentListNormal = lazy(() => import('../pages/Components/PaymentListNormal.tsx'));
@@ -301,6 +303,11 @@ const routes = [
     {
         path: '/cart',
         element: <Cart />,
+        layout:'web',
+    },
+    {
+        path: '/landing-page',
+        element: <LandingPage />,
         layout:'web',
     },
      {

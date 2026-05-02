@@ -17,6 +17,11 @@ export default function HeroSection() {
     }
   };
 
+  const handleClickJoin = () => {
+    const user = localStorage.getItem("access_token"); // ya token check karo
+    navigate("/landing-page");
+  };
+
   return (
     <section className="relative overflow-hidden bg-[#1b1533]">
       
@@ -95,8 +100,13 @@ export default function HeroSection() {
               
               <button className="px-8 py-3 bg-[#8b5cf6] rounded-xl font-semibold hover:bg-[#7c3aed] transition-all duration-300" onClick={handleClick}>
                 Book Your Lab Now →
+              </button> 
+              &nbsp;&nbsp;<button className="px-8 py-3  rounded-xl font-semibold bg-gradient-to-r from-[#8358ff] to-[#39c6fa] transition-all duration-300" onClick={handleClickJoin}>
+                Join Live Classes
               </button>
+             
             </div>
+            
 
           </div>
         </div>

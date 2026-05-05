@@ -15,22 +15,20 @@ import WhyChooseSection from "./WhyChooseSection";
 import CtaSection from "./CtaSection";
 
 const CoursePreview = () => {
-  const { id } = useParams();
+  const { slug } = useParams(); // ✅ correct
 
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ ADD THIS (important)
   const hasFetched = useRef(false);
 
   useEffect(() => {
-    // ✅ prevent double API call
     if (hasFetched.current) return;
     hasFetched.current = true;
 
     const fetchCourse = async () => {
       try {
-        const res = await api.get(`/course/courses/${id}/preview/`);
+        const res = await api.get(`/course/courses/slug/${slug}/`);
         setCourse(res.data);
       } catch (err) {
         console.error(err);
@@ -39,8 +37,8 @@ const CoursePreview = () => {
       }
     };
 
-    if (id) fetchCourse();
-  }, [id]);
+    if (slug) fetchCourse(); // ✅ FIX HERE
+  }, [slug]); // ✅ FIX HERE
 
   /* ================= UI ================= */
 

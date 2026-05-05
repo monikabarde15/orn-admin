@@ -110,6 +110,7 @@ const LabPricing = () => {
           billing_cycle: pkg.billing_cycle,
           planId: pkg.package_id,
           course_id: pkg.course_id,
+          course_slug:pkg.course_slug,
           currency: pkg.currency ?? "INR",
           freeUsed: Boolean((pkg as any).free_used),
           features: [
@@ -164,11 +165,11 @@ const LabPricing = () => {
   };
 
   const handleViewCourse = (lab: any) => {
-    if (!lab?.course_id) {
+    if (!lab?.course_slug) {
       notify("Course not available for this lab", "error");
       return;
     }
-    navigate(`/course-preview/${lab.course_id}`);
+    navigate(`/course-preview/${lab.course_slug}`);
   };
 
   /* ================= UI ================= */

@@ -293,21 +293,21 @@ const { id, slug } = useParams();
 
   /* ================= RAZORPAY ================= */
 
-  const loadRazorpay = () =>
-    new Promise<boolean>((resolve) => {
-      if ((window as any).Razorpay) return resolve(true);
-      const s = document.createElement("script");
-      s.src = "https://checkout.razorpay.com/v1/checkout.js";
-      s.onload = () => resolve(true);
-      s.onerror = () => resolve(false);
-      document.body.appendChild(s);
-    });
+  // const loadRazorpay = () =>
+  //   new Promise<boolean>((resolve) => {
+  //     if ((window as any).Razorpay) return resolve(true);
+  //     const s = document.createElement("script");
+  //     s.src = "https://checkout.razorpay.com/v1/checkout.js";
+  //     s.onload = () => resolve(true);
+  //     s.onerror = () => resolve(false);
+  //     document.body.appendChild(s);
+  //   });
 
-  const openRazorpay = async (amount: number) => {
-    const loaded = await loadRazorpay();
-    if (!loaded) throw new Error("Razorpay load failed");
+  // const openRazorpay = async (amount: number) => {
+  //   const loaded = await loadRazorpay();
+  //   if (!loaded) throw new Error("Razorpay load failed");
 
-    const orderRes = await api.post(`/api/v1/users/create-order/`, { amount });
+  //   const orderRes = await api.post(`/api/v1/users/create-order/`, { amount });
     // api.post(
     //   `api/v1/users/create-order/`,
     //   { amount },
@@ -315,37 +315,37 @@ const { id, slug } = useParams();
     // );
     
 
-    const order = orderRes.data;
+    // const order = orderRes.data;
 
-    return new Promise<void>((resolve, reject) => {
-      new (window as any).Razorpay({
-        key: order.key_id,
-        // amount: order.amount * 100,
-        amount: order.amount,
-        currency: "INR",
-        order_id: order.order_id,
+  //   return new Promise<void>((resolve, reject) => {
+  //     new (window as any).Razorpay({
+  //       key: order.key_id,
+  //       // amount: order.amount * 100,
+  //       amount: order.amount,
+  //       currency: "INR",
+  //       order_id: order.order_id,
 
-        handler: async (res: any) => {
-          try {
-            await api.post(`/api/v1/users/verify-payment/`,
-              {
-                razorpay_payment_id: res.razorpay_payment_id,
-                razorpay_order_id: res.razorpay_order_id,
-                razorpay_signature: res.razorpay_signature,
-              },
-            );
-            resolve();
-          } catch {
-            reject("Verification failed");
-          }
-        },
+  //       handler: async (res: any) => {
+  //         try {
+  //           await api.post(`/api/v1/users/verify-payment/`,
+  //             {
+  //               razorpay_payment_id: res.razorpay_payment_id,
+  //               razorpay_order_id: res.razorpay_order_id,
+  //               razorpay_signature: res.razorpay_signature,
+  //             },
+  //           );
+  //           resolve();
+  //         } catch {
+  //           reject("Verification failed");
+  //         }
+  //       },
 
-        modal: {
-          ondismiss: () => reject("Payment cancelled"),
-        },
-      }).open();
-    });
-  };
+  //       modal: {
+  //         ondismiss: () => reject("Payment cancelled"),
+  //       },
+  //     }).open();
+  //   });
+  // };
 
   /* ================= INSTANCE LIST + POLLING ================= */
 
@@ -412,19 +412,7 @@ const fetchInstances = async () => {
 
       const price = subscription.price || 0;
 
-      // 💰 Wallet / Razorpay
-      // if (wallet < price) {
-      //   await openRazorpay(price - wallet);
-      // }
-      if (wallet < price) {
-        const remaining = price - wallet;
-        const amountValidationError = validateWalletAddAmount(remaining);
-        if (amountValidationError) {
-          alert(amountValidationError);
-          return;
-        }
-        await openRazorpay(remaining);
-      }
+     
 
       // 🚀 Deploy
       await api.post(`/api/v1/lab/deploy/${action}/${slug || ''}/`,
@@ -716,9 +704,9 @@ const fetchInstances = async () => {
     </button>
 
     {/* 💰 WALLET INFO */}
-    <p className="text-xs text-gray-400 text-center">
+    {/* <p className="text-xs text-gray-400 text-center">
       Wallet balance: ₹{wallet}
-    </p>
+    </p> */}
   </div>
 </div>
 

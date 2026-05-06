@@ -236,32 +236,62 @@ const CartPage = () => {
 
   /* ================= CREATE SUB ================= */
 
-  const createSubscription = async (planId: number, price: number) => {
-    try {
-      const res = await api.post(
-        `/api/v1/users/subscriptions/create/${planId}/`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  const createSubscription = async (
+  planId: number,
+  price: number
+) => {
+  try {
 
-      return res.data;
-    } catch (err: any) {
-      const data = err?.response?.data;
-
-      if (data?.error?.includes("already")) {
-        notify("Already active", "info");
-        navigate("/my-subscrption");
-        return null;
+    const res = await api.post(
+      `/api/v1/users/subscriptions/create/${planId}/`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
+    );
 
-      notify(data?.error || "Failed", "error");
-      return null;
+    return res.data;
+
+  } catch (err: any) {
+
+    const data = err?.response?.data;
+
+    // ✅ already active
+    if (
+      data?.message?.toLowerCase().includes("already")
+    ) {
+
+      notify(
+        "Subscription already active",
+        "info"
+      );
+      localStorage.removeItem("orl_cart");
+          setCartItems([]);
+      // ⏳ small delay
+      setTimeout(() => {
+        navigate("/my-subscrption");
+      }, 1500);
+
+      return data?.subscription;
     }
-  };
+
+    // normal error
+    notify(
+      data?.message ||
+      data?.error ||
+      "Subscription failed",
+      "error"
+    );
+
+    return null;
+  }
+};
 
   /* ================= CHECKOUT FLOW ================= */
 
-  const handleCheckout = async () => {
+const handleCheckout = async () => {
     if (!requireLogin()) return;
 
     if (!cartItems.length) return notify("Cart empty");
@@ -269,11 +299,45 @@ const CartPage = () => {
     const item = cartItems[0];
 
     // 🆓 FREE PLAN
-    if (item.billingType === "free" || Number(item.price) === 0) {
-      notify("Launching lab...");
-      navigate(`/lab/${item.course_id}`);
-      return;
-    }
+   if (item.billingType === "free" || Number(item.price) === 0) {
+
+  setLoading(true);
+
+  try {
+
+    // ✅ first create subscription
+    const sub = await createSubscription(
+      item.planId,
+      0
+    );
+
+    if (!sub) return;
+
+    // ✅ clear cart
+    localStorage.removeItem("orl_cart");
+    setCartItems([]);
+
+    notify("Subscription active", "success");
+
+    // ✅ redirect after subscription
+    navigate("/my-subscrption");
+
+  } catch (err: any) {
+
+    notify(
+      err?.response?.data?.error ||
+      "Failed to activate subscription",
+      "error"
+    );
+
+  } finally {
+
+    setLoading(false);
+
+  }
+
+  return;
+}
 
     setLoading(true);
 
@@ -320,7 +384,6 @@ const CartPage = () => {
       setLoading(false);
     }
   };
-
   /* ================= TOTAL ================= */
 
   const total = cartItems.reduce(

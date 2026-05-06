@@ -56,28 +56,42 @@ const ChangePassword = () => {
 
       toast.success("Password changed successfully!");
       setFormData({ new_password1: "", new_password2: "" });
-    } catch (error) {
-      if (error.response?.data) {
-        const apiErrors = {};
-        const data = error.response.data;
-        for (const key in data) {
-          if (Array.isArray(data[key])) {
-            apiErrors[key] = data[key][0];
-          } else if (typeof data[key] === "string") {
-            apiErrors[key] = data[key];
-          }
-        }
-        if (Object.keys(apiErrors).length === 0 && data.detail) {
-          toast.error(data.detail);
-        } else {
-          setErrors(apiErrors);
-        }
-      } else {
-        toast.error("Something went wrong. Please try again.");
+    }catch (error: any) {
+  console.log("FULL API ERROR:", error?.response?.data);
+
+  if (error.response?.data) {
+    const apiErrors: any = {};
+
+    // ✅ nested error object
+    const errorData =
+      error.response.data.error || error.response.data;
+
+    for (const key in errorData) {
+      if (Array.isArray(errorData[key])) {
+        // multiple errors join
+        apiErrors[key] = errorData[key].join(" ");
+      } else if (typeof errorData[key] === "string") {
+        apiErrors[key] = errorData[key];
       }
-    } finally {
-      setLoading(false);
     }
+
+    // fallback
+    if (Object.keys(apiErrors).length === 0) {
+      toast.error(
+        error.response.data.message ||
+        error.response.data.detail ||
+        "Something went wrong"
+      );
+    } else {
+      setErrors(apiErrors);
+    }
+
+  } else {
+    toast.error("Something went wrong. Please try again.");
+  }
+    } finally {
+          setLoading(false);
+        }
   };
 
   return (

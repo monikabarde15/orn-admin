@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 const CtaSection = ({ course }) => {
   const navigate = useNavigate();
 const handleStart = (course) => {
+  console.log('course',course.slug);
   if (!course?.id) {
     console.error("Invalid course data", course);
     return;

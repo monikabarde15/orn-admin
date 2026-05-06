@@ -199,35 +199,75 @@ const VideoPlayer: React.FC = () => {
       <div className="flex-1 flex flex-col">
 
         {/* CONTENT */}
-        <div className="bg-black aspect-video">
-          {currentChapter?.video ? (
-            <video
-              ref={videoRef}
-              src={`https://${currentChapter.video}`}
-              controls
-              className="w-full h-full"
-              onEnded={async () => {
-                await api.post(`/course/progress/`, {
-                  item_type: "chapter",
-                  item_value: currentChapter?.id,
-                  status: "completed",
-                  user: 1,
-                });
-              }}
-            />
-          ) : currentChapter?.thumbnail || course?.thumbnail ? (
-            <img
-              src={currentChapter?.thumbnail || course?.thumbnail}
-              className="w-full h-full object-cover"
-            />
-          ) : currentChapter?.file ? (
-            <iframe src={currentChapter.file} className="w-full h-full" />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              No Document Found
-            </div>
-          )}
-        </div>
+        <div className="bg-black aspect-video w-full">
+
+  {/* VIDEO */}
+  {currentChapter?.video ? (
+    <video
+      ref={videoRef}
+      src={
+        currentChapter.video.startsWith("http")
+          ? currentChapter.video
+          : `https://${currentChapter.video}`
+      }
+      controls
+      className="w-full h-full"
+      onEnded={async () => {
+        await api.post(`/course/progress/`, {
+          item_type: "chapter",
+          item_value: currentChapter?.id,
+          status: "completed",
+          user: 1,
+        });
+      }}
+    />
+  ) : currentChapter?.file ? (
+
+    /* PDF / DOC VIEWER */
+    currentChapter.file.endsWith(".pdf") ? (
+      <iframe
+        src={
+          currentChapter.file.startsWith("http")
+            ? currentChapter.file
+            : `https://${currentChapter.file}`
+        }
+        className="w-full h-full bg-white"
+        title="PDF Viewer"
+      />
+    ) : (
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-white">
+        <p>Document Available</p>
+
+        <a
+          href={
+            currentChapter.file.startsWith("http")
+              ? currentChapter.file
+              : `https://${currentChapter.file}`
+          }
+          target="_blank"
+          rel="noreferrer"
+          className="bg-purple-600 px-4 py-2 rounded"
+        >
+          Open File
+        </a>
+      </div>
+    )
+
+  ) : course?.thumbnail?.image ? (
+
+    /* THUMBNAIL */
+    <img
+      src={`https://${course.thumbnail.image}`}
+      alt="thumbnail"
+      className="w-full h-full object-cover"
+    />
+
+  ) : (
+    <div className="flex items-center justify-center h-full text-white">
+      No Content Found
+    </div>
+  )}
+</div>
 
         {/* TABS */}
         <div className="bg-white text-black p-4">

@@ -229,7 +229,7 @@ const routes = [
             layout:'web',
         },
          {
-            path: '/course-preview/:id',
+            path: '/course-preview/:slug',
             element: <CoursePreview />,
             layout:'web',
         },

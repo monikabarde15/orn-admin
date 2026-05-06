@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import api from "../../services/api";
 
 import Navbar from "../../pages/Components/Navbar";
@@ -15,51 +15,66 @@ import WhyChooseSection from "./WhyChooseSection";
 import CtaSection from "./CtaSection";
 
 const CoursePreview = () => {
-  const { slug } = useParams(); // ✅ correct
+  const { slug } = useParams();
 
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const hasFetched = useRef(false);
-
   useEffect(() => {
-    if (hasFetched.current) return;
-    hasFetched.current = true;
-
     const fetchCourse = async () => {
       try {
+        console.log("Slug:", slug);
+
+        if (!slug) {
+          setLoading(false);
+          return;
+        }
+
         const res = await api.get(`/course/courses/slug/${slug}/`);
-        setCourse(res.data);
-      } catch (err) {
-        console.error(err);
+
+        console.log("API Response:", res.data);
+
+        // backend response handling
+        const courseData =
+          res.data?.data ||
+          res.data?.course ||
+          res.data;
+
+        setCourse(courseData);
+      } catch (error) {
+        console.error("Fetch course error:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    if (slug) fetchCourse(); // ✅ FIX HERE
-  }, [slug]); // ✅ FIX HERE
+    fetchCourse();
+  }, [slug]);
 
-  /* ================= UI ================= */
+  /* ================= LOADING ================= */
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white">
+      <div className="min-h-screen bg-black flex items-center justify-center text-white text-xl">
         Loading course...
       </div>
     );
   }
 
+  /* ================= ERROR ================= */
+
   if (!course) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-red-500">
+      <div className="min-h-screen bg-black flex items-center justify-center text-red-500 text-xl">
         Course not found
       </div>
     );
   }
 
+  /* ================= UI ================= */
+
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-black text-white">
       <Navbar />
 
       <HeroCourseSection course={course} />

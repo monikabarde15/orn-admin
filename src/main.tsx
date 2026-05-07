@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,15 +34,17 @@ import { HelmetProvider } from "react-helmet-async";
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <QueryClientProvider client={queryClient}>
-    <React.StrictMode>
-         <HelmetProvider>
-            <Suspense>
-                <Provider store={store}>
-                    <RouterProvider router={router} />
-                </Provider>
-            </Suspense>
-         </HelmetProvider>
-    </React.StrictMode>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ""}>
+      <React.StrictMode>
+          <HelmetProvider>
+              <Suspense>
+                  <Provider store={store}>
+                      <RouterProvider router={router} />
+                  </Provider>
+              </Suspense>
+          </HelmetProvider>
+      </React.StrictMode>
+    </GoogleOAuthProvider>
     </QueryClientProvider>
 );
 

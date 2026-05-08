@@ -15,16 +15,21 @@ export default function BlogListNew() {
   const [page, setPage] = useState(1);
 
   // 🚀 FAST API FETCH
- const fetchBlogs = async () => {
-  const res = await axios.get(
-    `${VIT}/api/v1/blog/?page=${page}&limit=6`
-  );
+//  const fetchBlogs = async () => {
+//     const res = await axios.get(
+//       `${VIT}/api/v1/blog/?page=${page}&limit=6`
+//     );
 
-  return res?.data?.data || [];
-};
+//     return res?.data?.data || [];
+//   };
+  const fetchBlogs = async () => {
+    const res = await axios.get(`${VIT}/api/v1/blog/?page=${page}&limit=6`);
+    // Paginated response: { count, next, previous, results }
+    return res.data;   // keep full response
+  };
 
   const {
-    data: allBlogs = [],
+    data: blogResponse,
     isLoading,
     isFetching,
   } = useQuery({
@@ -42,17 +47,20 @@ export default function BlogListNew() {
     retry: 1,
   });
 
+  const allBlogs = blogResponse?.results || [];
+  const totalPages = Math.ceil((blogResponse?.count || 0) / PAGE_SIZE);
+
   // 🔥 FEATURED
   const featuredBlog = allBlogs[0];
 
   // 🚀 MEMO
-  const blogsToShow = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
+  // const blogsToShow = useMemo(() => {
+  //   const start = (page - 1) * PAGE_SIZE;
 
-    return allBlogs.slice(start + 1, start + 1 + PAGE_SIZE);
-  }, [allBlogs, page]);
+  //   return allBlogs.slice(start + 1, start + 1 + PAGE_SIZE);
+  // }, [allBlogs, page]);
 
-  const totalPages = Math.ceil((allBlogs.length - 1) / PAGE_SIZE);
+  // const totalPages = Math.ceil((allBlogs.length - 1) / PAGE_SIZE);
 
   const getImage = (img: string) => {
     if (!img) return "https://via.placeholder.com/800x400";
@@ -167,7 +175,7 @@ export default function BlogListNew() {
               {/* BLOG GRID */}
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
 
-                {blogsToShow.map((b) => (
+                {allBlogs.map((b) => (
                   <Link key={b.slug} to={`/blog-detail/${b.slug}`}>
 
                     <motion.div

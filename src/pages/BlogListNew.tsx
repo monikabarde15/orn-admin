@@ -91,19 +91,7 @@ export default function BlogListNew() {
         <div className="max-w-7xl mx-auto px-4">
 
           {/* 🔥 ROUND LOADER */}
-          {isLoading ? (
-            <div className="flex items-center justify-center py-32">
-
-              <div className="relative w-16 h-16">
-
-                <div className="absolute inset-0 rounded-full border-4 border-[#241436]" />
-
-                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#7b4dff] animate-spin" />
-
-              </div>
-
-            </div>
-          ) : (
+          
             <>
               {/* FEATURED BLOG */}
               {featuredBlog && (
@@ -166,11 +154,11 @@ export default function BlogListNew() {
               )}
 
               {/* SMALL TOP LOADER */}
-              {isFetching && (
+              {/* {isFetching && (
                 <div className="flex justify-center mb-6">
                   <div className="w-8 h-8 border-4 border-[#7b4dff] border-t-transparent rounded-full animate-spin"></div>
                 </div>
-              )}
+              )} */}
 
               {/* BLOG GRID */}
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -250,7 +238,6 @@ export default function BlogListNew() {
                 </div>
               )}
             </>
-          )}
         </div>
       </div>
 

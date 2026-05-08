@@ -38,29 +38,84 @@ export default function BlogDetailPage() {
   });
 
   // ================= BLOG LIST =================
-  const { data: blogs = [] } = useQuery({
-    queryKey: ["blogs"],
-    queryFn: async () => {
-      const res = await axios.get(`${API}/api/v1/blog/`);
-      return res.data.data || res.data;
-    },
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-    placeholderData: [],
-  });
+  // ================= BLOG LIST =================
+const { data: blogs = [] } = useQuery({
+  queryKey: ["blogs"],
 
-  // 🔥 latest blogs (exclude current)
-  const latestBlogs = blogs
-    .filter((b) => b.slug !== slug)
-    .slice(0, 5);
+  queryFn: async () => {
 
+    const res = await axios.get(
+      `${API}/api/v1/blog/`
+    );
+
+    return Array.isArray(res.data?.data)
+      ? res.data.data
+      : [];
+  },
+
+  // ⚡ cache instantly
+  staleTime: Infinity,
+  gcTime: Infinity,
+
+  // ⚡ no extra request
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+  refetchOnMount: false,
+
+  // ⚡ retry off
+  retry: 0,
+
+  // ⚡ instant old data
+  placeholderData: (prev) =>
+    prev || [],
+
+  networkMode: "always",
+});
+
+// ================= FAST LATEST BLOGS =================
+// ================= LATEST BLOG API =================
+const { data: latestBlogs = [] } = useQuery({
+  queryKey: ["latest-blogs"],
+
+  queryFn: async () => {
+
+    const res = await axios.get(
+      `${API}/api/v1/blog/`
+    );
+
+    // ✅ API response safe
+    if (Array.isArray(res.data?.data)) {
+      return res.data.data;
+    }
+
+    if (Array.isArray(res.data?.results)) {
+      return res.data.results;
+    }
+
+    if (Array.isArray(res.data)) {
+      return res.data;
+    }
+
+    return [];
+  },
+
+  staleTime: Infinity,
+  gcTime: Infinity,
+
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+  refetchOnMount: false,
+
+  retry: 0,
+
+  placeholderData: [],
+});
   // 🔥 image fix
-  const getImage = (img) => {
-    if (!img) return "https://via.placeholder.com/800x400";
-    if (img.startsWith("http")) return img;
-    return `${API}${img}`;
-  };
-
+  const getImage = (img: string | null) => {
+  if (!img) return "https://via.placeholder.com/800x400";
+  if (img.startsWith("http")) return img;
+  return `${API}${img}`;
+};
   return (
     <>
       <Navbar />
@@ -132,34 +187,40 @@ export default function BlogDetailPage() {
 
               <div className="flex flex-col gap-5">
 
-                {latestBlogs.length === 0 ? (
-                  <p className="text-gray-400">Loading...</p>
-                ) : (
-                  latestBlogs.map((b) => (
-                    <Link
-                      key={b.blogId}
-                      to={`/blog-detail/${b.slug}`}
-                      className="flex gap-4 group"
-                    >
-                      <img
-                        src={getImage(b.image)}
-                        className="w-20 h-20 rounded-lg object-cover"
-                      />
+              {latestBlogs
+                .filter((b: any) => b.slug !== slug)
+                .map((b: any) => (
 
-                      <div>
-                        <p className="text-sm font-medium group-hover:text-[#7c4dff]">
-                          {b.title}
-                        </p>
+                  <Link
+                    key={b.blogId || b.id}
+                    to={`/blog-detail/${b.slug}`}
+                    className="flex gap-4 group"
+                  >
 
-                        <span className="text-xs text-gray-400">
-                          {b.createdAt?.slice(0, 10)}
-                        </span>
-                      </div>
-                    </Link>
-                  ))
-                )}
+                    <img
+                      src={getImage(b.image)}
+                      alt={b.title}
+                      className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
+                      loading="lazy"
+                    />
 
-              </div>
+                    <div>
+
+                      <p className="text-sm font-medium group-hover:text-[#7c4dff] transition">
+                        {b.title}
+                      </p>
+
+                      <span className="text-xs text-gray-400">
+                        {b.createdAt?.slice(0, 10)}
+                      </span>
+
+                    </div>
+
+                  </Link>
+
+              ))}
+
+            </div>
             </div>
 
             {/* VIEW ALL */}

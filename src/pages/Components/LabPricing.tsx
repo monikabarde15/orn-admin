@@ -179,24 +179,7 @@ const [initialLoading, setInitialLoading] = useState(true);
 
       {/* 🔥 TOP LOADER */}
      {/* 🔥 FULL SCREEN ROUND LOADER */}
-      {loading && allPackages.length === 0 && (
-        <div className="fixed inset-0 bg-[#020617] z-[9999] flex items-center justify-center">
-
-          <div className="relative w-20 h-20">
-
-            {/* OUTER */}
-            <div className="absolute inset-0 rounded-full border-4 border-[#312e81]/30"></div>
-
-            {/* SPINNER */}
-            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-purple-500 border-r-blue-500 animate-spin"></div>
-
-            {/* INNER GLOW */}
-            <div className="absolute inset-3 rounded-full bg-gradient-to-r from-purple-500/20 to-blue-500/20 blur-md"></div>
-
-          </div>
-
-        </div>
-      )}
+    
 
       <div className="max-w-7xl mx-auto">
 

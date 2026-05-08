@@ -37,7 +37,13 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ""}>
       <React.StrictMode>
           <HelmetProvider>
-              <Suspense>
+              <Suspense
+                fallback={
+                  <div className="global-loader">
+                    <div className="spinner"></div>
+                  </div>
+                }
+              >
                   <Provider store={store}>
                       <RouterProvider router={router} />
                   </Provider>

@@ -6,6 +6,7 @@ import axios from "axios";
 import { setPageTitle } from "../../store/themeConfigSlice";
 import i18next from "i18next";
 import { toast, ToastContainer } from "react-toastify";
+import { GoogleLogin } from "@react-oauth/google";
 
 import "react-toastify/dist/ReactToastify.css";
 import IconMail from "../../components/Icon/IconMail";
@@ -144,6 +145,55 @@ const submitForm = async (e: React.FormEvent) => {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    const idToken = credentialResponse?.credential;
+    
+    if (!idToken) {
+      toast.error("Google login failed. Please try again.");
+      return;
+    }
+
+    try {
+      
+      const response = await axios.post(
+        `${VIT}/api/v1/users/auth/google/`,
+        { id_token: idToken },
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      const data = response.data;
+      
+      if (data.user && data.access) {
+        // Store tokens (matching existing login flow)
+        localStorage.setItem("access_token", data.access);
+        localStorage.setItem("refresh_token", data.refresh);
+        localStorage.setItem("userId", String(data.user.id));
+        localStorage.setItem("email", data.user.email);
+        localStorage.setItem("username", data.user.username);
+        localStorage.setItem("is_superuser", String(data.user.is_superuser));
+        
+        // Store additional user data if needed
+        if (data.user.first_name) localStorage.setItem("first_name", data.user.first_name);
+        if (data.user.profile_image) localStorage.setItem("profile_image", data.user.profile_image);
+
+        toast.success("Google login successful!");
+
+        // Redirect (same as existing login)
+        setTimeout(() => {
+          window.location.href = data.user.is_superuser ? "/index" : "/";
+        }, 800);
+      }
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.message || err?.response?.data?.error || "Google login failed. Please try again.";
+      toast.error(errorMsg);
+      console.error("Google login error:", err);
+    }
+  };
+
+  const handleGoogleError = () => {
+    toast.error("Google login failed. Please try again.");
+  };
+
   return (
     <>
     <Navbar />
@@ -213,6 +263,30 @@ const submitForm = async (e: React.FormEvent) => {
                   >
                     {loading ? "Signing in..." : "Sign in"}
                   </button>
+
+                  {/* Google Button */}
+                <div className="mt-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex justify-center">
+                    <GoogleLogin
+                      onSuccess={handleGoogleSuccess}
+                      onError={handleGoogleError}
+                      useOneTap={false}
+                      theme="outline"
+                      size="large"
+                      text="signin_with"
+                      shape="rectangular"
+                    />
+                  </div>
+                </div>
 
                   <p
                     className="text-primary text-center mt-3 cursor-pointer hover:underline"

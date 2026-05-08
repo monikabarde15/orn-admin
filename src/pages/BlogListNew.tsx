@@ -28,7 +28,8 @@ export default function BlogListNew() {
     isLoading,
     isFetching,
   } = useQuery({
-    queryKey: ["blogs"],
+    // queryKey: ["blogs"],
+    queryKey: ["blogs", page],
     queryFn: fetchBlogs,
 
     // 🚀 CACHE

@@ -3,7 +3,9 @@ import { Clock, BookOpen, User } from "lucide-react";
 import { Container, Code2, Database, Rocket } from "lucide-react";
 import { CheckCircle2 } from "lucide-react";
 import { Check } from "lucide-react";
-
+import Navbar from "../../pages/Components/Navbar";
+import Footer from "../Components/Footer";
+import { useState, useEffect } from "react";
 
 const modules = [
   {
@@ -81,7 +83,76 @@ const audience = [
   { title: "Developers moving into DevOps", desc: "Get production workflows and tooling under your belt." },
   { title: "Anyone wanting real project experience", desc: "Skip theory-only courses. Build, ship, repeat." },
 ];
+/* ================= CURRENCY ================= */
+
+const currencySymbols: Record<string, string> = {
+  INR: "₹",
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+};
+
+const rates: any = {
+  INR: 1,
+  USD: 0.012,
+  EUR: 0.011,
+  GBP: 0.0095,
+};
+
+const getCurrencySymbol = (currency?: string | null) => {
+  const raw = (currency || "INR").toUpperCase();
+  return currencySymbols[raw] || raw || "₹";
+};
+
+const convertPrice = (price: number, currency: string) => {
+  return price * (rates[currency] || 1);
+};
 export default function LandingPage() {
+  /* ================= CURRENCY ================= */
+
+const [currency, setCurrency] = useState(
+  () => localStorage.getItem("orl_currency") || "INR"
+);
+
+useEffect(() => {
+
+  const handler = () => {
+
+    const newCurrency =
+      localStorage.getItem("orl_currency") || "INR";
+
+    setCurrency(newCurrency);
+
+  };
+
+  window.addEventListener(
+    "orlcurrencychange",
+    handler
+  );
+
+  return () =>
+    window.removeEventListener(
+      "orlcurrencychange",
+      handler
+    );
+
+}, []);
+
+/* ================= PRICE ================= */
+
+const basePrice = 2500;
+
+const convertedPrice = convertPrice(
+  basePrice,
+  currency
+);
+
+const formattedPrice = new Intl.NumberFormat(
+  "en-IN",
+  {
+    maximumFractionDigits: 0,
+  }
+).format(convertedPrice);
   return (
     <div className="min-h-screen text-white relative overflow-hidden">
 
@@ -102,46 +173,7 @@ export default function LandingPage() {
       </div>
 
       {/* ================= NAVBAR ================= */}
-      <header className="relative z-50 px-8 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-
-          {/* LEFT LOGO */}
-          <div className="w-1/4">
-            <div className="text-lg font-bold">
-              <span className="text-red-400">&lt;</span>
-              OnRequest<span className="text-blue-400">Lab</span>
-              <span className="text-blue-400"> &gt;</span>
-            </div>
-          </div>
-
-          {/* CENTER NAV (25% CENTER SHIFTED) */}
-          <nav className="w-2/4 flex justify-center gap-8 text-gray-300 text-sm">
-            <a href="#">Home</a>
-            <a href="#">Curriculum</a>
-            <a href="#">Outcomes</a>
-            <a href="#">Pricing</a>
-          </nav>
-
-          {/* RIGHT BUTTON */}
-          <div className="w-1/4 flex justify-end">
-             <a
-                href={`https://zoom.us/meeting/register/GxZk_6qDRNOxsj3TzjRfRQ`}
-                className="
-                  px-6 py-1 rounded-md inline-flex items-center justify-center
-
-                  bg-[linear-gradient(135deg,#7c3aed,#2563eb)]
-
-                  hover:opacity-90
-                  transition
-                "
-              >
-                Enroll Now
-              </a>
-
-          </div>
-
-        </div>
-      </header>
+      <Navbar />
 
       {/* ================= HERO ================= */}
       <section className="relative z-10 max-w-7xl mx-auto px-8 py-20 grid md:grid-cols-2 gap-12 items-center" >
@@ -249,7 +281,10 @@ export default function LandingPage() {
             {/* PRICE */}
             <div className="absolute top-4 left-4 bg-[#1a1f4f] px-4 py-2 rounded-xl text-sm">
               <p className="text-gray-400 text-xs">Launch Offer</p>
-              <p className="text-blue-400 font-semibold">$25 / student</p>
+              <p className="text-blue-400 font-semibold">
+                {getCurrencySymbol(currency)}
+                {formattedPrice} / student
+              </p>
             </div>
 
             {/* FORMAT */}
@@ -510,15 +545,22 @@ export default function LandingPage() {
 
               {/* PRICE */}
               <div className="mt-8">
-                <span className="text-5xl font-bold text-[oklch(0.72_0.2_255)]">
-                  $25
-                </span>
+               <span className="text-5xl font-bold text-[oklch(0.72_0.2_255)]">
+                {getCurrencySymbol(currency)}
+                {formattedPrice}
+              </span>
                 <span className="text-[oklch(0.7_0.03_260)] ml-2">
                   / student
                 </span>
 
                 <p className="text-sm text-gray-500 mt-1">
-                  (Regular fee: $2,500)
+                  (Regular fee:
+                  {" "}
+                  {getCurrencySymbol(currency)}
+                  {new Intl.NumberFormat("en-IN").format(
+                    convertPrice(2500, currency)
+                  )}
+                  )
                 </p>
               </div>
 
@@ -588,6 +630,7 @@ export default function LandingPage() {
           </div>
         </div>
       </div>
+      <Footer />
 
     </section>
     </div>

@@ -10,7 +10,6 @@ import api from "../../services/api";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
-
 const VideoPlayer: React.FC = () => {
   const { id } = useParams();
 
@@ -37,6 +36,11 @@ const VideoPlayer: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  const token = localStorage.getItem("access_token");
+const userId = localStorage.getItem("userId");
+
+const isLoggedIn = !!token && !!userId;
 
   // 🔥 FETCH API
   useEffect(() => {
@@ -273,7 +277,11 @@ const VideoPlayer: React.FC = () => {
         <div className="bg-white text-black p-4">
           <div className="flex gap-4 border-b mb-4">
             <button onClick={() => setActiveTab("overview")}>Overview</button>
-            <button onClick={() => setActiveTab("quiz")}>Quiz</button>
+            {isLoggedIn && (
+              <button onClick={() => setActiveTab("quiz")}>
+                Quiz
+              </button>
+            )}
           </div>
 
           {/* OVERVIEW */}
@@ -486,6 +494,15 @@ const VideoPlayer: React.FC = () => {
           ))}
         </div>
       )}
+      {/* OPEN SIDEBAR BUTTON */}
+    {!sidebarOpen && (
+      <button
+        onClick={() => setSidebarOpen(true)}
+        className="fixed top-24 right-4 z-50 bg-purple-600 text-white p-3 rounded-full shadow-lg"
+      >
+        <Menu size={22} />
+      </button>
+    )}
     </div>  
       <Footer/>
     </>

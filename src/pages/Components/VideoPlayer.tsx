@@ -124,7 +124,8 @@ const isLoggedIn = !!token && !!userId;
   };
 
   // 🔥 FEEDBACK + CERTIFICATE
-  const handleFeedbackSubmit = async () => {
+// ✅ FEEDBACK + CERTIFICATE
+const handleFeedbackSubmit = async () => {
   try {
     // ✅ FEEDBACK
     await api.post(`/api/feedback/feedback_vc/`, {
@@ -134,43 +135,47 @@ const isLoggedIn = !!token && !!userId;
     });
 
     // ✅ CERTIFICATE CREATE
-    await api.post(`/certificate/certificate/`, {
+    const certRes = await api.post(`/certificate/certificate/`, {
       title: course.title,
       user: 1,
       course: id,
     });
 
+    // ✅ FIRST TIME CREATE RESPONSE
+    if (certRes?.data?.id) {
+      window.location.href = `/certificate-view/${certRes.data.id}`;
+      return;
+    }
+
     setCertificateGenerated(true);
 
   } catch (err: any) {
-    const errorData = err?.response?.data;
 
+    const errorData = err?.response?.data;
     const raw = errorData?.error?.bunny_error;
 
     if (raw) {
       try {
-        // 🔥 FIX: single quotes → double quotes
+        // single quote fix
         const cleaned = raw.replace(/'/g, '"');
 
         const parsed = JSON.parse(cleaned);
 
         if (parsed?.certificate_id) {
-          const certId = parsed.certificate_id;
 
-          // ✅ REDIRECT
-          window.location.href = `/certificate-view/${certId}`;
+          // ✅ ALREADY EXISTS CASE
+          window.location.href = `/certificate-view/${parsed.certificate_id}`;
           return;
         }
 
       } catch (e) {
-        console.error("Still parse error", e);
+        console.error("Parse Error:", e);
       }
     }
 
     console.error("Final Error:", err);
   }
 };
-
   // 🔥 NEXT CHAPTER
   const goToNextChapter = () => {
     for (let sec of sections) {

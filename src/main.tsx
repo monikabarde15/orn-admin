@@ -34,7 +34,7 @@ import { HelmetProvider } from "react-helmet-async";
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <QueryClientProvider client={queryClient}>
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ""}>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || "400368542110-9njp1688ml0itqg1531bv77ohpnig3ui.apps.googleusercontent.com"}>
       <React.StrictMode>
           <HelmetProvider>
               <Suspense

@@ -42,74 +42,44 @@ const LoginBoxed = () => {
   
 const submitForm = async (e: React.FormEvent) => {
   e.preventDefault();
-  setError("");
-  setLoading(true);
-
-  if (!username.trim() || !password.trim()) {
-    toast.error("Please fill in all fields.", { position: "top-center" });
-    setLoading(false);
-    return;
-  }
 
   try {
     const response = await axios.post(
-      `${VIT}/api/v1/users/login/`,
-      { login: username, password },
-      { headers: { "Content-Type": "application/json" }, withCredentials: true }
+      `${import.meta.env.VITE_API_URL}/api/v1/auth/login`,
+      {
+        email: username,
+        password: password,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
     );
 
     const data = response.data;
 
-    if (data.user && data.access) {
+    console.log("Login Success:", data.user);
 
-      // Login Time Validation
-      localStorage.setItem("login_at", String(Date.now()));
-      localStorage.setItem("session_expires_at", String(Date.now() + SESSION_TIME_MS));
-      localStorage.removeItem("logout_at");
+    // SAVE TOKEN
+    localStorage.setItem("token", data.token);
 
-      // ✅ SAVE SESSION EXPIRY TIME
- 
+    // SAVE USER
+    localStorage.setItem("user", JSON.stringify(data.user));
 
-      // ✅ COOKIES (SHORT LIVED)
-      document.cookie = `username=${encodeURIComponent(data.user.username)}; path=/;`;
-      document.cookie = `user_id=${data.user.id}; path=/;`;
-      document.cookie = `email=${encodeURIComponent(data.user.email)}; path=/;`;
-      document.cookie = `is_superuser=${data.user.is_superuser}; path=/;`;
-      document.cookie = `access=${data.access}; path=/;`;
+    toast.success("Login successful!");
 
-      // ✅ LOCAL STORAGE
-      localStorage.setItem("access_token", data.access);
-      localStorage.setItem("refresh_token", data.refresh);
+    // REDIRECT
+    setTimeout(() => {
+      window.location.href = "/vidya-gyan-admin/index";
+    }, 1000);
 
-  // 👤 USER INFO
-  localStorage.setItem("userId", String(data.user.id));
-  localStorage.setItem("email", data.user.email);
-  localStorage.setItem("username", data.user.username);
-  localStorage.setItem("is_superuser", String(data.user.is_superuser));
+  } catch (error: any) {
+    console.log("Login Error:", error);
 
-      toast.success("Login successful!", { position: "top-center" });
-
-      setTimeout(() => {
-        window.location.href = data.user.is_superuser ? "/index" : "/";
-      }, 1000);
-    }
-
-  }  catch (err: any) {
-  let msg = "Invalid username or password.";
-
-  if (err.response?.data) {
-    const data = err.response.data;
-
-    if (data.message) msg = data.message;   // ✅ your case
-    else if (data.error) msg = data.error;
-    else if (data.detail) msg = data.detail;
-  }
-
-  setError(msg); // ✅ frontend ke liye
-  toast.error(msg, { position: "top-center" }); // optional
-}
- finally {
-    setLoading(false);
+    toast.error(
+      error?.response?.data?.message || "Login failed"
+    );
   }
 };
 

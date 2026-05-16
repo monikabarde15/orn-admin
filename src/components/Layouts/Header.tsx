@@ -40,6 +40,7 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import api from "../../services/api";
+import { Trash2Icon } from 'lucide-react';
 
 const Header = () => {
 <ToastContainer
@@ -56,8 +57,8 @@ const Header = () => {
 const [profileLoading, setProfileLoading] = useState(true);
 const fetchProfile = async () => {
   try {
-    const res = await api.get("/api/v1/users/profile/");
-    setProfile(res.data);
+    const res = await api.get("/api/v1/profile/getUserDetails");
+    setProfile(res.data.data);
   } catch (err) {
     console.error("Profile fetch failed:", err);
   } finally {
@@ -67,12 +68,13 @@ const fetchProfile = async () => {
 useEffect(() => {
   fetchProfile();
 }, []);
+console.log("profile=",profile);
 const username = profile?.username || "Admin";
 const email = profile?.email || "";
-const profileImage = profile?.profile_image
-  ? profile.profile_image.startsWith("http")
-    ? profile.profile_image
-    : `https://${profile.profile_image}`
+const profileImage = profile?.image
+  ? profile.image.startsWith("http")
+    ? profile.image
+    : `https://${profile.image}`
   : "https://t4.ftcdn.net/jpg/01/24/65/69/240_F_124656969_x3y8YVzvrqFZyv3YLWNo6PJaC88SYxqM.jpg";
 
 const role = profile?.role || "";
@@ -237,7 +239,33 @@ useEffect(() => {
     );
   };
 }, []);
+const deleteAccount = async () => {
+  try {
+    const res = await api.delete(
+      "/api/v1/profile/deleteProfile"
+    );
 
+    console.log(res.data);
+
+    toast.success("Account deleted successfully");
+
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("userId");
+
+    setTimeout(() => {
+      window.location.href = "/";
+    }, 1000);
+
+  } catch (err) {
+    console.log(err);
+
+    toast.error(
+      err.response?.data?.message ||
+      "Delete account failed"
+    );
+  }
+};
 const logout = async () => {
   try {
     // ✅ HIT BACKEND LOGOUT API
@@ -427,6 +455,11 @@ const userID = JSON.parse(localStorage.getItem("userId") || "{}");
                                             <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
                                             Profile
                                         </Link>
+                                    </li>
+                                    <li>
+                                        <button onClick={deleteAccount}>
+                                        <Trash2Icon className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 rotate-90 shrink-0" />    Delete Account
+                                        </button>
                                     </li>
                                    
                                     <li className="border-t border-white-light dark:border-white-light/10">

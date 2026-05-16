@@ -4,7 +4,7 @@ const Index = lazy(() => import('../pages/Index'));
 const Overview = lazy(() => import('../pages/Dashboard'));
 const MessagesList = lazy(() => import('../pages/MessagesList'));
 const AdminMessages = lazy(() => import('../pages/AdminMessages'));
-const BlogAdmin = lazy(() => import('../pages/BlogAdmin'));
+const AdminCategoryPanel = lazy(() => import('../pages/AdminCategoryPanel'));
 
 const AdminNotificationsBroadcast = lazy(() => import('../pages/AdminNotificationsBroadcast'));
 
@@ -24,15 +24,17 @@ const Notes = lazy(() => import('../pages/Apps/Notes'));
 const Contacts = lazy(() => import('../pages/Apps/Contacts'));
 const LandingPage = lazy(() => import('../pages/Apps/LandingPage'));
 
-const FeedbackListNew = lazy(() => import('../pages/Components/FeedbackListNew.tsx'));
-const PaymentList = lazy(() => import('../pages/Components/PaymentList.tsx'));
-const PaymentListNormal = lazy(() => import('../pages/Components/PaymentListNormal.tsx'));
+const FeedbackListNew = lazy(() => import('../pages/Components/FeedbackListNew'));
+const PaymentList = lazy(() => import('../pages/Components/PaymentList'));
+const PaymentListNormal = lazy(() => import('../pages/Components/PaymentListNormal'));
 
-const LabList = lazy(() => import('../pages/Components/LabList.tsx'));
-const LabListNormal = lazy(() => import('../pages/Components/LabListNormal.tsx'));
+const LabList = lazy(() => import('../pages/Components/LabList'));
+const LabListNormal = lazy(() => import('../pages/Components/LabListNormal'));
 const Cart = lazy(() => import('../pages/Components/CartPage'));
 const Checkout =lazy(() => import('../pages/Components/Checkout'));
-const UsersList = lazy(() => import('../pages/Components/UserList.tsx'));
+const UsersList = lazy(() => import('../pages/Components/UserList'));
+const Infrastrucutr = lazy(() => import('../pages/Components/Infrastrucutr'));
+const AnalyticsN = lazy(() => import('../pages/Components/Analytics'));
 
 
 const Chat = lazy(() => import('../pages/Apps/Chat'));
@@ -182,10 +184,8 @@ const UserInstances = lazy(() => import('../pages/Components/UserInstances'));
 
 const CourseEnrollment = lazy(() => import('../pages/Components/CourseEnrollment'));
 const CreateCourseForm = lazy(() =>
-  import('../pages/Components/CreateCourse').then((module) => ({
-    default: module.CreateCourseForm,
-  }))
-)
+  import("../pages/Components/CreateCourse")
+);
 const CoursesListPage = lazy(() => import('../pages/Components/CoursesListPage'));
 const VideoPlayer = lazy(() => import('../pages/Components/VideoPlayer'));
 const CoursePlayer  = lazy(() => import('../pages/Components/CoursePlayer'));
@@ -199,7 +199,7 @@ const CertificateView = lazy(() => import('../pages/Components/CertificateView')
 const routes = [
     // dashboard
      {
-        path: '/',
+        path: '/home',
         element: <Home />,
         layout:'web',
     },
@@ -422,8 +422,8 @@ const routes = [
          element: <AdminMessages />,
     },
      {
-        path: '/admin-blog',
-         element: <BlogAdmin />,
+        path: '/admin-category',
+         element: <AdminCategoryPanel />,
     },
    
    
@@ -472,8 +472,16 @@ const routes = [
         element: <PaymentList />,
     },
     {
-        path: '/users-list',
+        path: '/student-list',
         element: <UsersList />,
+    },
+     {
+        path: '/analytics-list',
+        element: <AnalyticsN />,
+    },
+     {
+        path: '/instructors',
+        element: <Infrastrucutr />,
     },
     
     {
@@ -825,7 +833,7 @@ const routes = [
     },
     //Authentication
     {
-        path: '/login',
+        path: '/',
         element: <LoginBoxed />,
         layout: 'web',
     },

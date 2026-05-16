@@ -7,7 +7,7 @@ import api from "../../services/api"; // 👈 path adjust if needed
 console.log(import.meta.env.VITE_API_URL);
 const VIT=import.meta.env.VITE_API_URL;
 
-const API_URL = `${VIT}/api/v1/admin/users/`;
+const API_URL = `${VIT}/api/v1/admin/students`;
 const ROWS_PER_PAGE = 5;
 
 const UsersList = () => {
@@ -24,7 +24,7 @@ const UsersList = () => {
     setLoading(true);
     try {
       const res = await api.get(API_URL);
-      const items = res.data.results || [];
+     const items = res.data.students || [];
       setUsers(items);
       setFilteredUsers(items);
     } catch (err) {
@@ -46,10 +46,9 @@ const UsersList = () => {
   useEffect(() => {
     const filtered = users.filter(
       (u) =>
-        u.username?.toLowerCase().includes(search.toLowerCase()) ||
         u.email?.toLowerCase().includes(search.toLowerCase()) ||
-        u.first_name?.toLowerCase().includes(search.toLowerCase()) ||
-        u.last_name?.toLowerCase().includes(search.toLowerCase())
+        u.firstName?.toLowerCase().includes(search.toLowerCase()) ||
+        u.lastName?.toLowerCase().includes(search.toLowerCase())
     );
     setFilteredUsers(filtered);
     setCurrentPage(1); // reset to first page when searching
@@ -79,8 +78,8 @@ const deleteUser = async (user: any) => {
     if (!confirm.isConfirmed) return;
 
     try {
-      await api.delete(`${API_URL}${user.id}/`);
-      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+      await api.delete(`${API_URL}${user._id}/`);
+      setUsers((prev) => prev.filter((u) => u._id !== user._id));
       Swal.fire({
         icon: "success",
         toast: true,
@@ -105,7 +104,7 @@ const deleteUser = async (user: any) => {
   const toggleActive = async (user) => {
     try {
       await axios.patch(
-        `${API_URL}${user.id}/`,
+        `${API_URL}${user._id}/`,
         { is_active: !user.is_active },
         {
           headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
@@ -122,23 +121,19 @@ const deleteUser = async (user: any) => {
   const exportCSV = () => {
     const headers = [
       "ID",
-      "Username",
       "Email",
       "First Name",
       "Last Name",
-      "Date Joined",
       "Active",
     ];
     let csv = headers.join(",") + "\n";
     filteredUsers.forEach((u) => {
       csv +=
         [
-          u.id,
-          u.username,
+          u._id,
           u.email,
-          u.first_name || "-",
-          u.last_name || "-",
-          new Date(u.date_joined).toLocaleString(),
+          u.firstName || "-",
+          u.lastName || "-",
           u.is_active ? "Active" : "Inactive",
         ].join(",") + "\n";
     });
@@ -155,19 +150,17 @@ const deleteUser = async (user: any) => {
     table.innerHTML = `
       <thead>
         <tr>
-          <th>ID</th><th>Username</th><th>Email</th><th>First Name</th><th>Last Name</th><th>Date Joined</th><th>Active</th>
+          <th>ID</th><th>Email</th><th>First Name</th><th>Last Name</th><th>Active</th>
         </tr>
       </thead>
       <tbody>
         ${filteredUsers
           .map(
             (u) => `<tr>
-              <td>${u.id}</td>
-              <td>${u.username}</td>
+              <td>${u._id}</td>
               <td>${u.email}</td>
-              <td>${u.first_name || "-"}</td>
-              <td>${u.last_name || "-"}</td>
-              <td>${new Date(u.date_joined).toLocaleString()}</td>
+              <td>${u.firstName || "-"}</td>
+              <td>${u.lastName || "-"}</td>
               <td>${u.is_active ? "Active" : "Inactive"}</td>
             </tr>`
           )
@@ -210,11 +203,9 @@ const deleteUser = async (user: any) => {
           <thead>
             <tr>
               <th>ID</th>
-              <th>Username</th>
               <th>Email</th>
               <th>First Name</th>
               <th>Last Name</th>
-              <th>Date Joined</th>
               <th>Active</th>
               <th>Actions</th>
             </tr>
@@ -234,13 +225,12 @@ const deleteUser = async (user: any) => {
               </tr>
             ) : (
               currentUsers.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.id}</td>
-                  <td>{u.username}</td>
+                <tr key={u._id}>
+                  <td>{u._id}</td>
                   <td>{u.email}</td>
-                  <td>{u.first_name || "-"}</td>
-                  <td>{u.last_name || "-"}</td>
-                  <td>{new Date(u.date_joined).toLocaleString()}</td>
+                  <td>{u.firstName || "-"}</td>
+                  <td>{u.lastName || "-"}</td>
+                  {/* <td>{new Date(u.date_joined).toLocaleString()}</td> */}
                   <td>
                     <button
                       className={`btn btn-sm ${
@@ -254,10 +244,10 @@ const deleteUser = async (user: any) => {
                   <td>
                    <button
                     className={`btn btn-sm ${
-                      u.id < 2 ? "btn-secondary opacity-50 cursor-not-allowed" : "btn-danger"
+                      u._id < 2 ? "btn-secondary opacity-50 cursor-not-allowed" : "btn-danger"
                     }`}
                     onClick={() => deleteUser(u)}
-                    disabled={u.id < 2}
+                    disabled={u._id < 2}
                   >
                     Delete
                   </button>

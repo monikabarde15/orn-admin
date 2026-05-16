@@ -1,20 +1,38 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+
+    {
+      name: "redirect-to-admin",
+
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (
+            req.url === "/" ||
+            req.url === "/index" ||
+            req.url === "/index.html"
+          ) {
+            res.statusCode = 302;
+            res.setHeader("Location", "/vidya-gyan-admin/");
+            res.end();
+            return;
+          }
+
+          next();
+        });
+      },
+    },
+  ],
+
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      "@": path.resolve(__dirname, "./src"),
     },
   },
-  server: {
-    port: 3000,
-    host: true,
-  },
-  build: {
-     outDir: 'build',
-    chunkSizeWarningLimit: 1600, // 500kb से बढ़ाकर 1.6mb कर दिया
-  },
+
+  base: "/vidya-gyan-admin/",
 });

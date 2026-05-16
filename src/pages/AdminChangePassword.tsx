@@ -5,25 +5,44 @@ import api from "../services/api";
 
 const AdminChangePassword = () => {
   const [formData, setFormData] = useState({
-    new_password1: "",
-    new_password2: "",
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+
+    setErrors((prev) => ({
+      ...prev,
+      [e.target.name]: "",
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setErrors({});
 
-    if (formData.new_password1 !== formData.new_password2) {
+    // validation
+    if (
+      !formData.oldPassword ||
+      !formData.newPassword ||
+      !formData.confirmPassword
+    ) {
+      toast.error("All fields are required");
+      return;
+    }
+
+    if (formData.newPassword !== formData.confirmPassword) {
       setErrors({
-        new_password2: "Passwords do not match.",
+        confirmPassword: "Passwords do not match",
       });
       return;
     }
@@ -31,36 +50,31 @@ const AdminChangePassword = () => {
     setLoading(true);
 
     try {
-      await api.post("/api/v1/users/auth/password/change/", {
-        new_password1: formData.new_password1,
-        new_password2: formData.new_password2,
+      const response = await api.post(
+        "/api/v1/auth/changePassword",
+        {
+          oldPassword: formData.oldPassword,
+          newPassword: formData.newPassword,
+        }
+      );
+
+      toast.success(
+        response.data.message || "Password changed successfully 🎉"
+      );
+
+      setFormData({
+        oldPassword: "",
+        newPassword: "",
+        confirmPassword: "",
       });
 
-      toast.success("Password changed successfully 🎉");
-      setFormData({ new_password1: "", new_password2: "" });
     } catch (error) {
-      if (error.response?.data) {
-        const apiErrors = {};
-        const data = error.response.data;
+      console.log(error);
 
-        for (const key in data) {
-          if (Array.isArray(data[key])) {
-            apiErrors[key] = data[key][0];
-          } else if (typeof data[key] === "string") {
-            apiErrors[key] = data[key];
-          }
-        }
-
-        if (Object.keys(apiErrors).length > 0) {
-          setErrors(apiErrors);
-        } else if (data.detail) {
-          toast.error(data.detail);
-        } else {
-          toast.error("Password update failed.");
-        }
-      } else {
-        toast.error("Server error. Please try again.");
-      }
+      toast.error(
+        error.response?.data?.message ||
+          "Password update failed"
+      );
     } finally {
       setLoading(false);
     }
@@ -69,32 +83,61 @@ const AdminChangePassword = () => {
   return (
     <div className="p-6 md:p-10 bg-gray-50 min-h-[calc(100vh-80px)]">
       <div className="max-w-3xl mx-auto bg-white shadow-md rounded-xl p-8">
+
         <h2 className="text-2xl font-semibold text-gray-800 mb-6 border-b pb-3">
           Change Password
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+
+          {/* OLD PASSWORD */}
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-700">
+              Old Password
+            </label>
+
+            <input
+              type="password"
+              name="oldPassword"
+              value={formData.oldPassword}
+              onChange={handleChange}
+              placeholder="Enter old password"
+              className={`w-full border rounded-lg p-2.5 focus:ring-2 focus:outline-none ${
+                errors.oldPassword
+                  ? "border-red-500 focus:ring-red-300"
+                  : "border-gray-300 focus:ring-indigo-500"
+              }`}
+            />
+
+            {errors.oldPassword && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.oldPassword}
+              </p>
+            )}
+          </div>
+
           {/* NEW PASSWORD */}
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700">
               New Password
             </label>
+
             <input
               type="password"
-              name="new_password1"
-              value={formData.new_password1}
+              name="newPassword"
+              value={formData.newPassword}
               onChange={handleChange}
+              placeholder="Enter new password"
               className={`w-full border rounded-lg p-2.5 focus:ring-2 focus:outline-none ${
-                errors.new_password1
+                errors.newPassword
                   ? "border-red-500 focus:ring-red-300"
                   : "border-gray-300 focus:ring-indigo-500"
               }`}
-              placeholder="Enter new password"
-              required
             />
-            {errors.new_password1 && (
+
+            {errors.newPassword && (
               <p className="text-red-500 text-sm mt-1">
-                {errors.new_password1}
+                {errors.newPassword}
               </p>
             )}
           </div>
@@ -102,29 +145,30 @@ const AdminChangePassword = () => {
           {/* CONFIRM PASSWORD */}
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700">
-              Confirm New Password
+              Confirm Password
             </label>
+
             <input
               type="password"
-              name="new_password2"
-              value={formData.new_password2}
+              name="confirmPassword"
+              value={formData.confirmPassword}
               onChange={handleChange}
+              placeholder="Confirm new password"
               className={`w-full border rounded-lg p-2.5 focus:ring-2 focus:outline-none ${
-                errors.new_password2
+                errors.confirmPassword
                   ? "border-red-500 focus:ring-red-300"
                   : "border-gray-300 focus:ring-indigo-500"
               }`}
-              placeholder="Re-enter new password"
-              required
             />
-            {errors.new_password2 && (
+
+            {errors.confirmPassword && (
               <p className="text-red-500 text-sm mt-1">
-                {errors.new_password2}
+                {errors.confirmPassword}
               </p>
             )}
           </div>
 
-          {/* SUBMIT */}
+          {/* BUTTON */}
           <div className="flex justify-end">
             <button
               type="submit"
@@ -138,6 +182,7 @@ const AdminChangePassword = () => {
               {loading ? "Updating..." : "Change Password"}
             </button>
           </div>
+
         </form>
       </div>
     </div>

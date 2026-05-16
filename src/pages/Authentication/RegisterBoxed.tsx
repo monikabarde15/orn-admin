@@ -46,6 +46,7 @@ const RegisterBoxed = () => {
     country_code: "+91",
     password1: "",
     password2: "",
+    accountType: "Student",
   });
 
   const [errors, setErrors] = useState<any>({});
@@ -101,99 +102,73 @@ const RegisterBoxed = () => {
   // Submit
   // -------------------------------
   const handleSubmit = async (e: any) => {
+
   e.preventDefault();
+
   if (!validate()) return;
 
-  const finalPhone = `${formData.country_code}${formData.phone}`;
   setLoading(true);
 
   try {
+
+    // FULL SIGNUP DATA
     const payload = {
-      username: formData.username || formData.email,
+      firstName: formData.first_name,
+      lastName: formData.last_name,
       email: formData.email,
       password: formData.password1,
-      first_name: formData.first_name,
-      last_name: formData.last_name,
-      phone: finalPhone,
-      is_superuser: false,
-      is_staff: false,
-      is_active: true,
+      confirmPassword: formData.password2,
+      accountType: formData.accountType,
+      contactNumber: formData.phone,
     };
 
-    const response = await axios.post(
-      `${VIT}/api/v1/users/register/`,
-      payload
+    // SAVE TEMP DATA
+    localStorage.setItem(
+      "signupData",
+      JSON.stringify(payload)
     );
 
-    if (response.data?.status_code === 201) {
+    // SEND OTP API
+    const response = await axios.post(
+      `${VIT}/api/v1/auth/sendotp`,
+      {
+        email: formData.email
+      }
+    );
 
-      const user = response.data.user;
+    console.log(response.data);
 
-      // ✅ Store data (same as your code)
-      sessionStorage.setItem("formData", JSON.stringify(formData));
+    // SUCCESS
+    if (response.data.success) {
 
-      localStorage.setItem("email", formData.email);
+      toast.success("OTP Sent Successfully");
 
-      sessionStorage.setItem(
-        "otp_user",
-        JSON.stringify({
-          user_id: user.id,
-          email: user.email,
-          username: user.username,
-        })
+      // SAVE EMAIL
+      localStorage.setItem(
+        "otpEmail",
+        formData.email
       );
 
-      localStorage.setItem("otp_email", user.email);
+      // REDIRECT OTP PAGE
+      setTimeout(() => {
+        navigate("/otp");
+      }, 1000);
 
-      // -----------------------------
-      // ✅ CALL RESEND OTP API
-      // -----------------------------
-      // const otpResponse = await axios.post(
-      //   `${VIT}/api/v1/users/auth/resend-otp/`,
-      //   { email: user.email },
-      //   { headers: { "Content-Type": "application/json" } }
-      // );
-
-      // if (otpResponse.data) {
-      //   toast.success("OTP Sent Successfully!", {
-      //     position: "top-center",
-      //   });
-
-        toast.success("OTP Sent Successfully!");
-        setTimeout(() => navigate("/otp"), 800);
-
-        // // ✅ Redirect only after OTP sent
-        // setTimeout(() => {
-        //   navigate("/otp");
-        // }, 800);
-      // }
     }
 
-  }catch (error: any) {
+  } catch (error: any) {
 
-  const errorMessage =
-    error.response?.data?.error ||
-    error.response?.data?.message ||
-    "Registration failed";
+    console.log(error);
 
-  // ✅ Handle OTP cooldown error
-  if (errorMessage.includes("Please wait 2 minutes")) {
-    
-    toast.info("OTP already sent. Redirecting to OTP screen...", {
-      position: "top-center",
-    });
+    toast.error(
+      error?.response?.data?.message ||
+      "OTP Send Failed"
+    );
 
-    setTimeout(() => {
-      navigate("/otp");
-    }, 800);
+  } finally {
 
-  } else {
-    toast.error(errorMessage, {
-      position: "top-center",
-    });
-  }
-} finally {
     setLoading(false);
+
   }
 };
 
@@ -250,6 +225,21 @@ const RegisterBoxed = () => {
       </div>
     ))}
   </div>
+  <div className="space-y-1">
+  <label className="block text-xs font-semibold">
+    Account Type
+  </label>
+
+  <select
+    name="accountType"
+    value={formData.accountType}
+    onChange={handleChange}
+    className="form-select w-full h-10 text-sm"
+  >
+    <option value="Student">Student</option>
+    <option value="Instructor">Instructor</option>
+  </select>
+</div>
 
   {/* PHONE + COUNTRY CODE - Full Width */}
   <div className="space-y-1">

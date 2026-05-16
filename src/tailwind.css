@@ -752,3 +752,7 @@ body,
     transform: rotate(360deg);
   }
 }
+
+.p-6.animate__animated{
+    background: #f7f9fa;
+}

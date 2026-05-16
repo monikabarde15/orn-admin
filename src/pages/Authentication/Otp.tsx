@@ -23,11 +23,12 @@ const OtpVerification = () => {
     if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
     return null;
   };
+  const usern = JSON.parse(localStorage.getItem("signupData") || "{}");
+
     const cookieEmailnew = localStorage.getItem("email");
-console.log('cookieEmail1',cookieEmailnew);
+console.log('cookieEmail1',usern.email);
   useEffect(() => {
     const cookieEmail = cookieEmailnew;//getCookie("email");
-    console.log('cookieEmail',cookieEmail);
     if (cookieEmail) setEmail(decodeURIComponent(cookieEmail));
   }, []);
 
@@ -40,156 +41,150 @@ console.log('cookieEmail1',cookieEmailnew);
   }, [navigate]);
 
   // SEND / RESEND OTP
-  const handleSendOTP = async () => {
-    if (!email.trim()) {
-      toast.error("Email not found. Please login again.", {
-        position: "top-center",
-      });
-      return;
-    }
+    const handleSendOTP = async () => {
 
-    setResending(true);
-    try {
-      const response = await axios.post(
-        `${VIT}/api/v1/users/auth/resend-otp/`,
-        { email },
-        { headers: { "Content-Type": "application/json" } }
-      );
+  if (!usern.email.trim()) {
+    toast.error("Email not found");
+    return;
+  }
 
-      toast.success(response.data?.message || "OTP Sent Successfully!", {
-        position: "top-center",
-      });
+  setResending(true);
 
-      setShowOtpInput(true);
-      setOtpExpired(false);
-      setOtp("");
-    } catch (err: any) {
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        "Failed to resend OTP.";
-      toast.error(msg, { position: "top-center" });
-    } finally {
-      setResending(false);
-    }
-  };
+  try {
 
-  // VERIFY OTP
-  // const handleVerifyOTP = async (e: React.FormEvent) => {
-  //   e.preventDefault();
+    // RESEND OTP API
+    const response = await axios.post(
+      `${VIT}/api/v1/auth/sendotp`,
+      {
+        email: usern.email
+      },
+      {
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    );
 
-  //   if (!otp.trim()) {
-  //     toast.error("Please enter OTP.", { position: "top-center" });
-  //     return;
-  //   }
+    console.log("OTP RESPONSE => ", response.data);
 
-  //   setLoading(true);
-  //   try {
-  //     const response = await axios.post(
-  //       "https://dev.backend.onrequestlab.com/api/v1/users/auth/verify-otp/",
-  //       { email, otp },
-  //       { headers: { "Content-Type": "application/json" } }
-  //     );
-  //     console.log('response=',response);
-  //     // toast.success("OTP Verified Successfully!", { position: "top-center" });
-  //           const data = response.data;
-  //           if (data.user) {
-  //             // Save cookies
-  //             document.cookie = `username=${encodeURIComponent(data.user.username)}; path=/; max-age=86400`;
-  //             document.cookie = `user_id=${encodeURIComponent(data.user.id)}; path=/; max-age=86400`;
-  //             document.cookie = `email=${encodeURIComponent(data.user.email)}; path=/; max-age=86400`;
-  //             document.cookie = `is_staff=${data.user.is_staff}; path=/; max-age=86400`;
-  //             document.cookie = `access=${data.access}; path=/; max-age=86400`;
-      
-  //             // Save localStorage
-  //             localStorage.setItem("jwt-auth", data.access);
-  //             localStorage.setItem("userId", data.user.id);
-  //             localStorage.setItem("email", data.user.email);
-  //             localStorage.setItem("username", data.user.username);
-      
-  //             toast.success("OTP Verified Successfully!", { position: "top-center" });
-      
-  //             setTimeout(() => {
-  //               if (data.user.id < 2) {
-  //                 window.location.href = "/index";
-  //               } else {
-  //                 window.location.href = "/";
-  //               }
-  //             }, 1200);
-  //           }
+    toast.success(
+      response.data.message || "OTP Sent Successfully"
+    );
 
-  //  //  setTimeout(() => navigate("/login"), 1200);
-  //   } catch (err: any) {
-  //     const msg =
-  //       err.response?.data?.message ||
-  //       err.response?.data?.error ||
-  //       "OTP Invalid or Expired.";
-  //     toast.error(msg, { position: "top-center" });
+    setOtp("");
+    setShowOtpInput(true);
 
-  //     // Show resend section
-  //     setOtpExpired(true);
-  //     setShowOtpInput(false);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-  const handleVerifyOTP = async (e: React.FormEvent) => {
+  } catch (err: any) {
+
+    console.log("OTP ERROR => ", err);
+
+    toast.error(
+      err.response?.data?.message ||
+      "Failed to resend OTP"
+    );
+
+  } finally {
+
+    setResending(false);
+
+  }
+};
+      const handleVerifyOTP = async (e: React.FormEvent) => {
+
   e.preventDefault();
 
   if (!otp.trim()) {
-    toast.error("Please enter OTP.", { position: "top-center" });
+    toast.error("Please enter OTP");
     return;
   }
 
   setLoading(true);
+
   try {
+
+    // GET STORED SIGNUP DATA
+    const signupData = JSON.parse(
+      localStorage.getItem("signupData") || "{}"
+    );
+
+    // FINAL PAYLOAD
+    const payload = {
+      ...signupData,
+      otp: otp
+    };
+
+    console.log("SIGNUP PAYLOAD => ", payload);
+
+    // SIGNUP API
     const response = await axios.post(
-      `${VIT}/api/v1/users/auth/verify-otp/`,
-      { email, otp },
+      `${VIT}/api/v1/auth/signup`,
+      payload,
       {
-        headers: { "Content-Type": "application/json" },
-        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json"
+        }
       }
     );
 
+    console.log("SIGNUP RESPONSE => ", response.data);
+
     const data = response.data;
-    console.log('data=',data);
-    if (data.user) {
 
-      // Set cookies (working)
-      document.cookie = `access=${encodeURIComponent(data.access)}; path=/; max-age=86400; SameSite=Lax; Secure`;
-      document.cookie = `username=${encodeURIComponent(data.user.username)}; path=/; max-age=86400; SameSite=Lax; Secure`;
-      document.cookie = `user_id=${encodeURIComponent(data.user.id)}; path=/; max-age=86400; SameSite=Lax; Secure`;
-      document.cookie = `email=${encodeURIComponent(data.user.email)}; path=/; max-age=86400; SameSite=Lax; Secure`;
-      document.cookie = `is_staff=${data.user.is_staff}; path=/; max-age=86400; SameSite=Lax; Secure`;
-      
+    // SUCCESS
+    if (data.success) {
 
-      // LocalStorage
-      localStorage.setItem("jwt-auth", data.access);
-      localStorage.setItem("userId", data.user.id);
-      localStorage.setItem("email", data.user.email);
-      localStorage.setItem("username", data.user.username);
+      toast.success(
+        data.message || "Account Created Successfully"
+      );
 
-      toast.success("OTP Verified Successfully!", { position: "top-center" });
+      // SAVE USER
+      localStorage.setItem(
+        "user",
+        JSON.stringify(data.user)
+      );
 
-      setTimeout(() => {
-        // window.location.href = data.user.id < 2 ? "/index" : "/login";
-        navigate(data.user.id < 2 ? "/index" : "/login", { replace: true });
-      }, 1200);
+      // AUTO LOGIN IF TOKEN EXISTS
+      if (data.token) {
+
+        localStorage.setItem(
+          "token",
+          data.token
+        );
+
+        toast.success("Login Successful");
+
+        setTimeout(() => {
+
+          navigate("/");
+
+        }, 1000);
+
+      } else {
+
+        // LOGIN PAGE REDIRECT
+        setTimeout(() => {
+
+          navigate("/");
+
+        }, 1000);
+
+      }
+
     }
 
   } catch (err: any) {
-    const msg =
+
+    console.log(err);
+
+    toast.error(
       err.response?.data?.message ||
-      err.response?.data?.error ||
-      "OTP Invalid or Expired.";
+      "OTP Invalid or Expired"
+    );
 
-    toast.error(msg, { position: "top-center" });
-
-    setOtpExpired(true);
-    setShowOtpInput(false);
   } finally {
+
     setLoading(false);
+
   }
 };
 

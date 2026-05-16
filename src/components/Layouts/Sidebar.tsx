@@ -74,9 +74,13 @@ const getCookie = (name) => {
     (getCookie("access") ||
       localStorage.getItem("access") ||
       localStorage.getItem("jwt-auth"))?.trim();
- const is_superuser = getCookie("is_superuser");
+const usern = JSON.parse(localStorage.getItem("user") || "{}");
 
-console.log('userID=',userID,'is_superuser=',is_superuser);
+const is_superuser = usern.accountType === "Admin";
+
+console.log(is_superuser);
+
+console.log('userID=',usern.accountType,'is_superuser=',is_superuser);
   // Fetch employee details and permissions
   const fetchEmployeeDetails = async () => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -147,7 +151,9 @@ const menuItems: MenuItem[] = [
           label: "users",
           icon: IconUsers,
           subMenu: [
-            { path: "/users-list", label: "Users List", permission: "Users" },
+            { path: "/student-list", label: "Students", permission: "Users" },
+            { path: "/instructors", label: "Instructors", permission: "Users" },
+            { path: "/analytics-list", label: "Analytics", permission: "Users" },
           ],
         },
       ]
@@ -181,9 +187,9 @@ const menuItems: MenuItem[] = [
 
 if (is_superuser) {
   menuItems.push({
-    sectionLabel: "Blog Management",
+    sectionLabel: "Category Management",
     items: [
-      { path: "/admin-blog", label: "Blogs", icon: IconBlogs, permission: "blogs" },
+      { path: "/admin-category", label: "Category", icon: IconBlogs, permission: "blogs" },
     ],
   });
 }

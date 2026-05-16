@@ -28,7 +28,11 @@ const [orders, setOrders] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [counts, setCounts] = useState<any>({});
-
+const [analytics, setAnalytics] = useState<any>({
+  totalStudents: 0,
+  studentsEnrolled: 0,
+  activeStudents: 0,
+});
   /* ================= API CALL (ONE TIME) ================= */
   useEffect(() => {
   const fetchAll = async () => {
@@ -40,6 +44,7 @@ const [orders, setOrders] = useState<any[]>([]);
         instances,
         feedback,
         contact,
+        analyticsData,
       ] = await Promise.all([
         api.get("/api/v1/admin/users/count"),
         api.get("/api/v1/admin/support/count"),
@@ -47,6 +52,7 @@ const [orders, setOrders] = useState<any[]>([]);
         api.get("/api/v1/admin/instances/count"),
         api.get("/api/v1/admin/feedback/count"),
         api.get("/api/v1/admin/contact/count"),
+         api.get("/api/v1/admin/analytics"),
       ]);
 
       setCounts({
@@ -57,6 +63,7 @@ const [orders, setOrders] = useState<any[]>([]);
         feedback: feedback.data.count || 0,
         contact: contact.data.count || 0,
       });
+      setAnalytics(analyticsData.data.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -240,6 +247,30 @@ useEffect(() => {
             )}
           </div>
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+
+  <div className="panel">
+    <h5 className="font-semibold text-lg">Total Students</h5>
+    <h2 className="text-3xl font-bold text-primary mt-2">
+      {analytics.totalStudents}
+    </h2>
+  </div>
+
+  <div className="panel">
+    <h5 className="font-semibold text-lg">Students Enrolled</h5>
+    <h2 className="text-3xl font-bold text-success mt-2">
+      {analytics.studentsEnrolled}
+    </h2>
+  </div>
+
+  <div className="panel">
+    <h5 className="font-semibold text-lg">Active Students</h5>
+    <h2 className="text-3xl font-bold text-warning mt-2">
+      {analytics.activeStudents}
+    </h2>
+  </div>
+
+</div>
 
         {/* ================= SECOND ROW ================= */}
         <div className="grid xl:grid-cols-3 gap-6 mb-6">

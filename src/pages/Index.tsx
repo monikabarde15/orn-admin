@@ -1,3 +1,4 @@
+// src\pages\Index.tsx
 "use client";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -26,8 +27,8 @@ const [activities, setActivities] = useState<any[]>([]);
 const [orders, setOrders] = useState<any[]>([]);
 
 
-  const [loading, setLoading] = useState(true);
-  const [counts, setCounts] = useState<any>({});
+const [loading, setLoading] = useState(true);
+const [counts, setCounts] = useState<any>({});
 const [analytics, setAnalytics] = useState<any>({
   totalStudents: 0,
   studentsEnrolled: 0,

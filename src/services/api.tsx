@@ -1,3 +1,4 @@
+// src\services\api.tsx
 import axios from "axios";
 
 const api = axios.create({
@@ -51,7 +52,8 @@ const hardLogout = () => {
 
   localStorage.removeItem("userId");
 
-  window.location.href = "/login";
+  // window.location.href = "/login";
+  window.location.href = "/vidya-gyan-admin/";
 };
 
 /* ======================================================

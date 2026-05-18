@@ -1,712 +1,207 @@
+// src\pages\Components\Navbar.tsx (Vidya-merge)
 import React, { useState, useEffect, useRef } from "react";
 import "../../pages/Components/Navbar.css";
-import logoimg from "../../../public/assets/orllogo.png";
+import "../../pages/Components/MegaMenu.css";
+import logoimg from "../../../public/assets/logo.svg";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { User, LogOut, Wallet, Laptop, Lock, DollarSign } from "lucide-react";
 import axios from "axios";
-import { Wallet, User, LogOut, Laptop, ShoppingCart, Lock, DollarSign, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import api from "../../services/api";
-import { fetchNotifications, fetchUnreadCount, markNotificationRead } from "../../services/notifications";
-
-const currencySymbols: Record<string, string> = {
-  INR: "₹",
-  USD: "$",
-  EUR: "€",
-  GBP: "£",
-};
-
-const getCurrencySymbol = (currency?: string | null) => {
-  const raw = (currency || "INR").toString().split("-")[0].trim().toUpperCase();
-  return currencySymbols[raw] || raw || "₹";
-};
 
 const Navbar = () => {
-          const navigate = useNavigate();
-  
   const [menuOpen, setMenuOpen] = useState(false);
+  const [coursesMenuOpen, setCoursesMenuOpen] = useState(false);
   const [profileMenu, setProfileMenu] = useState(false);
-  const [cartItems, setCartItems] = useState(JSON.parse(localStorage.getItem("orl_cart") || "[]"));
-  const [cartOpen, setCartOpen] = useState(false);
-  const logoutTimerRef = useRef<any>(null);
-
-  const notifRef = useRef<HTMLDivElement | null>(null);
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [notifLoading, setNotifLoading] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [notifItems, setNotifItems] = useState<any[]>([]);
-
-
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [walletBalance, setWalletBalance] = useState(0);
 
-  const [walletBalance, setWalletBalance] = useState<number | null>(null);
-  const [loadingWallet, setLoadingWallet] = useState(false);
+  const navigate = useNavigate();
+  const menuRef = useRef(null);
 
-  const currencyOptions = ["INR", "USD", "EUR"];
-  const [selectedCurrency, setSelectedCurrency] = useState<string>(
-    () => localStorage.getItem("orl_currency") || "INR"
-  );
+  const links = [
+    { name: "Home", path: "/" },
+    { name: "Courses", mega: true },
+    { name: "About Us", path: "/about-us" },
+    { name: "Blogs", path: "/blogs" },
+    { name: "Contact Us", path: "/contact-us" },
+  ];
 
+  // Auto-detect login
   useEffect(() => {
-    if (logoutTimerRef.current) {
-      clearTimeout(logoutTimerRef.current);
-      logoutTimerRef.current = null;
-    }
-
-    const expiresAtRaw = localStorage.getItem("session_expires_at");
-    if (!expiresAtRaw) return;
-
-    const expiresAt = Number(expiresAtRaw);
-    if (!Number.isFinite(expiresAt)) return;
-
-    const delay = expiresAt - Date.now();
-    if (delay <= 0) {
-      handleLogout();
-      return;
-    }
-
-    logoutTimerRef.current = setTimeout(() => {
-      handleLogout();
-    }, delay);
-
-    return () => {
-      if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const token = localStorage.getItem("access");
+    setIsLoggedIn(!!token);
   }, []);
 
-useEffect(() => {
-  if (isLoggedIn && profile?.currency) {
-    const normalized = profile.currency.toString().split("-")[0].trim().toUpperCase();
-    if (currencyOptions.includes(normalized)) {
-      setSelectedCurrency(normalized);
-      localStorage.setItem("orl_currency", normalized);
-    }
-  }
-}, [isLoggedIn, profile]);
-
-const handleCurrencyChange = async (e: any) => {
-  const next = e?.target?.value;
-  if (!next || !currencyOptions.includes(next)) return;
-
-  setSelectedCurrency(next);
-  localStorage.setItem("orl_currency", next);
-  window.dispatchEvent(new Event("orlcurrencychange"));
-
-  // Persist for authenticated users (best effort; UI already updates via query param).
-  try {
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      await api.patch("/api/v1/users/profile/update/", { currency: next });
-    }
-  } catch (err) {
-    console.error("Currency persist failed:", err);
-  }
-};
-
-// const fetchProfile = async () => {
-//   try {
-//     const res = await api.get("/api/v1/users/profile/");
-//     setProfile(res.data);
-
-//     // 🔥 LOGIN CONFIRMATION
-//     setIsLoggedIn(true);
-
-//     // wallet bhi yahin se
-//     fetchWalletBalance();
-//   } catch (err) {
-//     console.error("Profile fetch failed:", err);
-//     setIsLoggedIn(false);
-//   } finally {
-//     setProfileLoading(false);
-//   }
-// };
-
-const fetchProfile = async () => {
-  try {
-    setProfileLoading(true);
-    const res = await api.get("/api/v1/users/profile/");
-    setProfile(res.data);
-  } catch (err) {
-    console.error("Profile fetch failed:", err);
-    setIsLoggedIn(false); // token invalid ho to logout state
-  } finally {
-    setProfileLoading(false);
-  }
-};
-
-useEffect(() => {
-  const token = localStorage.getItem("access_token"); // ✅ SAME AS ADMIN
-
-  if (token) {
-    fetchProfile();   // ✅ profile decides login
-  } else {
-    setIsLoggedIn(false);
-    setProfileLoading(false);
-  }
-}, []);
-
-console.log("isLoggedIn:", isLoggedIn);
-console.log("profile:", profile);
-const user = profile;
-useEffect(() => {
-  if (!profile) return;
-
-  if (profile.is_superuser === true) {
-    // 🔒 SUPERADMIN GUARD
-    if (!window.location.pathname.startsWith("/index")) {
-      navigate("/index", { replace: true });
-    }
-  }
-}, [profile, navigate]);
-
-const fetchWalletBalance = async () => {
-  try {
-    setLoadingWallet(true);
-    const res = await api.get("/api/v1/users/wallet/balance/");
-    setWalletBalance(res.data?.balance ?? res.data?.wallet_amount ?? 0);
-  } catch (err) {
-    console.error("Wallet fetch error:", err);
-    setWalletBalance(0);
-  } finally {
-    setLoadingWallet(false);
-  }
-};
-
-const loadUnread = async () => {
-  try {
-    const count = await fetchUnreadCount();
-    setUnreadCount(count);
-  } catch (e) {
-    // ignore (don’t toast on navbar polling)
-  }
-};
-
-const loadNotifications = async () => {
-  setNotifLoading(true);
-  try {
-    const list = await fetchNotifications();
-    setNotifItems(list || []);
-  } catch (e) {
-    setNotifItems([]);
-  } finally {
-    setNotifLoading(false);
-  }
-};
-
-const openNotifications = async () => {
-  setNotifOpen((v) => !v);
-};
-
-useEffect(() => {
-  if (!isLoggedIn) {
-    setUnreadCount(0);
-    setNotifItems([]);
-    setNotifOpen(false);
-    return;
-  }
-
-  loadUnread();
-  const t = setInterval(loadUnread, 30000);
-  return () => clearInterval(t);
-}, [isLoggedIn]);
-
-useEffect(() => {
-  if (isLoggedIn && notifOpen) {
-    loadNotifications();
-  }
-}, [isLoggedIn, notifOpen]);
-
-const menuRef = useRef(null);
-const cartRef = useRef(null); // ✅ REQUIRED
-useEffect(() => {
-  const handleClickOutside = (e) => {
-    if (menuRef.current && !menuRef.current.contains(e.target)) {
-      setProfileMenu(false);
-    }
-
-    if (cartRef.current && !cartRef.current.contains(e.target)) {
-      setCartOpen(false);
-    }
-
-    if (notifRef.current && !notifRef.current.contains(e.target)) {
-      setNotifOpen(false);
-    }
+  const handleLogout = () => {
+    localStorage.clear();
+    toast.success("Logged out!");
+    setTimeout(() => navigate("/"), 500);
   };
 
-  const handleStorageChange = () => {
-    setCartItems(JSON.parse(localStorage.getItem("orl_cart") || "[]"));
+  // Close dropdown if clicked outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setProfileMenu(false);
+        setCoursesMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const redirect = (path) => {
+    setCoursesMenuOpen(false);
+    setMenuOpen(false);
+    navigate(path);
   };
-
-  document.addEventListener("mousedown", handleClickOutside);
-  window.addEventListener("storage", handleStorageChange);
-
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-    window.removeEventListener("storage", handleStorageChange);
-  };
-}, []);
-useEffect(() => {
-  const token = localStorage.getItem("access_token");
-
-  if (token) {
-    setIsLoggedIn(true);
-  } else {
-    setIsLoggedIn(false);
-  }
-}, []);
-useEffect(() => {
-  if (isLoggedIn) {
-    fetchProfile();
-    fetchWalletBalance();
-  }
-}, [isLoggedIn]);
-
-
-const handleLogout = async () => {
-  try {
-    // await api.post("/api/v1/users/auth/logout/");
-    const refresh = localStorage.getItem("refresh_token");
-    if (refresh) {
-      await api.post("/api/v1/users/logout/", { refresh });
-    } else {
-      await api.post("/api/v1/users/logout/", { refresh: "" });
-    }
-  } catch (err) {
-    console.warn("Logout API failed:", err);
-  } finally {
-    localStorage.setItem("logout_at", String(Date.now()));
-    localStorage.removeItem("session_expires_at");
-    localStorage.removeItem("login_at");
-
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("userId");
-
-    setIsLoggedIn(false);
-    setProfile(null);
-
-    toast.info("You have been logged out!", { position: "top-center" });
-
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 800);
-  }
-};
-const profileImage = profile?.profile_image
-  ? profile.profile_image.startsWith("http")
-    ? profile.profile_image
-    : `https://${profile.profile_image}`
-  : "https://t4.ftcdn.net/jpg/01/24/65/69/240_F_124656969_x3y8YVzvrqFZyv3YLWNo6PJaC88SYxqM.jpg";
-
-  const navigateTo = (path) => (window.location.href = path);
-
-  const links = isLoggedIn
-    ? ["/", "/about-us", "/labs", "/blogs","/contact-us"]
-    : ["/", "/about-us", "/labs", "/blogs", "/contact-us"];
 
   return (
     <>
-      <ToastContainer position="top-center" autoClose={1500} theme="colored" />
+      <ToastContainer />
 
       <nav className="navbar">
-        {/* Logo */}
+
+        {/* ---------- LOGO ---------- */}
         <div className="navbar-logo">
-          <span className="logo-icon">
-            <img src={logoimg} alt="logo" width="200" height="100" />
-          </span>
+          <img src={logoimg} alt="logo" className="logo-img" />
         </div>
 
-        {/* Hamburger */}
+        {/* ---------- MOBILE MENU BUTTON ---------- */}
         <div className="navbar-toggle" onClick={() => setMenuOpen(!menuOpen)}>
-          <div></div>
-          <div></div>
-          <div></div>
+          <div></div><div></div><div></div>
         </div>
 
-        {/* Mobile menu backdrop */}
-        <div className={`menu-backdrop ${menuOpen ? "show" : ""}`} onClick={() => setMenuOpen(false)} />
-
-        {/* Mobile Menu */}
+        {/* ---------- MOBILE MENU ---------- */}
         <div className={`mobile-menu ${menuOpen ? "open" : ""}`}>
           <button className="close-btn" onClick={() => setMenuOpen(false)}>×</button>
 
           <ul className="mobile-links">
-            {links.map((path, i) => (
+
+            {/* Loop menu items */}
+            {links.map((item, i) => (
               <li key={i}>
-                <a href={path}>
-                  {path === "/" ? "Home" : path.split("/")[1].replace("-", " ").toUpperCase()}
-                </a>
+                {item.mega ? (
+                  <>
+                    <span onClick={() => setCoursesMenuOpen(!coursesMenuOpen)}>
+                      Courses ▾
+                    </span>
+
+                    {coursesMenuOpen && (
+                      <ul className="mobile-submenu">
+                        <li onClick={() => redirect("/cyber-security")}>Cyber Security</li>
+                        <li onClick={() => redirect("/data-science-ai")}>Data Science & AI</li>
+                        <li onClick={() => redirect("/advanced-programs")}>Advanced Programs</li>
+                        <li onClick={() => redirect("/business-analytics")}>Business Analytics</li>
+                        <li onClick={() => redirect("/technology-programs")}>Technology Programs</li>
+                        <li onClick={() => redirect("/telecommunication")}>Telecommunication</li>
+                        <li onClick={() => redirect("/science-programs")}>Science Programs</li>
+                      </ul>
+                    )}
+                  </>
+                ) : (
+                  <a href={item.path}>{item.name}</a>
+                )}
               </li>
             ))}
           </ul>
 
-          {/* Mobile Cart */}
-          <div className="mobile-cart-box">
-            <div className="mobile-cart-icon" onClick={() => setCartOpen(!cartOpen)}>
-              <ShoppingCart size={22} />
-              {cartItems.length > 0 && <span className="cart-count-mobile">{cartItems.length}</span>}
-              <span style={{ marginLeft: "6px" }}>Cart</span>
-            </div>
-            {cartOpen && (
-              <div className="cart-dropdown-mobile">
-                {cartItems.length === 0 ? <p>No items added</p> : cartItems.map((item, idx) => (
-                  <div key={idx} className="cart-item-row">
-                    <span>{item.name}</span>
-                    <strong>
-                      {getCurrencySymbol(item.currency)}
-                      {Number(item.displayPrice ?? item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0)}
-                    </strong>
-                  </div>
-                ))}
-                <div className="cart-total-row">
-                  <span className="cart-total-label">Total</span>
-                  <div className="vertical-line"></div>
-                  <strong className="cart-total-amount">
-                    {getCurrencySymbol(cartItems[0]?.currency)}
-                    {cartItems
-                      .reduce((total, item) => {
-                        return total + Number(item.displayPrice ?? item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0);
-                      }, 0)
-                      .toFixed(2)}
-                  </strong>
-                </div>
-
-                <button className="blue-btn w-full" onClick={() => navigateTo("/cart")}>Go to Cart</button>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile Profile */}
+          {/* MOBILE PROFILE */}
           {isLoggedIn ? (
             <div className="mobile-profile">
-              <div className="blue-btn">
-                <p>{(user?.name || "").slice(0, 5) + (user?.name?.length > 2 ? "..." : "")}</p>
-              </div>
-
-              {/* Currency Selector */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                <DollarSign size={16} />
-                <select
-                  value={selectedCurrency}
-                  onChange={handleCurrencyChange}
-                  style={{
-                    background: "transparent",
-                    color: "#fff",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    borderRadius: 8,
-                    padding: "6px 10px",
-                    outline: "none",
-                  }}
-                >
-                  {currencyOptions.map((c) => (
-                    <option
-                      key={c}
-                      value={c}
-                      style={{ backgroundColor: "#111827", color: "#ffffff" }}
-                    >
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-                  
-              <p className="wallet-line">
-                <Wallet size={16} /> {loadingWallet ? "Loading..." : `₹${walletBalance}`}
-              </p> 
-              <button className="blue-btn" onClick={() => navigateTo("/wallet/add-funds")}>Add Funds</button>
-              <button className="blue-btn" onClick={() => navigateTo("/wallet-history")}>Wallet History</button>
-               <button className="blue-btn" onClick={() => navigateTo("/my-subscrption")}>My Subscrption</button>
-                <button className="blue-btn" onClick={() => navigateTo("/certificate")}>My Certificatons</button>
-              
-              <button className="blue-btn" onClick={() => navigateTo("/your-instances")}>My Instances</button>
+              <div className="blue-btn">Profile</div>
+              <p><Wallet size={16} /> ₹{walletBalance}</p>
+              <button className="blue-btn" onClick={() => redirect("/wallet-history")}>Wallet History</button>
+              <button className="blue-btn" onClick={() => redirect("/instances")}>Your Instances</button>
               <button className="red-btn" onClick={handleLogout}>Logout</button>
             </div>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <DollarSign size={16} />
-                <select
-                  value={selectedCurrency}
-                  onChange={handleCurrencyChange}
-                  style={{
-                    background: "transparent",
-                    color: "#fff",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    borderRadius: 8,
-                    padding: "6px 10px",
-                    outline: "none",
-                  }}
-                >
-                  {currencyOptions.map((c) => (
-                    <option
-                      key={c}
-                      value={c}
-                      style={{ backgroundColor: "#111827", color: "#ffffff" }}
-                    >
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Icon-only auth button (keeps space for currency) */}
-              <button
-                className="navbar-btn mobile-login-btn"
-                onClick={() => navigateTo("/login")}
-                title="Login"
-              >
-                <User size={18} />
-              </button>
-            </div>
+            <button className="navbar-btn mobile-login-btn">
+              <a href="https://app.orn-ai.com/web/login">Login</a> / <a href="https://app.orn-ai.com/web/sign-up">Signup</a>
+            </button>
           )}
         </div>
 
-        {/* Desktop Menu */}
+        {/* ---------- DESKTOP MENU ---------- */}
         <div className="navbar-actions">
           <ul className="navbar-links">
-            {links.map((path, i) => (
-              <li key={i}>
-                <a href={path}>
-                  {path === "/" ? "Home" : path.split("/")[1].replace("-", " ").toUpperCase()}
-                </a>
-              </li>
-            ))}
-          </ul>
 
-          {/* Desktop Cart */}
-          <div className="cart-wrapper" ref={cartRef}>
-            <div className="cart-icon" onClick={() => setCartOpen(!cartOpen)}>
-              <ShoppingCart size={22} />
-              {cartItems.length > 0 && <span className="cart-count">{cartItems.length}</span>}
-            </div>
-            {cartOpen && (
-              <div className="cart-dropdown clean-card">
-                {cartItems.length === 0 ? <p>No items added</p> : cartItems.map((item, idx) => (
-                  <div key={idx} className="cart-item-row">
-                    <span>{item.name}</span>
-                    <strong>
-                      {getCurrencySymbol(item.currency)}
-                      {Number(item.displayPrice ?? item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0)}
-                    </strong>
-                  </div>
-                ))}
-                <hr />
-                <div className="cart-total-row">
-                  <span className="cart-total-label">Total</span>
-                 &nbsp;&nbsp; <strong className="cart-total-amount">
-                      {getCurrencySymbol(cartItems[0]?.currency)}
-                      {cartItems
-                        .reduce((total, item) => {
-                          return total + Number(item.displayPrice ?? item.monthlyPrice ?? item.yearlyPrice ?? item.price ?? 0);
-                        }, 0)
-                        .toFixed(2)}
-                  </strong>
-                </div>
+            {links.map((item, i) =>
+              item.mega ? (
+                <li key={i} className="mega-parent" onClick={() => setCoursesMenuOpen(!coursesMenuOpen)}>
+                  <span className="menu-title">Courses ▾</span>
 
-                <button className="blue-btn w-full" onClick={() => navigateTo("/cart")}>Go to Cart</button>
-              </div>
-            )}
-          </div>
+                  {coursesMenuOpen && (
+                    <div className="mega-menu open">
+                      <div className="mega-row">
 
-          {/* Currency Selector */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 8px" }}>
-            <DollarSign size={18} />
-            <select
-              value={selectedCurrency}
-              onChange={handleCurrencyChange}
-              style={{
-                background: "transparent",
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.2)",
-                borderRadius: 8,
-                padding: "6px 10px",
-                outline: "none",
-              }}
-            >
-              {currencyOptions.map((c) => (
-                <option
-                  key={c}
-                  value={c}
-                  style={{ backgroundColor: "#111827", color: "#ffffff" }}
-                >
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
+                        <div className="mega-col" onClick={() => redirect("/cyber-security")}>
+                          <h4>Cyber Security</h4>
+                          <p>Learn to secure systems.</p>
+                        </div>
 
-          {isLoggedIn && (
-            <div ref={notifRef} style={{ position: "relative", marginLeft: 8 }}>
-              <button
-                type="button"
-                className="navbar-btn"
-                onClick={openNotifications}
-                title="Notifications"
-                style={{ position: "relative" }}
-              >
-                <Bell size={18} />
-                {unreadCount > 0 && (
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: -4,
-                      right: -4,
-                      minWidth: 18,
-                      height: 18,
-                      padding: "0 6px",
-                      borderRadius: 999,
-                      background: "#ef4444",
-                      color: "#fff",
-                      fontSize: 11,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      lineHeight: "18px",
-                    }}
-                  >
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
-              </button>
+                        <div className="mega-col" onClick={() => redirect("/data-science-ai")}>
+                          <h4>Data Science & AI</h4>
+                          <p>Master AI & ML.</p>
+                        </div>
 
-              {notifOpen && (
-                <div
-                  className="clean-card"
-                  style={{
-                    position: "absolute",
-                    right: 0,
-                    top: "calc(100% + 10px)",
-                    width: 360,
-                    maxWidth: "85vw",
-                    zIndex: 9999,
-                    background: "#fff",
-                    borderRadius: 12,
-                    padding: 12,
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                    <strong style={{ fontSize: 14 }}>Notifications</strong>
-                    <button
-                      type="button"
-                      onClick={() => setNotifOpen(false)}
-                      style={{ fontSize: 14, opacity: 0.7 }}
-                    >
-                      ✕
-                    </button>
-                  </div>
+                        <div className="mega-col" onClick={() => redirect("/advanced-programs")}>
+                          <h4>Advanced Programs</h4>
+                          <p>DevOps & Cloud.</p>
+                        </div>
 
-                  {notifLoading ? (
-                    <div style={{ padding: 10, color: "#6b7280" }}>Loading…</div>
-                  ) : notifItems.length === 0 ? (
-                    <div style={{ padding: 10, color: "#6b7280" }}>No notifications</div>
-                  ) : (
-                    <div style={{ maxHeight: 360, overflowY: "auto" }}>
-                      {notifItems.map((n) => (
-                        <button
-                          key={n.id}
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              await markNotificationRead(n.id);
-                              await loadUnread();
-                              await loadNotifications();
-                            } catch (e) {
-                              // ignore
-                            }
-                          }}
-                          style={{
-                            width: "100%",
-                            textAlign: "left",
-                            padding: 10,
-                            borderRadius: 10,
-                            marginBottom: 8,
-                            background: n.is_read ? "rgba(0,0,0,0.03)" : "rgba(59,130,246,0.10)",
-                          }}
-                        >
-                          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>{n.title}</div>
-                          <div style={{ fontSize: 12, color: "#374151" }}>{n.message}</div>
-                          <div style={{ fontSize: 11, color: "#6b7280", marginTop: 6 }}>
-                            {n.created_at ? new Date(n.created_at).toLocaleString() : ""}
-                          </div>
-                        </button>
-                      ))}
+                        <div className="mega-col" onClick={() => redirect("/business-analytics")}>
+                          <h4>Business Analytics</h4>
+                          <p>Data-driven insights.</p>
+                        </div>
+
+                        <div className="mega-col" onClick={() => redirect("/technology-programs")}>
+                          <h4>Technology Programs</h4>
+                          <p>Modern IT skills.</p>
+                        </div>
+
+                        <div className="mega-col" onClick={() => redirect("/telecommunication")}>
+                          <h4>Telecommunication</h4>
+                          <p>Network engineering.</p>
+                        </div>
+
+                        <div className="mega-col" onClick={() => redirect("/science-programs")}>
+                          <h4>Science Programs</h4>
+                          <p>Research & labs.</p>
+                        </div>
+
+                      </div>
                     </div>
                   )}
-                </div>
-              )}
-            </div>
-          )}
+                </li>
+              ) : (
+                <li key={i}><a href={item.path}>{item.name}</a></li>
+              )
+            )}
+          </ul>
 
-          {/* Profile */}
+          {/* ---------- PROFILE ---------- */}
           {isLoggedIn ? (
             <div className="profile-wrapper" ref={menuRef}>
               <div className="profile-avatar" onClick={() => setProfileMenu(!profileMenu)}>
-                {/* <User size={22} /> */}
-               <img
-                src={profileImage}
-                alt="profile"
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                }}
-              />
-
-
+                <User size={22} />
               </div>
+
               {profileMenu && (
                 <div className="profile-dropdown clean-card">
-                  <div className="dropdown-wallet">
-                    {/* <p>{user.name||''}</p> */}
-                     <p onClick={() => navigateTo("/users/user-profile")} >{(user?.username || "").slice(0, 5) + (user?.username?.length > 4 ? "..." : "")}</p>
-                  </div>
-                  
-                  <div className="dropdown-wallet">
-                    <Wallet size={16} /> <span>{loadingWallet ? "Loading..." : `₹${walletBalance}`}</span>
-                  </div>
-
-                  <div className="dropdown-item" onClick={() => navigateTo("/wallet/add-funds")}>
-                    <Wallet size={16} /> <span>Add Funds</span>
-                  </div>
-                 
-                  <div className="dropdown-item" onClick={() => navigateTo("/wallet-history")}>
-                    <Wallet size={16} /> <span>Wallet History</span>
-                  </div>
-                  <div className="dropdown-item" onClick={() => navigateTo("/your-instances")}>
-                    <Laptop size={16} /> <span>My Instances</span>
-                  </div>
-                   <div className="dropdown-item" onClick={() => navigateTo("/my-subscrption")}>
-                    <Laptop size={16} /> <span>My Subscrption</span>
-                  </div>
-                   <div className="dropdown-item" onClick={() => navigateTo("/certificate")}>
-                    <Laptop size={16} /> <span>My Certificatons</span>
-                  </div>
-                  <div className="dropdown-item" onClick={() => navigateTo("/change-password")}>
-                    <Lock size={16} /> <span>Change Password</span>
-                  </div>
-                  <div className="dropdown-item" onClick={() => navigateTo("/payment-list")}>
-                    <DollarSign size={16} /> <span>My Payments</span>
-                  </div>
-                  <div className="dropdown-item logout" onClick={handleLogout}>
-                    <LogOut size={16} /> <span>Logout</span>
-                  </div>
+                  <div onClick={() => redirect("/users/user-profile")}>My Profile</div>
+                  <div><Wallet size={16} /> ₹{walletBalance}</div>
+                  <div className="dropdown-item" onClick={() => redirect("/wallet-history")}>Wallet History</div>
+                  <div className="dropdown-item" onClick={() => redirect("/your-instances")}>Your Instances</div>
+                  <div className="dropdown-item" onClick={() => redirect("/change-password")}>Change Password</div>
+                  <div className="dropdown-item" onClick={() => redirect("/apps/PaymentListNormal")}>My Payments</div>
+                  <div className="dropdown-item logout" onClick={handleLogout}><LogOut size={16} /> Logout</div>
                 </div>
               )}
             </div>
           ) : (
-            <button
-              className="navbar-btn"
-              onClick={() => navigateTo("/login")}
-              title="Login"
-            >
-              <User size={18} />
-            </button>
+            <button className="navbar-btn"><a href="https://app.orn-ai.com/web/login">Login</a> / <a href="https://app.orn-ai.com/web/sign-up">Signup</a></button>
           )}
         </div>
       </nav>

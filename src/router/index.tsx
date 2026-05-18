@@ -1,3 +1,4 @@
+// src\router\index.tsx
 import { createBrowserRouter } from 'react-router-dom';
 import BlankLayout from '../components/Layouts/BlankLayout';
 import DefaultLayout from '../components/Layouts/DefaultLayout';
@@ -5,9 +6,9 @@ import { routes } from './routes';
 import WebLayout from '../components/Layouts/WebLayout';
 
 const finalRoutes = routes.map((route) => {
-  console.log('route=',route);
+  // console.log('route=',route);
   if (route.layout === "web") {
-    console.log('hi');
+    // console.log('hi');
     return {
       ...route,
       element: <WebLayout>{route.element}</WebLayout>
@@ -25,6 +26,6 @@ const finalRoutes = routes.map((route) => {
 
 
 const router = createBrowserRouter(finalRoutes, {
-  basename: "/vidya-gyan-admin",
+  basename: "/vidya-gyan-admin/",
 });
 export default router;

@@ -1,3 +1,4 @@
+// src\components\Layouts\WebLayout.tsx
 import React from 'react';
 
 const WebLayout = ({ children }) => (

@@ -300,7 +300,7 @@ const RegisterBoxed = () => {
 
         <div className="text-center mt-6">
           Already have an account?{" "}
-          <Link to="/login" className="text-primary underline">
+          <Link to="/" className="text-primary underline">
             Sign In
           </Link>
         </div>

@@ -118,7 +118,7 @@ const Navbar = () => {
             </div>
           ) : (
             <button className="navbar-btn mobile-login-btn">
-              <a href="https://app.orn-ai.com/web/login">Login</a> / <a href="https://app.orn-ai.com/web/sign-up">Signup</a>
+              <a href="/admin">Login</a> / <a href="/admin/register">Signup</a>
             </button>
           )}
         </div>
@@ -201,7 +201,7 @@ const Navbar = () => {
               )}
             </div>
           ) : (
-            <button className="navbar-btn"><a href="https://app.orn-ai.com/web/login">Login</a> / <a href="https://app.orn-ai.com/web/sign-up">Signup</a></button>
+            <button className="navbar-btn"><a href="/admin">Login</a> / <a href="/admin/register">Signup</a></button>
           )}
         </div>
       </nav>

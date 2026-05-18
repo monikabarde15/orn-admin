@@ -94,12 +94,12 @@ const Footer = () => {
               </a>
             </li>
             <li>
-              <a href="https://app.orn-ai.com/web/login" className="hover:text-white">
+              <a href="/admin" className="hover:text-white">
                 Login
               </a>
             </li>
                         <li>
-              <a href="https://app.orn-ai.com/web/sign-up" className="hover:text-white">
+              <a href="/admin/register" className="hover:text-white">
                 Signup
               </a>
             </li>

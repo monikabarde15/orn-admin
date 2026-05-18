@@ -78,7 +78,7 @@ const Sidebar = () => {
                 sectionLabel: 'Core Dashboard',
                 items: [
                     {
-                        path: '/dashboard',
+                        path: '/index',
                         label: 'Dashboard',
                         icon: IconMenuDashboard,
                     },
@@ -528,7 +528,7 @@ const Sidebar = () => {
                 sectionLabel: 'Student Dashboard',
                 items: [
                     {
-                        path: '/student-dashboard',
+                        path: '/index/overview',
                         label: 'Dashboard',
                         icon: IconMenuDashboard,
                     },

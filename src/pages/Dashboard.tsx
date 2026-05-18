@@ -60,7 +60,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop()?.split(";").shift();
   };
-  const user = JSON.parse(localStorage.getItem("userId") || "{}");
+  const user = localStorage.getItem("userId") || "{}";
 
   console.log("user=",user);
   const accessToken = getCookie("access");

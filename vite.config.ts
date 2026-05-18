@@ -17,7 +17,7 @@ export default defineConfig({
             req.url === "/index.html"
           ) {
             res.statusCode = 302;
-            res.setHeader("Location", "/vidya-gyan-admin/");
+            res.setHeader("Location", "/admin/");
             res.end();
             return;
           }
@@ -34,5 +34,5 @@ export default defineConfig({
     },
   },
 
-  base: "/vidya-gyan-admin/",
+  base: "/admin/",
 });

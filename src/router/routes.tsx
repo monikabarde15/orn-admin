@@ -472,7 +472,7 @@ const routes = [
         element: <PaymentList />,
     },
     {
-        path: '/student-list',
+        path: '/students',
         element: <UsersList />,
     },
      {

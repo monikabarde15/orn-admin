@@ -69,8 +69,11 @@ useEffect(() => {
   fetchProfile();
 }, []);
 console.log("profile=",profile);
-const username = profile?.username || "Admin";
-const email = profile?.email || "";
+const username =
+  profile?.firstName || profile?.lastName
+    ? `${profile?.firstName || ""} ${profile?.lastName || ""}`
+    : "Admin";
+    const email = profile?.email || "";
 const profileImage = profile?.image
   ? profile.image.startsWith("http")
     ? profile.image
@@ -194,8 +197,8 @@ window.addEventListener("storage", (e) => {
     const [flag, setFlag] = useState(themeConfig.locale);
 
     const { t } = useTranslation();
-const user = JSON.parse(localStorage.getItem("user") || "{}");
-const userIDnew = JSON.parse(localStorage.getItem("userId") || "{}");
+const user = localStorage.getItem("user") || "{}";
+const userIDnew = localStorage.getItem("userId") || "{}";
 console.log('userIDnew=',userIDnew);
 
 
@@ -291,7 +294,7 @@ const logout = async () => {
   }
 };
 
-const userID = JSON.parse(localStorage.getItem("userId") || "{}");
+const userID = localStorage.getItem("userId") || "{}";
 
     return (
         <header className={`z-40 ${themeConfig.semidark && themeConfig.menu === 'horizontal' ? 'dark' : ''}`}>

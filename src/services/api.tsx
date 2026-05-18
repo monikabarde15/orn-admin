@@ -41,19 +41,27 @@ const isSessionExpired = (): boolean => {
 ====================================================== */
 
 const hardLogout = () => {
-  localStorage.removeItem("token");
 
-  localStorage.removeItem(
-    "session_expires_at"
-  );
+  const token =
+    localStorage.getItem("token");
 
-  localStorage.removeItem("user");
+  // AGAR TOKEN HI NAHI HAI TABHI LOGOUT
+  if (!token) {
 
-  localStorage.removeItem("userId");
+    localStorage.removeItem("token");
 
-  window.location.href = "/login";
+    localStorage.removeItem(
+      "session_expires_at"
+    );
+
+    localStorage.removeItem("user");
+
+    localStorage.removeItem("userId");
+
+    window.location.href =
+      "/login";
+  }
 };
-
 /* ======================================================
    REQUEST INTERCEPTOR
 ====================================================== */

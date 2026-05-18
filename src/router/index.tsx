@@ -25,6 +25,6 @@ const finalRoutes = routes.map((route) => {
 
 
 const router = createBrowserRouter(finalRoutes, {
-  basename: "/vidya-gyan-admin",
+  basename: "/admin",
 });
 export default router;

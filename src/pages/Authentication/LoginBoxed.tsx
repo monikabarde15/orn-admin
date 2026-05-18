@@ -40,10 +40,15 @@ const LoginBoxed = () => {
   }, [dispatch]);
 
   
-const submitForm = async (e: React.FormEvent) => {
+const submitForm = async (
+  e: React.FormEvent
+) => {
   e.preventDefault();
 
+  setLoading(true);
+
   try {
+
     const response = await axios.post(
       `${import.meta.env.VITE_API_URL}/api/v1/auth/login`,
       {
@@ -52,34 +57,83 @@ const submitForm = async (e: React.FormEvent) => {
       },
       {
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type":
+            "application/json",
         },
       }
     );
 
     const data = response.data;
 
-    console.log("Login Success:", data.user);
+    console.log(
+      "Login Success:",
+      data.user.accountType
+    );
+
+    // CLEAR OLD USER DATA
+    // localStorage.clear();
 
     // SAVE TOKEN
-    localStorage.setItem("token", data.token);
+    localStorage.setItem(
+      "token",
+      data.token
+    );
 
     // SAVE USER
-    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem(
+      "user",
+      JSON.stringify(data.user)
+    );
 
-    toast.success("Login successful!");
+    // SAVE USER ID
+    localStorage.setItem(
+      "userId",
+      data.user._id
+    );
+
+    // SAVE SESSION EXPIRY
+    const payload = JSON.parse(
+      atob(data.token.split(".")[1])
+    );
+
+    localStorage.setItem(
+      "session_expires_at",
+      String(payload.exp * 1000)
+    );
+
+    toast.success(
+      "Login successful!"
+    );
 
     // REDIRECT
-    setTimeout(() => {
-      window.location.href = "/vidya-gyan-admin/index";
-    }, 1000);
+    if(data.user.accountType=="Admin"){
+        setTimeout(() => {
+            window.location.href =
+              "/admin/index";
+          }, 1000);
+    }else{
+          setTimeout(() => {
+            window.location.href =
+              "/admin/index/overview";
+          }, 1000);
+    }
+    
 
   } catch (error: any) {
-    console.log("Login Error:", error);
+
+    console.log(
+      "Login Error:",
+      error
+    );
 
     toast.error(
-      error?.response?.data?.message || "Login failed"
+      error?.response?.data
+        ?.message ||
+        "Login failed"
     );
+
+  } finally {
+    setLoading(false);
   }
 };
 

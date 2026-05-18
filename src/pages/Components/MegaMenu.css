@@ -1,0 +1,56 @@
+.mega-parent {
+  position: relative;
+  cursor: pointer;
+  color: #62576f;
+}
+.mega-menu {
+  position: absolute;
+  top: 45px;               /* navbar के ठीक नीचे */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 900px;
+
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 20px 24px;
+
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12);
+
+  display: none;           /* default closed */
+  z-index: 9999;
+}
+
+.mega-menu.open {
+  display: block;          /* click से open */
+}
+
+.mega-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.mega-col {
+  background: #f6f9ff;
+  border-radius: 10px;
+  padding: 14px 16px;
+  transition: 0.2s;
+  cursor: pointer;
+}
+
+.mega-col:hover {
+  background: #e7efff;
+}
+
+.mega-col h4 {
+  margin: 0;
+  color: #001858;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.mega-col p {
+  margin-top: 6px;
+  color: #595959;
+  font-size: 13px;
+}

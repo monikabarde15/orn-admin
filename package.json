@@ -3,7 +3,12 @@
     "private": true,
     "version": "0.0.0",
     "type": "module",
+<<<<<<< HEAD
     "homepage": "/admin",
+=======
+    "homepage": "/vidya-gyan-admin",
+    
+>>>>>>> b765da5c316936f4e32e897f35a82a19b8386e34
     "scripts": {
         "dev": "vite",
         "build": "vite build",

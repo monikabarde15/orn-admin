@@ -1,3 +1,4 @@
+// src\services\api.tsx
 import axios from "axios";
 
 const api = axios.create({
@@ -50,6 +51,7 @@ const hardLogout = () => {
 
     localStorage.removeItem("token");
 
+<<<<<<< HEAD
     localStorage.removeItem(
       "session_expires_at"
     );
@@ -61,6 +63,10 @@ const hardLogout = () => {
     window.location.href =
       "/login";
   }
+=======
+  // window.location.href = "/login";
+  window.location.href = "/vidya-gyan-admin/";
+>>>>>>> b765da5c316936f4e32e897f35a82a19b8386e34
 };
 /* ======================================================
    REQUEST INTERCEPTOR

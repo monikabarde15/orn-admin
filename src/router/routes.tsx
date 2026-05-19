@@ -14,6 +14,8 @@ const AdminChangePassword = lazy(() => import('../pages/AdminChangePassword'));
 
 
 const Analytics = lazy(() => import('../pages/Analytics'));
+const MyCourses  = lazy(() => import('../pages/Analytics'));
+
 const Finance = lazy(() => import('../pages/Finance'));
 const Crypto = lazy(() => import('../pages/Crypto'));
 const Todolist = lazy(() => import('../pages/Apps/Todolist'));
@@ -431,6 +433,10 @@ const routes = [
     {
         path: '/analytics',
         element: <Analytics />,
+    },
+    {
+        path: '/my-courses',
+        element: <MyCourses  />,
     },
     // finance page
     {

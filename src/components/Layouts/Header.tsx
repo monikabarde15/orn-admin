@@ -68,7 +68,6 @@ const fetchProfile = async () => {
 useEffect(() => {
   fetchProfile();
 }, []);
-console.log("profile=",profile);
 const username =
   profile?.firstName || profile?.lastName
     ? `${profile?.firstName || ""} ${profile?.lastName || ""}`
@@ -199,12 +198,10 @@ window.addEventListener("storage", (e) => {
     const { t } = useTranslation();
 const user = localStorage.getItem("user") || "{}";
 const userIDnew = localStorage.getItem("userId") || "{}";
-console.log('userIDnew=',userIDnew);
 
 
     const navigate = useNavigate();
    if (!userIDnew) {
-  console.log("log");
   navigate('/');
 }
 useEffect(() => {
@@ -248,7 +245,6 @@ const deleteAccount = async () => {
       "/api/v1/profile/deleteProfile"
     );
 
-    console.log(res.data);
 
     toast.success("Account deleted successfully");
 

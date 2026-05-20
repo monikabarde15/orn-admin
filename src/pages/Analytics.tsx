@@ -28,7 +28,7 @@ const MyCourses = () => {
   useEffect(() => {
     fetchCourses();
   }, []);
-
+console.log("courses=",courses);
   // LOADING
   if (loading) {
     return (
@@ -55,65 +55,79 @@ const MyCourses = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses.map((course) => (
-            <div
-              key={course._id}
-              className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition duration-300"
-            >
-              {/* THUMBNAIL / VIDEO */}
-              <div className="relative w-full h-56 bg-black">
-                {course?.introVideo || course?.videoUrl ? (
-                  <video
-                    src={course?.introVideo || course?.videoUrl}
-                    controls
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <img
-                    src={course?.thumbnail}
-                    alt={course?.courseName}
-                    className="w-full h-full object-cover"
-                  />
-                )}
-              </div>
+         {courses.map((course) => (
+  <div
+    key={course._id}
+    className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition duration-300"
+  >
+    {/* THUMBNAIL / VIDEO */}
+    <div className="relative w-full h-56 bg-black overflow-hidden">
+      
+      {/* AGAR VIDEO HAI TO VIDEO SHOW */}
+      {course?.promotionalVideo ? (
+        <video
+          controls
+          preload="metadata"
+          className="w-full h-full object-cover"
+        >
+          <source
+            src={course?.promotionalVideo}
+            type="video/mp4"
+          />
+          Your browser does not support the video tag.
+        </video>
+      ) : course?.thumbnailImage ? (
+        
+        /* VIDEO NHI HAI TO IMAGE SHOW */
+        <img
+          src={course?.thumbnailImage}
+          alt={course?.courseName}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        
+        /* AGAR DONO NHI HAI */
+        <div className="w-full h-full flex items-center justify-center text-white text-lg">
+          No Preview Available
+        </div>
+      )}
+    </div>
 
-              {/* CONTENT */}
-              <div className="p-5">
-                <h2 className="text-xl font-bold text-gray-800 line-clamp-1">
-                  {course?.courseName}
-                </h2>
+    {/* CONTENT */}
+    <div className="p-5">
+      <h2 className="text-xl font-bold text-gray-800 line-clamp-1">
+        {course?.courseName}
+      </h2>
 
-                <p className="text-gray-500 text-sm mt-2 line-clamp-2">
-                  {course?.courseDescription}
-                </p>
+      <p className="text-gray-500 text-sm mt-2 line-clamp-2">
+        {course?.courseDescription}
+      </p>
 
-                {/* INSTRUCTOR */}
-                <div className="mt-3 text-sm text-gray-600">
-                  Instructor :{" "}
-                  <span className="font-medium">
-                    {course?.instructor?.firstName}{" "}
-                    {course?.instructor?.lastName}
-                  </span>
-                </div>
+      {/* INSTRUCTOR */}
+      <div className="mt-3 text-sm text-gray-600">
+        Added  :{" "}
+        <span className="font-medium">
+          {course?.instructor?.firstName}{" "}
+          {course?.instructor?.lastName}
+        </span>
+      </div>
 
-                {/* PRICE */}
-                <div className="mt-4 flex items-center justify-between">
-                  <h3 className="text-2xl font-bold text-blue-600">
-                    ₹ {course?.price}
-                  </h3>
+      {/* PRICE */}
+      <div className="mt-4 flex items-center justify-between">
+        <h3 className="text-2xl font-bold text-blue-600">
+          ₹ {course?.price}
+        </h3>
 
-                  <button
-                    onClick={() =>
-                      navigate(`/course/${course._id}`)
-                    }
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition"
-                  >
-                    Preview
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+        <button
+          onClick={() => navigate(`/course/${course._id}`)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition"
+        >
+          Preview
+        </button>
+      </div>
+    </div>
+  </div>
+))}
         </div>
       )}
     </div>

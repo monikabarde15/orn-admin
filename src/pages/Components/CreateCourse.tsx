@@ -108,28 +108,62 @@ const mockApi = {
 
     formData.append("courseName", data.title)
     formData.append("courseDescription", data.description)
-    formData.append("whatYouWillLearn", data.learningOutcomes.join(", "))
+   formData.append(
+      "whatYouWillLearn",
+      JSON.stringify(data.learningOutcomes)
+    )
     formData.append("price", data.price || "0")
     const allTags = [data.category, data.difficulty, ...(data.tags || [])]
     formData.append("tag", JSON.stringify(allTags))
     formData.append("instructions", JSON.stringify(data.prerequisites))
     formData.append("category", data.category)
+    formData.append(
+      "subtitle",
+      data.subtitle
+      )
+
+      formData.append(
+      "difficulty",
+      data.difficulty
+      )
+
+      const cleanFaqs =
+  data.faqs.map(
+    ({ id, ...rest }) => rest
+  );
+
+formData.append(
+  "faqs",
+  JSON.stringify(cleanFaqs)
+)
     formData.append("status", "Draft")
 
     if (data.thumbnailImage) {
       formData.append("thumbnailImage", data.thumbnailImage)
     }
+    if (data.promotionalVideo) {
+
+    formData.append(
+      "promotionalVideo",
+      data.promotionalVideo
+    )
+  }
 
     if (data.ebook) {
       formData.append("ebook", data.ebook)
     }
 
     try {
-      const res = await api.post("/api/v1/course/createCourse", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      })
+      const res = await api.post(
+        "/api/v1/course/createCourse",
+        formData,
+        {
+          headers: {
+            "Content-Type":
+              "multipart/form-data",
+          },
+        }
+      )
 
       return {
         success: true,
@@ -161,28 +195,72 @@ const mockApi = {
 
   // ================= ADD SUBSECTION =================
 
-  addLesson: async (sectionId: string, lesson: Lesson) => {
-    const formData = new FormData()
+ addLesson: async (
+  sectionId: string,
+  lesson: Lesson
+) => {
 
-    formData.append("sectionId", sectionId)
-    formData.append("title", lesson.title)
-    formData.append("description", lesson.content)
+  const formData =
+    new FormData();
 
-    if (lesson.videoFile) {
-      formData.append("video", lesson.videoFile)
-    }
+  formData.append(
+    "sectionId",
+    sectionId
+  );
 
-    const res = await api.post("api/v1/course/addSubSection", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    })
+  formData.append(
+    "title",
+    lesson.title
+  );
 
-    return {
+  formData.append(
+    "description",
+    lesson.content
+  );
+
+  formData.append(
+    "timeDuration",
+    lesson.duration
+  );
+
+  if (lesson.videoFile) {
+    formData.append(
+      "video",
+      lesson.videoFile
+    );
+  }
+
+  if (lesson.documentFile) {
+    formData.append(
+      "pdf",
+      lesson.documentFile
+    );
+  }
+
+  const res =
+    await api.post(
+      "/api/v1/course/addSubSection",
+      formData,
+      {
+        headers: {
+          "Content-Type":
+            "multipart/form-data",
+        },
+      }
+    );
+
+  console.log(
+    "SUBSECTION RESPONSE",
+    res.data
+  );
+
+  return {
       success: true,
-      id: res.data?.data?._id,
-    }
-  },
+
+      // ✅ FULL SECTION DATA
+      data: res.data.data,
+    };
+},
 
   // ================= PUBLISH =================
 
@@ -210,17 +288,53 @@ const mockApi = {
 
 
   // ================= ADD QUIZ (MOCK - replace with real API later) =================
-  addQuiz: async (moduleId: string, quiz: any) => {
+  // ================= ADD QUIZ =================
 
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500))
+addQuiz: async (
+  courseId: string,
+  subSectionId: string,
+  quiz: any
+) => {
 
-    // Return mock response (matches real API structure)
-    return {
-      success: true,
-      id: Date.now().toString(),  // Mock ID
-    }
-  },
+  const promises =
+    quiz.questions.map(
+      async (question: any) => {
+
+        return await api.post(
+          "/api/v1/mcq/create",
+          {
+            question:
+              question.question,
+
+            options:
+              question.options,
+
+            correctAnswer:
+              question.options.indexOf(
+                question.correctAnswer
+              ),
+
+            courseId,
+
+            subsectionId:
+              subSectionId,
+          }
+        );
+      }
+    );
+
+  const responses =
+    await Promise.all(
+      promises
+    );
+
+  return {
+    success: true,
+    id:
+      responses[0]?.data
+        ?.data?._id,
+  };
+},
 }
 
 
@@ -450,56 +564,127 @@ const [showLessonForm, setShowLessonForm] = useState<Record<string, boolean>>({}
      ADD LESSON
   ======================================================= */
 
-  const handleAddLesson = async (moduleId: string) => {
-    const lesson = lessonForms[moduleId]
+const handleAddLesson = async (
+  moduleId: string
+) => {
 
-    if (!lesson?.title) {
-      toast.error("Lesson title required")
-      return
+  const lesson =
+    lessonForms[moduleId];
+
+  if (!lesson?.title) {
+    toast.error(
+      "Lesson title required"
+    );
+    return;
+  }
+
+  if (!courseId) {
+    toast.error(
+      "Course not found. Please refresh and try again."
+    );
+    return;
+  }
+
+  try {
+
+    // ✅ ADD SUBSECTION API
+    const res =
+      await mockApi.addLesson(
+        moduleId,
+        lesson
+      );
+
+    console.log(
+      "LESSON API RESPONSE",
+      res
+    );
+
+    // ✅ GET ALL SUBSECTIONS
+    const subSections =
+      res?.data?.subSection || [];
+
+    console.log(
+      "ALL SUBSECTIONS",
+      subSections
+    );
+
+    // ✅ GET LAST CREATED SUBSECTION
+    const latestSubSection =
+      subSections[
+        subSections.length - 1
+      ];
+
+    console.log(
+      "LATEST SUBSECTION",
+      latestSubSection
+    );
+
+    // ✅ REAL SUBSECTION ID
+    const realSubSectionId =
+      latestSubSection?._id;
+
+    console.log(
+      "REAL SUBSECTION ID",
+      realSubSectionId
+    );
+
+    if (!realSubSectionId) {
+      toast.error(
+        "SubSection ID not found"
+      );
+      return;
     }
 
-    if (!courseId) {
-      toast.error("Course not found. Please refresh and try again.")
-      return
-    }
-
-    try {
-      const res = await mockApi.addLesson(moduleId, lesson)
-
-      setModules((prev) =>
-        prev.map((m) =>
-          m.id === moduleId
-            ? {
+    // ✅ UPDATE FRONTEND STATE
+    setModules((prev) =>
+      prev.map((m) =>
+        m.id === moduleId
+          ? {
               ...m,
               lessons: [
                 ...m.lessons,
                 {
                   ...lesson,
-                  id: res.id,
+
+                  // ✅ STORE REAL SUBSECTION ID
+                  id:
+                    realSubSectionId,
                 },
               ],
             }
-            : m
-        )
+          : m
       )
+    );
 
-      setLessonForms((prev) => ({
-        ...prev,
-        [moduleId]: {
-          id: "",
-          title: "",
-          duration: "",
-          content: "",
-          videoFile: null,
-        },
-      }))
+    // ✅ RESET FORM
+    setLessonForms((prev) => ({
+      ...prev,
+      [moduleId]: {
+        id: "",
+        title: "",
+        duration: "",
+        content: "",
+        videoFile: null,
+        documentFile: null,
+      },
+    }));
 
-      toast.success("Lesson Added")
-    } catch (err) {
-      console.error("Add lesson error:", err)
-      toast.error("Failed to add lesson")
-    }
+    toast.success(
+      "Lesson Added"
+    );
+
+  } catch (err) {
+
+    console.error(
+      "Add lesson error:",
+      err
+    );
+
+    toast.error(
+      "Failed to add lesson"
+    );
   }
+};
 
   /* =======================================================
      PUBLISH
@@ -572,62 +757,57 @@ const [showLessonForm, setShowLessonForm] = useState<Record<string, boolean>>({}
 
   // ========== FILE UPLOAD HANDLERS ==========
 
-  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const handleCoverUpload = (
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file')
-      return
-    }
+  const file =
+    e.target.files?.[0];
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size should be less than 5MB')
-      return
-    }
+  if (!file) return;
 
-    // Set status to "uploading" immediately
-    setUploadProgress((prev) => ({ ...prev, cover: 'uploading' }))
+  setFormData((prev) => ({
+    ...prev,
+    thumbnailImage: file,
+  }));
 
-    // Show preview
-    const reader = new FileReader()
-    reader.onloadend = () => setCoverPreview(reader.result as string)
-    reader.readAsDataURL(file)
+  const reader =
+    new FileReader();
 
-    // Simulate upload
-    setTimeout(() => {
-      setFormData({ ...formData, thumbnailImage: file })
-      setUploadProgress((prev) => ({ ...prev, cover: 'completed' }))
-      toast.success('Cover photo ready')
-    }, 1500)
-  }
+  reader.onloadend = () =>
+    setCoverPreview(
+      reader.result as string
+    );
 
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  reader.readAsDataURL(file);
 
-    if (!file.type.startsWith('video/')) {
-      toast.error('Please upload a video file')
-      return
-    }
+  setUploadProgress((prev) => ({
+    ...prev,
+    cover: "completed",
+  }));
+};
 
-    if (file.size > 500 * 1024 * 1024) {
-      toast.error('Video size should be less than 500MB')
-      return
-    }
+  const handleVideoUpload = (
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
 
-    // Set status to "uploading" immediately
-    setUploadProgress((prev) => ({ ...prev, video: 'uploading' }))
+  const file =
+    e.target.files?.[0];
 
-    setVideoPreview(file.name)
+  if (!file) return;
 
-    // Simulate upload
-    setTimeout(() => {
-      setFormData({ ...formData, promotionalVideo: file })
-      setUploadProgress((prev) => ({ ...prev, video: 'completed' }))
-      toast.success('Promotional video ready')
-    }, 2000)
-  }
+  setFormData((prev) => ({
+    ...prev,
+    promotionalVideo: file,
+  }));
+
+  setVideoPreview(file.name);
+
+  setUploadProgress((prev) => ({
+    ...prev,
+    video: "completed",
+  }));
+};
 
   const formatFileSize = (bytes) => {
     if (!bytes) return ''
@@ -659,27 +839,75 @@ const [showLessonForm, setShowLessonForm] = useState<Record<string, boolean>>({}
 
   // ========== QUIZ FUNCTIONS ==========
 
-  const handleAddQuiz = async (moduleId: string) => {
-    const quiz = quizForms[moduleId]
+const handleAddQuiz = async (
+  moduleId: string
+) => {
 
-    if (!quiz?.title) {
-      toast.error("Quiz title required")
-      return
-    }
+  const currentModule =
+    modules.find(
+      (m) => m.id === moduleId
+    );
 
-    if (!quiz.questions || quiz.questions.length === 0) {
-      toast.error("At least one question is required")
-      return
-    }
+  const quiz =
+    quizForms[moduleId];
 
-    try {
-      // Use mockApi (same as lessons)
-      const res = await mockApi.addQuiz(moduleId, quiz)
+  if (!quiz?.title) {
+    toast.error(
+      "Quiz title required"
+    );
+    return;
+  }
 
-      setModules((prev) =>
-        prev.map((m) =>
-          m.id === moduleId
-            ? {
+  if (
+    !quiz.questions ||
+    quiz.questions.length === 0
+  ) {
+    toast.error(
+      "At least one question required"
+    );
+    return;
+  }
+
+  // ✅ GET LAST CREATED LESSON
+  const latestLesson =
+    currentModule?.lessons?.[
+      currentModule.lessons.length - 1
+    ];
+
+  console.log(
+    "LATEST LESSON",
+    latestLesson
+  );
+
+  // ✅ REAL SUBSECTION ID
+  const realSubSectionId =
+    latestLesson?.id;
+
+  console.log(
+    "REAL SUBSECTION ID",
+    realSubSectionId
+  );
+
+  if (!realSubSectionId) {
+    toast.error(
+      "Please add lesson first"
+    );
+    return;
+  }
+
+  try {
+
+    const res =
+      await mockApi.addQuiz(
+        courseId,
+        realSubSectionId,
+        quiz
+      );
+
+    setModules((prev) =>
+      prev.map((m) =>
+        m.id === moduleId
+          ? {
               ...m,
               quizzes: [
                 ...m.quizzes,
@@ -689,26 +917,38 @@ const [showLessonForm, setShowLessonForm] = useState<Record<string, boolean>>({}
                 },
               ],
             }
-            : m
-        )
+          : m
       )
+    );
 
-      setQuizForms((prev) => ({
-        ...prev,
-        [moduleId]: {
-          id: "",
-          title: "",
-          questions: [],
-        },
-      }))
-      setShowQuizForm((prev) => ({ ...prev, [moduleId]: false }))
+    // ✅ RESET QUIZ FORM
+    setQuizForms((prev) => ({
+      ...prev,
+      [moduleId]: {
+        id: "",
+        title: "",
+        questions: [],
+      },
+    }));
 
-      toast.success("Quiz Added")
-    } catch (err) {
-      console.error("Add quiz error:", err)
-      toast.error("Failed to add quiz")
-    }
+    setShowQuizForm((prev) => ({
+      ...prev,
+      [moduleId]: false,
+    }));
+
+    toast.success(
+      "Quiz Added"
+    );
+
+  } catch (err) {
+
+    console.log(err);
+
+    toast.error(
+      "Failed to add quiz"
+    );
   }
+};
 
   const addQuestionToQuiz = (moduleId: string) => {
     const currentQuiz = quizForms[moduleId] || {

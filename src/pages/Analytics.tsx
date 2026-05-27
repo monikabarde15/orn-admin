@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import api from "../services/api";
 
 const MyCourses = () => {
   const [courses, setCourses] = useState([]);
@@ -11,8 +12,8 @@ const MyCourses = () => {
   // FETCH ALL COURSES
   const fetchCourses = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:4000/api/v1/course/getAllCourses"
+      const response = await api.get(
+        `/api/v1/course/getAllCourses`
       );
 
       console.log(response.data);
@@ -61,38 +62,19 @@ console.log("courses=",courses);
     className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition duration-300"
   >
     {/* THUMBNAIL / VIDEO */}
-    <div className="relative w-full h-56 bg-black overflow-hidden">
-      
-      {/* AGAR VIDEO HAI TO VIDEO SHOW */}
-      {course?.promotionalVideo ? (
-        <video
-          controls
-          preload="metadata"
-          className="w-full h-full object-cover"
-        >
-          <source
-            src={course?.promotionalVideo}
-            type="video/mp4"
-          />
-          Your browser does not support the video tag.
-        </video>
-      ) : course?.thumbnailImage ? (
-        
-        /* VIDEO NHI HAI TO IMAGE SHOW */
-        <img
-          src={course?.thumbnailImage}
-          alt={course?.courseName}
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        
-        /* AGAR DONO NHI HAI */
-        <div className="w-full h-full flex items-center justify-center text-white text-lg">
-          No Preview Available
-        </div>
-      )}
+   <div className="relative w-full h-56 bg-black overflow-hidden">
+  {course?.thumbnailImage ? (
+    <img
+      src={course.thumbnailImage}
+      alt={course?.courseName}
+      className="w-full h-full object-cover"
+    />
+  ) : (
+    <div className="w-full h-full flex items-center justify-center text-white text-lg">
+      No Preview Available
     </div>
-
+  )}
+</div>
     {/* CONTENT */}
     <div className="p-5">
       <h2 className="text-xl font-bold text-gray-800 line-clamp-1">
@@ -114,9 +96,9 @@ console.log("courses=",courses);
 
       {/* PRICE */}
       <div className="mt-4 flex items-center justify-between">
-        <h3 className="text-2xl font-bold text-blue-600">
+        {/* <h3 className="text-2xl font-bold text-blue-600">
           ₹ {course?.price}
-        </h3>
+        </h3> */}
 
         <button
           onClick={() => navigate(`/course/${course._id}`)}

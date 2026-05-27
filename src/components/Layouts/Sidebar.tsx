@@ -82,131 +82,131 @@ const Sidebar = () => {
                         label: 'Dashboard',
                         icon: IconMenuDashboard,
                     },
-                    {
-                        path: '/analytics-reports',
-                        label: 'Analytics & Reports',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/notifications-center',
-                        label: 'Notifications Center',
-                        icon: IconBellBing,
-                    },
+                    // {
+                    //     path: '/analytics-reports',
+                    //     label: 'Analytics & Reports',
+                    //     icon: IconBox,
+                    // },
+                    // {
+                    //     path: '/notifications-center',
+                    //     label: 'Notifications Center',
+                    //     icon: IconBellBing,
+                    // },
                 ],
             },
 
             {
                 sectionLabel: 'User Management',
                 items: [
-                    {
-                        path: '/candidates',
-                        label: 'Candidates / Consultants',
-                        icon: IconUsers,
-                    },
+                    // {
+                    //     path: '/candidates',
+                    //     label: 'Candidates / Consultants',
+                    //     icon: IconUsers,
+                    // },
                     {
                         path: '/students',
                         label: 'Students',
                         icon: IconUsers,
                     },
-                    {
-                        path: '/recruiters',
-                        label: 'Recruiters',
-                        icon: IconUsers,
-                    },
-                    {
-                        path: '/trainers',
-                        label: 'Trainers & Mentors',
-                        icon: IconUsers,
-                    },
-                    {
-                        path: '/enterprise-clients',
-                        label: 'Enterprise Clients',
-                        icon: IconUsers,
-                    },
-                    {
-                        path: '/admin-management',
-                        label: 'Admin Management',
-                        icon: IconUser,
-                    },
-                    {
-                        path: '/roles-permissions',
-                        label: 'Roles & Permissions',
-                        icon: IconSettings,
-                    },
+                    // {
+                    //     path: '/recruiters',
+                    //     label: 'Recruiters',
+                    //     icon: IconUsers,
+                    // },
+                    // {
+                    //     path: '/trainers',
+                    //     label: 'Trainers & Mentors',
+                    //     icon: IconUsers,
+                    // },
+                    // {
+                    //     path: '/enterprise-clients',
+                    //     label: 'Enterprise Clients',
+                    //     icon: IconUsers,
+                    // },
+                    // {
+                    //     path: '/admin-management',
+                    //     label: 'Admin Management',
+                    //     icon: IconUser,
+                    // },
+                    // {
+                    //     path: '/roles-permissions',
+                    //     label: 'Roles & Permissions',
+                    //     icon: IconSettings,
+                    // },
                 ],
             },
 
-            {
-                sectionLabel: 'Candidate Intelligence',
-                items: [
-                    {
-                        path: '/candidate-assessments',
-                        label: 'Candidate Assessments',
-                        icon: IconMenuNotes,
-                    },
-                    {
-                        path: '/ai-assessment-scores',
-                        label: 'AI Assessment Scores',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/skill-gap-analysis',
-                        label: 'Skill Gap Analysis',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/employability-scoring',
-                        label: 'Employability Scoring',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/readiness-status',
-                        label: 'Readiness Status Management',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/skill-passport',
-                        label: 'Skill Passport Management',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/candidate-verification',
-                        label: 'Candidate Verification',
-                        icon: IconBox,
-                    },
-                ],
-            },
+            // {
+            //     sectionLabel: 'Candidate Intelligence',
+            //     items: [
+            //         {
+            //             path: '/candidate-assessments',
+            //             label: 'Candidate Assessments',
+            //             icon: IconMenuNotes,
+            //         },
+            //         {
+            //             path: '/ai-assessment-scores',
+            //             label: 'AI Assessment Scores',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/skill-gap-analysis',
+            //             label: 'Skill Gap Analysis',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/employability-scoring',
+            //             label: 'Employability Scoring',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/readiness-status',
+            //             label: 'Readiness Status Management',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/skill-passport',
+            //             label: 'Skill Passport Management',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/candidate-verification',
+            //             label: 'Candidate Verification',
+            //             icon: IconBox,
+            //         },
+            //     ],
+            // },
 
-            {
-                sectionLabel: 'CV & Resume Intelligence',
-                items: [
-                    {
-                        path: '/cv-parser',
-                        label: 'CV Parser Management',
-                        icon: IconBlogs,
-                    },
-                    {
-                        path: '/masked-cv',
-                        label: 'Masked CV Management',
-                        icon: IconBlogs,
-                    },
-                    {
-                        path: '/resume-builder',
-                        label: 'Resume Builder',
-                        icon: IconBlogs,
-                    },
-                    {
-                        path: '/ats-optimization',
-                        label: 'ATS Optimization Engine',
-                        icon: IconBlogs,
-                    },
-                    {
-                        path: '/resume-review',
-                        label: 'Resume Review Queue',
-                        icon: IconBlogs,
-                    },
-                ],
-            },
+            // {
+            //     sectionLabel: 'CV & Resume Intelligence',
+            //     items: [
+            //         {
+            //             path: '/cv-parser',
+            //             label: 'CV Parser Management',
+            //             icon: IconBlogs,
+            //         },
+            //         {
+            //             path: '/masked-cv',
+            //             label: 'Masked CV Management',
+            //             icon: IconBlogs,
+            //         },
+            //         {
+            //             path: '/resume-builder',
+            //             label: 'Resume Builder',
+            //             icon: IconBlogs,
+            //         },
+            //         {
+            //             path: '/ats-optimization',
+            //             label: 'ATS Optimization Engine',
+            //             icon: IconBlogs,
+            //         },
+            //         {
+            //             path: '/resume-review',
+            //             label: 'Resume Review Queue',
+            //             icon: IconBlogs,
+            //         },
+            //     ],
+            // },
 
             {
                 sectionLabel: 'LMS & Learning Ecosystem',
@@ -216,307 +216,307 @@ const Sidebar = () => {
                         label: 'Course Management',
                         icon: IconOpenBook,
                     },
-                    {
-                        path: '/learning-paths',
-                        label: 'Learning Paths',
-                        icon: IconOpenBook,
-                    },
-                    {
-                        path: '/course-categories',
-                        label: 'Course Categories',
-                        icon: IconBlogs,
-                    },
-                    {
-                        path: '/modules',
-                        label: 'Module Management',
-                        icon: IconMenuTodo,
-                    },
-                    {
-                        path: '/certifications',
-                        label: 'Certifications',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/assessments',
-                        label: 'Assessments & Quizzes',
-                        icon: IconMenuNotes,
-                    },
-                    {
-                        path: '/coding-labs',
-                        label: 'Coding Labs',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/assignments',
-                        label: 'Assignments',
-                        icon: IconMenuTodo,
-                    },
-                    {
-                        path: '/live-training',
-                        label: 'Live Training Sessions',
-                        icon: IconBellBing,
-                    },
-                    {
-                        path: '/recorded-sessions',
-                        label: 'Recorded Sessions',
-                        icon: IconBellBing,
-                    },
+                    // {
+                    //     path: '/learning-paths',
+                    //     label: 'Learning Paths',
+                    //     icon: IconOpenBook,
+                    // },
+                    // {
+                    //     path: '/course-categories',
+                    //     label: 'Course Categories',
+                    //     icon: IconBlogs,
+                    // },
+                    // {
+                    //     path: '/modules',
+                    //     label: 'Module Management',
+                    //     icon: IconMenuTodo,
+                    // },
+                    // {
+                    //     path: '/certifications',
+                    //     label: 'Certifications',
+                    //     icon: IconBox,
+                    // },
+                    // {
+                    //     path: '/assessments',
+                    //     label: 'Assessments & Quizzes',
+                    //     icon: IconMenuNotes,
+                    // },
+                    // {
+                    //     path: '/coding-labs',
+                    //     label: 'Coding Labs',
+                    //     icon: IconBox,
+                    // },
+                    // {
+                    //     path: '/assignments',
+                    //     label: 'Assignments',
+                    //     icon: IconMenuTodo,
+                    // },
+                    // {
+                    //     path: '/live-training',
+                    //     label: 'Live Training Sessions',
+                    //     icon: IconBellBing,
+                    // },
+                    // {
+                    //     path: '/recorded-sessions',
+                    //     label: 'Recorded Sessions',
+                    //     icon: IconBellBing,
+                    // },
                 ],
             },
 
-            {
-                sectionLabel: 'AI Upskilling Engine',
-                items: [
-                    {
-                        path: '/ai-recommendations',
-                        label: 'AI Recommendations',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/upskilling-engine',
-                        label: 'Upskilling Engine',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/career-path-engine',
-                        label: 'Career Path Engine',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/ai-mentor',
-                        label: 'AI Mentor Management',
-                        icon: IconUser,
-                    },
-                ],
-            },
+            // {
+            //     sectionLabel: 'AI Upskilling Engine',
+            //     items: [
+            //         {
+            //             path: '/ai-recommendations',
+            //             label: 'AI Recommendations',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/upskilling-engine',
+            //             label: 'Upskilling Engine',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/career-path-engine',
+            //             label: 'Career Path Engine',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/ai-mentor',
+            //             label: 'AI Mentor Management',
+            //             icon: IconUser,
+            //         },
+            //     ],
+            // },
 
-            {
-                sectionLabel: 'Realtime Projects & Simulations',
-                items: [
-                    {
-                        path: '/realtime-projects',
-                        label: 'Realtime Projects',
-                        icon: IconMenuScrumboard,
-                    },
-                    {
-                        path: '/industry-simulations',
-                        label: 'Industry Simulations',
-                        icon: IconMenuScrumboard,
-                    },
-                    {
-                        path: '/project-assignments',
-                        label: 'Project Assignments',
-                        icon: IconMenuTodo,
-                    },
-                    {
-                        path: '/team-collaboration',
-                        label: 'Team Collaboration',
-                        icon: IconUsers,
-                    },
-                    {
-                        path: '/project-evaluations',
-                        label: 'Project Evaluations',
-                        icon: IconBox,
-                    },
-                ],
-            },
+            // {
+            //     sectionLabel: 'Realtime Projects & Simulations',
+            //     items: [
+            //         {
+            //             path: '/realtime-projects',
+            //             label: 'Realtime Projects',
+            //             icon: IconMenuScrumboard,
+            //         },
+            //         {
+            //             path: '/industry-simulations',
+            //             label: 'Industry Simulations',
+            //             icon: IconMenuScrumboard,
+            //         },
+            //         {
+            //             path: '/project-assignments',
+            //             label: 'Project Assignments',
+            //             icon: IconMenuTodo,
+            //         },
+            //         {
+            //             path: '/team-collaboration',
+            //             label: 'Team Collaboration',
+            //             icon: IconUsers,
+            //         },
+            //         {
+            //             path: '/project-evaluations',
+            //             label: 'Project Evaluations',
+            //             icon: IconBox,
+            //         },
+            //     ],
+            // },
 
-            {
-                sectionLabel: 'Recruiter Intelligence',
-                items: [
-                    {
-                        path: '/recruiter-dashboard',
-                        label: 'Recruiter Dashboard',
-                        icon: IconUsers,
-                    },
-                    {
-                        path: '/job-opportunities',
-                        label: 'Job Opportunities',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/hiring-requests',
-                        label: 'Hiring Requests',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/ai-match-engine',
-                        label: 'AI Match Engine',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/candidate-ranking',
-                        label: 'Candidate Ranking',
-                        icon: IconBox,
-                    },
-                ],
-            },
+            // {
+            //     sectionLabel: 'Recruiter Intelligence',
+            //     items: [
+            //         {
+            //             path: '/recruiter-dashboard',
+            //             label: 'Recruiter Dashboard',
+            //             icon: IconUsers,
+            //         },
+            //         {
+            //             path: '/job-opportunities',
+            //             label: 'Job Opportunities',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/hiring-requests',
+            //             label: 'Hiring Requests',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/ai-match-engine',
+            //             label: 'AI Match Engine',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/candidate-ranking',
+            //             label: 'Candidate Ranking',
+            //             icon: IconBox,
+            //         },
+            //     ],
+            // },
 
-            {
-                sectionLabel: 'Placement & Hiring',
-                items: [
-                    {
-                        path: '/placement-pipeline',
-                        label: 'Placement Pipeline',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/interview-coordination',
-                        label: 'Interview Coordination',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/mock-interviews',
-                        label: 'Mock Interviews',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/placement-readiness',
-                        label: 'Placement Readiness',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/offer-management',
-                        label: 'Offer Management',
-                        icon: IconDollarSign,
-                    },
-                ],
-            },
+            // {
+            //     sectionLabel: 'Placement & Hiring',
+            //     items: [
+            //         {
+            //             path: '/placement-pipeline',
+            //             label: 'Placement Pipeline',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/interview-coordination',
+            //             label: 'Interview Coordination',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/mock-interviews',
+            //             label: 'Mock Interviews',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/placement-readiness',
+            //             label: 'Placement Readiness',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/offer-management',
+            //             label: 'Offer Management',
+            //             icon: IconDollarSign,
+            //         },
+            //     ],
+            // },
 
-            {
-                sectionLabel: 'Marketplace & Visibility',
-                items: [
-                    {
-                        path: '/talent-marketplace',
-                        label: 'Talent Marketplace',
-                        icon: IconUsers,
-                    },
-                    {
-                        path: '/candidate-visibility',
-                        label: 'Candidate Visibility Controls',
-                        icon: IconUser,
-                    },
-                    {
-                        path: '/featured-talent',
-                        label: 'Featured Talent',
-                        icon: IconUsers,
-                    },
-                ],
-            },
+            // {
+            //     sectionLabel: 'Marketplace & Visibility',
+            //     items: [
+            //         {
+            //             path: '/talent-marketplace',
+            //             label: 'Talent Marketplace',
+            //             icon: IconUsers,
+            //         },
+            //         {
+            //             path: '/candidate-visibility',
+            //             label: 'Candidate Visibility Controls',
+            //             icon: IconUser,
+            //         },
+            //         {
+            //             path: '/featured-talent',
+            //             label: 'Featured Talent',
+            //             icon: IconUsers,
+            //         },
+            //     ],
+            // },
 
-            {
-                sectionLabel: 'Communication & Engagement',
-                items: [
-                    {
-                        path: '/email-campaigns',
-                        label: 'Email Campaigns',
-                        icon: IconMessage2,
-                    },
-                    {
-                        path: '/sms-whatsapp',
-                        label: 'SMS / WhatsApp Notifications',
-                        icon: IconBellBing,
-                    },
-                    {
-                        path: '/announcements',
-                        label: 'Announcements',
-                        icon: IconBellBing,
-                    },
-                    {
-                        path: '/community-forums',
-                        label: 'Community & Discussion Forums',
-                        icon: IconUsers,
-                    },
-                    {
-                        path: '/support-tickets',
-                        label: 'Support Tickets',
-                        icon: IconMessage2,
-                    },
-                ],
-            },
+            // {
+            //     sectionLabel: 'Communication & Engagement',
+            //     items: [
+            //         {
+            //             path: '/email-campaigns',
+            //             label: 'Email Campaigns',
+            //             icon: IconMessage2,
+            //         },
+            //         {
+            //             path: '/sms-whatsapp',
+            //             label: 'SMS / WhatsApp Notifications',
+            //             icon: IconBellBing,
+            //         },
+            //         {
+            //             path: '/announcements',
+            //             label: 'Announcements',
+            //             icon: IconBellBing,
+            //         },
+            //         {
+            //             path: '/community-forums',
+            //             label: 'Community & Discussion Forums',
+            //             icon: IconUsers,
+            //         },
+            //         {
+            //             path: '/support-tickets',
+            //             label: 'Support Tickets',
+            //             icon: IconMessage2,
+            //         },
+            //     ],
+            // },
 
-            {
-                sectionLabel: 'Finance & Subscription',
-                items: [
-                    {
-                        path: '/subscription-plans',
-                        label: 'Subscription Plans',
-                        icon: IconDollarSign,
-                    },
-                    {
-                        path: '/payments-billing',
-                        label: 'Payments & Billing',
-                        icon: IconDollarSign,
-                    },
-                    {
-                        path: '/invoice-management',
-                        label: 'Invoice Management',
-                        icon: IconDollarSign,
-                    },
-                    {
-                        path: '/revenue-analytics',
-                        label: 'Revenue Analytics',
-                        icon: IconDollarSign,
-                    },
-                ],
-            },
+            // {
+            //     sectionLabel: 'Finance & Subscription',
+            //     items: [
+            //         {
+            //             path: '/subscription-plans',
+            //             label: 'Subscription Plans',
+            //             icon: IconDollarSign,
+            //         },
+            //         {
+            //             path: '/payments-billing',
+            //             label: 'Payments & Billing',
+            //             icon: IconDollarSign,
+            //         },
+            //         {
+            //             path: '/invoice-management',
+            //             label: 'Invoice Management',
+            //             icon: IconDollarSign,
+            //         },
+            //         {
+            //             path: '/revenue-analytics',
+            //             label: 'Revenue Analytics',
+            //             icon: IconDollarSign,
+            //         },
+            //     ],
+            // },
 
-            {
-                sectionLabel: 'Reports & Intelligence',
-                items: [
-                    {
-                        path: '/placement-reports',
-                        label: 'Placement Reports',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/recruiter-analytics',
-                        label: 'Recruiter Analytics',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/skill-demand',
-                        label: 'Skill Demand Analytics',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/course-performance',
-                        label: 'Course Performance Reports',
-                        icon: IconBox,
-                    },
-                ],
-            },
+            // {
+            //     sectionLabel: 'Reports & Intelligence',
+            //     items: [
+            //         {
+            //             path: '/placement-reports',
+            //             label: 'Placement Reports',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/recruiter-analytics',
+            //             label: 'Recruiter Analytics',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/skill-demand',
+            //             label: 'Skill Demand Analytics',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/course-performance',
+            //             label: 'Course Performance Reports',
+            //             icon: IconBox,
+            //         },
+            //     ],
+            // },
 
-            {
-                sectionLabel: 'System Configuration',
-                items: [
-                    {
-                        path: '/platform-settings',
-                        label: 'Platform Settings',
-                        icon: IconSettings,
-                    },
-                    {
-                        path: '/api-integrations',
-                        label: 'API Integrations',
-                        icon: IconSettings,
-                    },
-                    {
-                        path: '/security-audit',
-                        label: 'Security & Audit Logs',
-                        icon: IconSettings,
-                    },
-                    {
-                        path: '/backup-recovery',
-                        label: 'Data Backup & Recovery',
-                        icon: IconSettings,
-                    },
-                    {
-                        path: '/branding',
-                        label: 'Branding & White Label',
-                        icon: IconSettings,
-                    },
-                ],
-            },
+            // {
+            //     sectionLabel: 'System Configuration',
+            //     items: [
+            //         {
+            //             path: '/platform-settings',
+            //             label: 'Platform Settings',
+            //             icon: IconSettings,
+            //         },
+            //         {
+            //             path: '/api-integrations',
+            //             label: 'API Integrations',
+            //             icon: IconSettings,
+            //         },
+            //         {
+            //             path: '/security-audit',
+            //             label: 'Security & Audit Logs',
+            //             icon: IconSettings,
+            //         },
+            //         {
+            //             path: '/backup-recovery',
+            //             label: 'Data Backup & Recovery',
+            //             icon: IconSettings,
+            //         },
+            //         {
+            //             path: '/branding',
+            //             label: 'Branding & White Label',
+            //             icon: IconSettings,
+            //         },
+            //     ],
+            // },
         ];
     }
 
@@ -543,49 +543,49 @@ const Sidebar = () => {
                         label: 'My Courses',
                         icon: IconOpenBook,
                     },
-                    {
-                        path: '/learning-paths',
-                        label: 'Learning Paths',
-                        icon: IconOpenBook,
-                    },
-                    {
-                        path: '/assignments',
-                        label: 'Assignments',
-                        icon: IconMenuTodo,
-                    },
-                    {
-                        path: '/assessments',
-                        label: 'Assessments',
-                        icon: IconMenuNotes,
-                    },
-                    {
-                        path: '/certificates',
-                        label: 'Certificates',
-                        icon: IconBox,
-                    },
+                    // {
+                    //     path: '/learning-paths',
+                    //     label: 'Learning Paths',
+                    //     icon: IconOpenBook,
+                    // },
+                    // {
+                    //     path: '/assignments',
+                    //     label: 'Assignments',
+                    //     icon: IconMenuTodo,
+                    // },
+                    // {
+                    //     path: '/assessments',
+                    //     label: 'Assessments',
+                    //     icon: IconMenuNotes,
+                    // },
+                    // {
+                    //     path: '/certificates',
+                    //     label: 'Certificates',
+                    //     icon: IconBox,
+                    // },
                 ],
             },
 
-            {
-                sectionLabel: 'Career',
-                items: [
-                    {
-                        path: '/job-opportunities',
-                        label: 'Job Opportunities',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/mock-interviews',
-                        label: 'Mock Interviews',
-                        icon: IconBox,
-                    },
-                    {
-                        path: '/placement-readiness',
-                        label: 'Placement Readiness',
-                        icon: IconBox,
-                    },
-                ],
-            },
+            // {
+            //     sectionLabel: 'Career',
+            //     items: [
+            //         {
+            //             path: '/job-opportunities',
+            //             label: 'Job Opportunities',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/mock-interviews',
+            //             label: 'Mock Interviews',
+            //             icon: IconBox,
+            //         },
+            //         {
+            //             path: '/placement-readiness',
+            //             label: 'Placement Readiness',
+            //             icon: IconBox,
+            //         },
+            //     ],
+            // },
 
             {
                 sectionLabel: 'Profile',
@@ -595,11 +595,11 @@ const Sidebar = () => {
                         label: 'My Profile',
                         icon: IconUser,
                     },
-                    {
-                        path: '/notifications',
-                        label: 'Notifications',
-                        icon: IconBellBing,
-                    },
+                        // {
+                        //     path: '/notifications',
+                        //     label: 'Notifications',
+                        //     icon: IconBellBing,
+                        // },
                 ],
             },
         ];

@@ -5,29 +5,26 @@ import React, {
 } from "react";
 
 import {
-  ChevronDown,
-  X,
-  Menu,
-  Clock3,
   PlayCircle,
   FileText,
-  Trophy,
-  CheckCircle2,
-  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  Clock3,
+  Users,
   Star,
-  Sparkles,
-  AlertCircle,
+  Award,
+  CheckCircle,
+  X,
+  Menu,
 } from "lucide-react";
 
 import { useParams } from "react-router-dom";
 
-import api from "../../services/api";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
 
-const VideoPlayer: React.FC = () => {
+const VideoPlayer = () => {
   const { id } = useParams();
-
-  const [loading, setLoading] =
-    useState(false);
 
   const [course, setCourse] =
     useState<any>(null);
@@ -35,131 +32,110 @@ const VideoPlayer: React.FC = () => {
   const [sections, setSections] =
     useState<any[]>([]);
 
-  const [currentLesson, setCurrentLesson] =
+  const [currentLecture,
+    setCurrentLecture] =
     useState<any>(null);
 
-  const [quizList, setQuizList] =
-    useState<any[]>([]);
-
-  const [expandedSections, setExpandedSections] =
+  const [expandedSections,
+    setExpandedSections] =
     useState<string[]>([]);
 
-  const [sidebarOpen, setSidebarOpen] =
+  // SIDEBAR DEFAULT OPEN
+  const [sidebarOpen,
+    setSidebarOpen] =
     useState(true);
-
-  const [selectedAnswers, setSelectedAnswers] =
-    useState<any>({});
-
-  const [showResult, setShowResult] =
-    useState(false);
-
-  const [score, setScore] =
-    useState(0);
-
-  const [timeLeft, setTimeLeft] =
-    useState(60);
-
-  const [completedLessons, setCompletedLessons] =
-    useState<string[]>([]);
 
   const videoRef =
     useRef<HTMLVideoElement>(null);
 
-  // ======================================================
-  // FETCH
-  // ======================================================
-
+  // FETCH COURSE
   useEffect(() => {
-    if (!id) return;
-
     fetchCourse();
   }, [id]);
 
   const fetchCourse = async () => {
     try {
-      setLoading(true);
-
-      const res = await api.post(
-        "/api/v1/course/getFullCourseDetails",
+      const response = await fetch(
+        "https://orn-ai-all-bakcned.onrender.com/api/v1/course/getFullCourseDetails",
         {
-          courseId: id,
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            courseId: id,
+          }),
         }
       );
 
-      const data =
-        res?.data?.data;
+      const result =
+        await response.json();
+
+      const data = {
+        ...result.data,
+        totalDuration:
+          result.totalDuration,
+      };
 
       setCourse(data);
 
       const formattedSections =
         data?.courseContent?.map(
-          (sec: any) => ({
-            id: sec._id,
-            title: sec.sectionName,
+          (section: any) => ({
+            id: section._id,
+            title:
+              section.sectionName,
 
             lessons:
-              sec.subSection?.map(
+              section.subSection?.map(
                 (sub: any) => ({
                   id: sub._id,
                   title: sub.title,
                   description:
                     sub.description,
-                  video: sub.videoUrl,
-                  pdfUrl: sub.pdfUrl,
-                  quizzes:
-                    sub.quizzes || [],
-                  timeDuration:
+                  videoUrl:
+                    sub.videoUrl,
+                  pdfUrl:
+                    sub.pdfUrl,
+                  duration:
                     sub.timeDuration,
                 })
               ) || [],
           })
         ) || [];
 
-      setSections(formattedSections);
-
-      setExpandedSections(
-        formattedSections.map(
-          (s: any) => s.id
-        )
+      setSections(
+        formattedSections
       );
 
       if (
-        formattedSections?.[0]
-          ?.lessons?.[0]
+        formattedSections.length >
+          0 &&
+        formattedSections[0]
+          .lessons.length > 0
       ) {
-        handleLessonClick(
+        setCurrentLecture(
           formattedSections[0]
             .lessons[0]
         );
+
+        setExpandedSections([
+          formattedSections[0].id,
+        ]);
       }
     } catch (error) {
       console.log(error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  // ======================================================
-  // LESSON CLICK
-  // ======================================================
-
-  const handleLessonClick = (
-    lesson: any
+  // OPEN LECTURE
+  const handleLecture = (
+    lecture: any
   ) => {
-    setCurrentLesson(lesson);
+    setCurrentLecture(lecture);
 
-    setQuizList(
-      lesson.quizzes || []
-    );
-
-    setSelectedAnswers({});
-
-    setShowResult(false);
-
-    setScore(0);
-
-    setTimeLeft(60);
-
+    // MOBILE PE SIDEBAR CLOSE
     if (
       window.innerWidth < 1024
     ) {
@@ -167,708 +143,469 @@ const VideoPlayer: React.FC = () => {
     }
   };
 
-  // ======================================================
-  // TOGGLE
-  // ======================================================
+  // AUTO NEXT
+  const playNextLecture = () => {
+    for (let sec of sections) {
+      const index =
+        sec.lessons.findIndex(
+          (lesson: any) =>
+            lesson.id ===
+            currentLecture?.id
+        );
 
-  const toggleSection = (
-    sectionId: string
-  ) => {
-    setExpandedSections((prev) =>
-      prev.includes(sectionId)
-        ? prev.filter(
-            (id) => id !== sectionId
-          )
-        : [...prev, sectionId]
-    );
-  };
+      if (
+        index !== -1 &&
+        index <
+          sec.lessons.length - 1
+      ) {
+        handleLecture(
+          sec.lessons[index + 1]
+        );
 
-  // ======================================================
-  // TIMER
-  // ======================================================
-
-  useEffect(() => {
-    if (showResult) return;
-
-    if (timeLeft <= 0) {
-      submitQuiz();
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setTimeLeft(
-        (prev) => prev - 1
-      );
-    }, 1000);
-
-    return () =>
-      clearTimeout(timer);
-  }, [timeLeft, showResult]);
-
-  // ======================================================
-  // SUBMIT QUIZ
-  // ======================================================
-
-  const submitQuiz = () => {
-    let correct = 0;
-
-    quizList.forEach(
-      (
-        q: any,
-        index: number
-      ) => {
-        if (
-          selectedAnswers[index] ===
-          q.correctAnswer
-        ) {
-          correct++;
-        }
+        return;
       }
-    );
-
-    setScore(correct);
-
-    setShowResult(true);
+    }
   };
-
-  const percentage =
-    quizList.length > 0
-      ? Math.round(
-          (score /
-            quizList.length) *
-            100
-        )
-      : 0;
-
-  // ======================================================
-  // LOADING
-  // ======================================================
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#050816] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-5" />
-
-          <h2 className="text-white text-xl font-medium">
-            Loading Premium
-            Experience...
-          </h2>
-        </div>
-      </div>
-    );
-  }
-
-  // ======================================================
-  // NO COURSE
-  // ======================================================
-
-  if (!course) {
-    return (
-      <div className="min-h-screen bg-[#050816] flex items-center justify-center p-6">
-        <div className="bg-[#0B1023] border border-white/5 rounded-[30px] p-10 max-w-md text-center">
-          <AlertCircle
-            size={70}
-            className="mx-auto text-red-400 mb-5"
-          />
-
-          <h2 className="text-3xl font-semibold text-white">
-            Course Not Found
-          </h2>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-[#050816] text-white flex overflow-hidden">
-      {/* ====================================================== */}
-      {/* OVERLAY */}
-      {/* ====================================================== */}
+    <>
+      <Navbar />
 
-      {sidebarOpen && (
-        <div
-          onClick={() =>
-            setSidebarOpen(false)
-          }
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
-        />
-      )}
+      <div className="min-h-screen bg-[#f5f7fb]">
 
-      {/* ====================================================== */}
-      {/* SIDEBAR */}
-      {/* ====================================================== */}
-
-      <div
-        className={`
-        fixed top-0 left-0
-        z-50
-        h-screen
-        w-[320px]
-
-        bg-[#0A0F1F]/95
-        backdrop-blur-2xl
-
-        border-r border-white/5
-
-        overflow-y-auto
-
-        transition-all duration-300
-
-        ${
-          sidebarOpen
-            ? "translate-x-0"
-            : "-translate-x-full"
-        }
-
-        lg:translate-x-0
-      `}
-      >
-        {/* HEADER */}
-
-        <div className="sticky top-0 z-20 bg-[#0A0F1F]/95 backdrop-blur-xl border-b border-white/5 px-5 py-5 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold">
-              Course Content
-            </h2>
-
-            <p className="text-slate-400 text-sm mt-1">
-              {sections.length} Sections
-            </p>
-          </div>
-
-          <button
-            onClick={() =>
-              setSidebarOpen(false)
-            }
-            className="w-10 h-10 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center hover:bg-white/10 transition-all"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* CONTENT */}
-
-        <div className="p-4 space-y-5">
-          {sections?.map((section) => (
-            <div
-              key={section.id}
-              className="rounded-[28px] overflow-hidden bg-[#111827]/60 border border-white/5 backdrop-blur-xl"
-            >
-              <button
-                onClick={() =>
-                  toggleSection(
-                    section.id
-                  )
-                }
-                className="w-full px-5 py-5 flex items-center justify-between"
-              >
-                <div className="text-left">
-                  <h3 className="font-medium">
-                    {section.title}
-                  </h3>
-
-                  <p className="text-xs text-slate-400 mt-1">
-                    {
-                      section.lessons
-                        ?.length
-                    }{" "}
-                    lessons
-                  </p>
-                </div>
-
-                <ChevronDown
-                  className={`transition-all ${
-                    expandedSections.includes(
-                      section.id
-                    )
-                      ? "rotate-180"
-                      : ""
-                  }`}
-                />
-              </button>
-
-              {expandedSections.includes(
-                section.id
-              ) && (
-                <div className="px-4 pb-4 space-y-4">
-                  {section.lessons?.map(
-                    (lesson: any) => (
-                      <div
-                        key={lesson.id}
-                        onClick={() =>
-                          handleLessonClick(
-                            lesson
-                          )
-                        }
-                        className={`rounded-[24px] border p-5 cursor-pointer transition-all duration-300 ${
-                          currentLesson?.id ===
-                          lesson.id
-                            ? "bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-400/20"
-                            : "bg-[#0F172A]/70 border-white/5 hover:bg-[#1E293B]"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h4 className="font-medium leading-7">
-                              {lesson.title}
-                            </h4>
-
-                            <div className="flex flex-wrap gap-2 mt-4">
-                              {lesson.video && (
-                                <span className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/10 text-blue-300 text-xs">
-                                  Video
-                                </span>
-                              )}
-
-                              {lesson.pdfUrl && (
-                                <span className="px-3 py-1 rounded-full bg-green-500/10 border border-green-400/10 text-green-300 text-xs">
-                                  PDF
-                                </span>
-                              )}
-
-                              {lesson.quizzes
-                                ?.length > 0 && (
-                                <span className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-400/10 text-purple-300 text-xs">
-                                  Quiz
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {completedLessons.includes(
-                            lesson.id
-                          ) && (
-                            <CheckCircle2 className="text-green-400" />
-                          )}
-                        </div>
-                      </div>
-                    )
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ====================================================== */}
-      {/* MAIN */}
-      {/* ====================================================== */}
-
-      <div className="flex-1 overflow-y-auto lg:ml-[320px]">
-        {/* ====================================================== */}
         {/* HERO */}
-        {/* ====================================================== */}
+        <div className="relative overflow-hidden">
 
-        <div className="relative mx-4 lg:mx-6 mt-6 overflow-hidden rounded-[36px] border border-white/5 bg-[#0B1023] shadow-[0_10px_80px_rgba(0,0,0,0.4)]">
-          {/* BG IMAGE */}
-
+          {/* BG */}
           <div className="absolute inset-0">
-            <img
-              src={
-                course?.thumbnailImage
-              }
-              alt="thumbnail"
-              className="w-full h-full object-cover opacity-30 scale-105 blur-[1px]"
-            />
 
-            <div className="absolute inset-0 bg-gradient-to-br from-[#050816] via-[#0B1023]/90 to-[#111827]/70" />
+            <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-purple-400/20 blur-[140px]" />
+
+            <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-400/20 blur-[140px]" />
+
           </div>
 
-          {/* CONTENT */}
+          {/* MAIN */}
+          <div className="relative z-10 max-w-[1700px] mx-auto px-3 sm:px-4 lg:px-6 py-4 md:py-8">
 
-          <div className="relative z-10 p-6 lg:p-10">
-            <div className="grid xl:grid-cols-[1fr_420px] gap-10 items-center">
-              {/* LEFT */}
+            <div className="flex gap-6 relative">
 
-              <div>
-                {/* BADGES */}
-
-                <div className="flex flex-wrap gap-3 mb-6">
-                  <span className="px-4 py-2 rounded-full bg-purple-500/10 border border-purple-400/10 text-purple-200 text-xs">
-                    {
-                      course?.difficulty
-                    }
-                  </span>
-
-                  <span className="px-4 py-2 rounded-full bg-blue-500/10 border border-blue-400/10 text-blue-200 text-xs">
-                    ₹ {course?.price}
-                  </span>
-
-                  <span className="px-4 py-2 rounded-full bg-white/5 border border-white/5 text-slate-300 text-xs">
-                    {
-                      course?.category
-                        ?.name
-                    }
-                  </span>
-                </div>
-
-                {/* TITLE */}
-
-                <h1 className="text-[34px] lg:text-[62px] leading-[1.05] font-semibold tracking-[-2px] max-w-4xl">
-                  {
-                    course?.courseName
+              {/* LEFT CONTENT */}
+              <div
+                className={`
+                  min-w-0 transition-all duration-300 ease-in-out
+                  ${
+                    sidebarOpen
+                      ? "w-full lg:w-[calc(100%-380px)]"
+                      : "w-full"
                   }
-                </h1>
+                `}
+              >
 
-                {/* SUBTITLE */}
+                {/* VIDEO CARD */}
+                <div className="bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10">
 
-                <p className="text-slate-300 leading-8 mt-6 max-w-3xl text-[15px]">
-                  {course?.subtitle}
-                </p>
+                  <div className="w-full aspect-video">
 
-                {/* STATS */}
+                    {currentLecture?.videoUrl ? (
 
-                <div className="flex flex-wrap gap-5 mt-8">
-                  <div className="bg-white/5 border border-white/5 rounded-2xl px-5 py-4 flex items-center gap-4">
-                    <BookOpen className="text-purple-300" />
-
-                    <div>
-                      <p className="text-xs text-slate-400">
-                        Sections
-                      </p>
-
-                      <h4 className="font-medium mt-1">
-                        {
-                          sections.length
+                      <video
+                        ref={videoRef}
+                        src={
+                          currentLecture.videoUrl
                         }
-                      </h4>
-                    </div>
-                  </div>
-
-                  <div className="bg-white/5 border border-white/5 rounded-2xl px-5 py-4 flex items-center gap-4">
-                    <Sparkles className="text-blue-300" />
-
-                    <div>
-                      <p className="text-xs text-slate-400">
-                        Experience
-                      </p>
-
-                      <h4 className="font-medium mt-1">
-                        Premium
-                      </h4>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* RIGHT */}
-
-              <div className="relative">
-                <div className="overflow-hidden rounded-[28px] border border-purple-500/10 bg-[#111827] shadow-[0_10px_50px_rgba(0,0,0,0.4)]">
-                  <img
-                    src={
-                      course?.thumbnailImage
-                    }
-                    alt="course"
-                    className="w-full h-[260px] object-cover"
-                  />
-
-                  <div className="absolute bottom-4 left-4 px-4 py-2 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-sm">
-                    Premium Learning
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ====================================================== */}
-        {/* VIDEO + PDF */}
-        {/* ====================================================== */}
-
-        <div className="grid xl:grid-cols-[1fr_320px] gap-6 px-4 lg:px-6 mt-6">
-          {/* LEFT */}
-
-          <div className="space-y-6">
-            {/* VIDEO */}
-
-            <div className="bg-[#0B1023] border border-white/5 rounded-[32px] overflow-hidden shadow-[0_10px_60px_rgba(0,0,0,0.35)]">
-              {/* HEADER */}
-
-              <div className="flex items-center justify-between px-6 py-5 border-b border-white/5">
-                <div>
-                  <h2 className="text-lg font-medium">
-                    {
-                      currentLesson?.title
-                    }
-                  </h2>
-
-                  <p className="text-sm text-slate-400 mt-1">
-                    Current Lesson
-                    Video
-                  </p>
-                </div>
-
-                <div className="px-4 py-2 rounded-full bg-purple-500/10 border border-purple-400/10 text-purple-300 text-xs">
-                  {
-                    currentLesson?.timeDuration
-                  }
-                  s
-                </div>
-              </div>
-
-              {/* PLAYER */}
-
-              <div className="p-5">
-                <div className="overflow-hidden rounded-[24px] border border-purple-500/10 bg-black">
-                  {currentLesson?.video ? (
-                    <video
-                      ref={videoRef}
-                      src={
-                        currentLesson?.video
-                      }
-                      controls
-                      className="w-full aspect-video"
-                    />
-                  ) : (
-                    <div className="h-[400px] flex flex-col items-center justify-center">
-                      <PlayCircle
-                        size={70}
-                        className="text-slate-500 mb-5"
+                        controls
+                        onEnded={
+                          playNextLecture
+                        }
+                        className="w-full h-full object-cover"
                       />
 
-                      <h2 className="text-2xl font-medium">
-                        Video Not
-                        Available
-                      </h2>
-                    </div>
-                  )}
+                    ) : currentLecture?.pdfUrl ? (
+
+                      <iframe
+                        src={`https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(
+                          currentLecture.pdfUrl
+                        )}`}
+                        className="w-full min-h-[400px] md:min-h-[700px] bg-white"
+                        title="PDF"
+                      />
+
+                    ) : course?.promotionalVideo ? (
+
+                      <video
+                        src={
+                          course.promotionalVideo
+                        }
+                        controls
+                        className="w-full h-full object-cover"
+                      />
+
+                    ) : (
+
+                      <img
+                        src={
+                          course?.thumbnailImage
+                        }
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* QUIZ */}
+                {/* DETAILS */}
+                <div className="mt-6 md:mt-8">
 
-            {quizList?.length >
-              0 && (
-              <div className="bg-[#0F172A]/90 border border-white/5 rounded-[32px] p-6 lg:p-8 backdrop-blur-xl">
-                {!showResult ? (
-                  <>
-                    {/* HEADER */}
+                  {/* TITLE */}
+                  <h1 className="text-3xl md:text-5xl font-bold text-[#111827] leading-tight mb-3">
+                    {
+                      course?.courseName
+                    }
+                  </h1>
 
-                    <div className="flex flex-col lg:flex-row justify-between gap-6 mb-10">
-                      <div>
-                        <h2 className="text-3xl font-semibold">
-                          Quiz Test
-                        </h2>
+                  {/* SUBTITLE */}
+                  <p className="text-base md:text-xl text-gray-600 mb-6">
+                    {course?.subtitle}
+                  </p>
 
-                        <p className="text-slate-400 mt-3">
-                          Complete
-                          before timer
-                          ends
-                        </p>
-                      </div>
+                  {/* BADGES */}
+                  <div className="grid grid-cols-2 lg:flex gap-3 mb-8">
 
-                      {/* TIMER */}
-
-                      <div className="w-24 h-24 rounded-2xl bg-[#111827] border border-purple-500/20 flex flex-col items-center justify-center">
-                        <span className="text-3xl font-semibold">
-                          {timeLeft}
-                        </span>
-
-                        <span className="text-xs text-slate-400 mt-1">
-                          Seconds
-                        </span>
-                      </div>
+                    <div className="bg-white border border-gray-200 shadow-sm rounded-xl px-4 py-3 flex items-center gap-2">
+                      <Star
+                        className="text-yellow-500"
+                        size={18}
+                      />
+                      <span className="font-semibold text-sm md:text-base">
+                        4.8 Rating
+                      </span>
                     </div>
 
-                    {/* QUESTIONS */}
+                    <div className="bg-white border border-gray-200 shadow-sm rounded-xl px-4 py-3 flex items-center gap-2">
+                      <Users
+                        className="text-blue-500"
+                        size={18}
+                      />
+                      <span className="text-sm md:text-base">
+                        {
+                          course
+                            ?.studentsEnrolled
+                            ?.length
+                        }{" "}
+                        Students
+                      </span>
+                    </div>
 
-                    <div className="space-y-6">
-                      {quizList?.map(
+                    <div className="bg-white border border-gray-200 shadow-sm rounded-xl px-4 py-3 flex items-center gap-2">
+                      <Clock3
+                        className="text-purple-500"
+                        size={18}
+                      />
+                      <span className="text-sm md:text-base">
+                        {
+                          course?.totalDuration
+                        }{" "}
+                        sec
+                      </span>
+                    </div>
+
+                    <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl px-4 py-3 font-semibold text-center text-sm md:text-base">
+                      {
+                        course?.difficulty
+                      }
+                    </div>
+
+                    <div className="bg-green-600 text-white rounded-xl px-4 py-3 font-semibold text-center text-sm md:text-base">
+                      ₹ {course?.price}
+                    </div>
+                  </div>
+
+                  {/* WHAT YOU LEARN */}
+                  <div className="bg-white rounded-3xl p-5 md:p-8 shadow-sm border border-gray-100 mb-6">
+
+                    <h2 className="text-2xl md:text-3xl font-bold text-[#111827] mb-6">
+                      What you'll learn
+                    </h2>
+
+                    <div className="grid md:grid-cols-2 gap-5">
+
+                      {course?.whatYouWillLearn?.map(
                         (
-                          q: any,
-                          qIndex: number
+                          item: string,
+                          index: number
                         ) => (
                           <div
-                            key={q._id}
-                            className="bg-[#111827]/70 border border-white/5 rounded-[28px] p-6"
+                            key={index}
+                            className="flex gap-3"
                           >
-                            <h3 className="text-lg font-medium leading-8 mb-6">
-                              Q
-                              {qIndex +
-                                1}
-                              .{" "}
-                              {
-                                q.question
-                              }
-                            </h3>
 
-                            <div className="space-y-4">
-                              {q.options?.map(
-                                (
-                                  opt: any,
-                                  optIndex: number
-                                ) => (
-                                  <button
-                                    key={
-                                      optIndex
-                                    }
-                                    onClick={() =>
-                                      setSelectedAnswers(
-                                        {
-                                          ...selectedAnswers,
+                            <CheckCircle
+                              className="text-green-500 mt-1"
+                              size={20}
+                            />
 
-                                          [qIndex]:
-                                            optIndex,
-                                        }
-                                      )
-                                    }
-                                    className={`w-full text-left rounded-2xl p-5 border transition-all duration-300 ${
-                                      selectedAnswers[
-                                        qIndex
-                                      ] ===
-                                      optIndex
-                                        ? "bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-400/30"
-                                        : "bg-[#111827] border-white/5 hover:border-purple-500/30 hover:bg-[#1E293B]"
-                                    }`}
-                                  >
-                                    {opt}
-                                  </button>
-                                )
-                              )}
-                            </div>
+                            <p className="text-gray-700 text-sm md:text-base">
+                              {item}
+                            </p>
                           </div>
                         )
                       )}
                     </div>
+                  </div>
 
-                    {/* BUTTON */}
+                  {/* DESCRIPTION */}
+                  <div className="bg-white rounded-3xl p-5 md:p-8 shadow-sm border border-gray-100 mb-6">
 
-                    <button
-                      onClick={
-                        submitQuiz
-                      }
-                      className="mt-10 bg-gradient-to-r from-[#8B5CF6] to-[#6366F1] rounded-2xl px-10 py-4 font-medium"
-                    >
-                      Submit Quiz
-                    </button>
-                  </>
-                ) : (
-                  <div className="text-center py-12">
-                    <div className="w-28 h-28 rounded-full bg-gradient-to-r from-[#8B5CF6] to-[#6366F1] flex items-center justify-center mx-auto mb-8">
-                      <Trophy
-                        size={55}
-                      />
-                    </div>
-
-                    <h2 className="text-4xl font-semibold">
-                      Quiz
-                      Completed
+                    <h2 className="text-2xl md:text-3xl font-bold text-[#111827] mb-5">
+                      Course Description
                     </h2>
 
-                    <p className="text-slate-400 mt-4">
-                      Your Score
-                    </p>
-
-                    <h3 className="text-6xl font-semibold text-purple-300 mt-5">
-                      {score}/
+                    <p className="text-gray-700 leading-7 md:leading-8 text-sm md:text-base">
                       {
-                        quizList.length
+                        course?.courseDescription
                       }
-                    </h3>
-
-                    <p className="text-xl text-slate-300 mt-4">
-                      {percentage}%
                     </p>
                   </div>
-                )}
+
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* RIGHT */}
+              {/* SIDEBAR */}
+              <div
+                className={`
+                  fixed lg:sticky
+                  top-0 right-0
+                  h-screen lg:h-[calc(100vh-40px)]
+                  bg-white
+                  border-l border-gray-200
+                  shadow-2xl
+                  overflow-y-auto
+                  z-50
+                  transition-all duration-300 ease-in-out
 
-          <div className="space-y-6">
-            {/* PDF */}
+                  ${
+                    sidebarOpen
+                      ? "w-[90%] sm:w-[380px] lg:w-[380px] translate-x-0"
+                      : "w-0 translate-x-full overflow-hidden border-0"
+                  }
+                `}
+              >
 
-            {currentLesson?.pdfUrl && (
-              <div className="bg-[#0F172A]/90 border border-white/5 rounded-[32px] overflow-hidden backdrop-blur-xl">
-                <div className="px-5 py-4 border-b border-white/5 flex items-center gap-3">
-                  <FileText
-                    size={18}
-                    className="text-green-300"
-                  />
+                {/* HEADER */}
+                <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between z-20">
 
-                  <h2 className="font-medium">
-                    Lesson Notes
+                  <h2 className="text-xl md:text-2xl font-bold text-[#111827]">
+                    Course Content
                   </h2>
+
+                  {/* CLOSE BUTTON */}
+                  <button
+                    onClick={() =>
+                      setSidebarOpen(false)
+                    }
+                    className="
+                      flex items-center justify-center
+                      w-10 h-10
+                      rounded-full
+                      bg-red-500 text-white
+                      hover:bg-red-600
+                      transition
+                    "
+                  >
+                    <X size={20} />
+                  </button>
                 </div>
 
-                <iframe
-                  src={`http://localhost:4000${currentLesson?.pdfUrl}`}
-                  className="w-full h-[420px]"
+                {/* BODY */}
+                <div className="p-4">
+
+                  {sections.map(
+                    (section) => (
+                      <div
+                        key={section.id}
+                        className="mb-4 border border-gray-200 rounded-2xl overflow-hidden"
+                      >
+
+                        {/* SECTION */}
+                        <button
+                          onClick={() =>
+                            setExpandedSections(
+                              (
+                                prev
+                              ) =>
+                                prev.includes(
+                                  section.id
+                                )
+                                  ? prev.filter(
+                                      (
+                                        item
+                                      ) =>
+                                        item !==
+                                        section.id
+                                    )
+                                  : [
+                                      ...prev,
+                                      section.id,
+                                    ]
+                            )
+                          }
+                          className="w-full p-5 bg-gray-50 hover:bg-gray-100 flex justify-between"
+                        >
+
+                          <div className="text-left">
+
+                            <h3 className="font-bold text-[#111827] text-sm md:text-base">
+                              {
+                                section.title
+                              }
+                            </h3>
+
+                            <p className="text-sm text-gray-500 mt-1">
+                              {
+                                section
+                                  .lessons
+                                  .length
+                              }{" "}
+                              lectures
+                            </p>
+                          </div>
+
+                          {expandedSections.includes(
+                            section.id
+                          ) ? (
+                            <ChevronDown />
+                          ) : (
+                            <ChevronRight />
+                          )}
+                        </button>
+
+                        {/* LESSONS */}
+                        {expandedSections.includes(
+                          section.id
+                        ) &&
+                          section.lessons.map(
+                            (
+                              lesson: any
+                            ) => (
+                              <div
+                                key={
+                                  lesson.id
+                                }
+                                onClick={() =>
+                                  handleLecture(
+                                    lesson
+                                  )
+                                }
+                                className={`p-4 cursor-pointer border-t border-gray-100 hover:bg-purple-50 transition ${
+                                  currentLecture?.id ===
+                                  lesson.id
+                                    ? "bg-purple-100"
+                                    : ""
+                                }`}
+                              >
+
+                                <div className="flex gap-3">
+
+                                  {lesson.videoUrl ? (
+                                    <PlayCircle
+                                      className="text-purple-600 mt-1"
+                                      size={
+                                        20
+                                      }
+                                    />
+                                  ) : (
+                                    <FileText
+                                      className="text-blue-600 mt-1"
+                                      size={
+                                        20
+                                      }
+                                    />
+                                  )}
+
+                                  <div>
+
+                                    <h3 className="font-semibold text-[#111827] text-sm md:text-base">
+                                      {
+                                        lesson.title
+                                      }
+                                    </h3>
+
+                                    <p className="text-sm text-gray-500 mt-1">
+                                      {
+                                        lesson.duration
+                                      }{" "}
+                                      sec
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          )}
+                      </div>
+                    )
+                  )}
+
+                  {/* CERTIFICATE */}
+                  <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-3xl p-6 md:p-8 text-white mt-8">
+
+                    <Award
+                      size={50}
+                      className="mb-5"
+                    />
+
+                    <h2 className="text-2xl md:text-3xl font-bold mb-4">
+                      Get Certificate
+                    </h2>
+
+                    <p className="opacity-90 mb-6 leading-7 text-sm md:text-base">
+                      Complete this
+                      course and earn
+                      your certificate.
+                    </p>
+
+                    <button className="bg-white text-purple-700 font-semibold px-6 py-4 rounded-2xl w-full">
+                      Download
+                      Certificate
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* OVERLAY */}
+              {sidebarOpen && (
+                <div
+                  onClick={() =>
+                    setSidebarOpen(
+                      false
+                    )
+                  }
+                  className="fixed inset-0 bg-black/40 z-40 lg:hidden"
                 />
-              </div>
-            )}
+              )}
 
-            {/* COURSE DETAILS */}
+              {/* OPEN BUTTON */}
+              {!sidebarOpen && (
+                <button
+                  onClick={() =>
+                    setSidebarOpen(
+                      true
+                    )
+                  }
+                  className="fixed bottom-5 right-5 z-50 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 rounded-full shadow-2xl"
+                >
+                  <Menu size={24} />
+                </button>
+              )}
 
-            <div className="bg-[#0F172A]/90 border border-white/5 rounded-[32px] p-6 backdrop-blur-xl">
-              <h2 className="text-xl font-medium mb-6">
-                Course Details
-              </h2>
-
-              <div className="space-y-5">
-                <div>
-                  <p className="text-sm text-slate-400">
-                    Course Name
-                  </p>
-
-                  <h4 className="mt-2 font-medium">
-                    {
-                      course?.courseName
-                    }
-                  </h4>
-                </div>
-
-                <div>
-                  <p className="text-sm text-slate-400">
-                    Category
-                  </p>
-
-                  <h4 className="mt-2 font-medium">
-                    {
-                      course?.category
-                        ?.name
-                    }
-                  </h4>
-                </div>
-
-                <div>
-                  <p className="text-sm text-slate-400">
-                    Difficulty
-                  </p>
-
-                  <h4 className="mt-2 font-medium">
-                    {
-                      course?.difficulty
-                    }
-                  </h4>
-                </div>
-              </div>
             </div>
           </div>
         </div>
+
+        <Footer />
       </div>
-
-      {/* ====================================================== */}
-      {/* OPEN BUTTON */}
-      {/* ====================================================== */}
-
-      {!sidebarOpen && (
-        <button
-          onClick={() =>
-            setSidebarOpen(true)
-          }
-          className="fixed top-5 left-5 z-50 w-12 h-12 rounded-2xl bg-[#111827]/90 border border-white/5 backdrop-blur-xl flex items-center justify-center"
-        >
-          <Menu size={20} />
-        </button>
-      )}
-    </div>
+    </>
   );
 };
 
